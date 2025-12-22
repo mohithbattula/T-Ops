@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, MessageSquare, X, Move, Loader } from 'lucide-react';
 import { supabase } from '../../../../lib/supabaseClient';
 
-const CHATBOT_API_URL = 'http://localhost:8000/chat';
+const CHATBOT_API_URL = 'http://localhost:5000/chat';
 
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -34,14 +34,14 @@ const Chatbot = () => {
                         .select('*')
                         .eq('id', user.id)
                         .single();
-
+                    
                     setUserProfile(profile);
                 }
             } catch (error) {
                 console.error('Error fetching user profile:', error);
             }
         };
-
+        
         fetchUserProfile();
     }, []);
 
@@ -60,7 +60,7 @@ const Chatbot = () => {
 
     const handleSend = async () => {
         if (!input.trim() || isLoading) return;
-
+        
         const userMessage = input.trim();
         setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
         setInput('');
@@ -68,12 +68,12 @@ const Chatbot = () => {
 
         try {
             // Check if backend is running
-            const healthCheck = await fetch('http://localhost:8000/health').catch(() => null);
-
+            const healthCheck = await fetch('http://localhost:5000/health').catch(() => null);
+            
             if (!healthCheck || !healthCheck.ok) {
-                setMessages(prev => [...prev, {
-                    role: 'ai',
-                    text: '⚠️ Chatbot backend is not running. Please start the backend server first.\n\nTo start:\n1. Open terminal in chatbot-backend folder\n2. Run: python main.py\n3. Wait for "Running on http://localhost:8000"'
+                setMessages(prev => [...prev, { 
+                    role: 'ai', 
+                    text: '⚠️ Chatbot backend is not running. Please start the backend server first.\n\nTo start:\n1. Open terminal in chatbot-backend folder\n2. Run: python main.py\n3. Wait for "Running on http://localhost:5000"' 
                 }]);
                 setIsLoading(false);
                 return;
@@ -94,36 +94,36 @@ const Chatbot = () => {
             });
 
             const data = await response.json();
-
+            
             // Handle different response types
             if (data.reply === 'forbidden') {
-                setMessages(prev => [...prev, {
-                    role: 'ai',
-                    text: `🚫 ${data.message || data.reason || 'You do not have permission to perform this action.'}`
+                setMessages(prev => [...prev, { 
+                    role: 'ai', 
+                    text: `🚫 ${data.message || data.reason || 'You do not have permission to perform this action.'}` 
                 }]);
             } else if (data.message) {
-                setMessages(prev => [...prev, {
-                    role: 'ai',
-                    text: data.message
+                setMessages(prev => [...prev, { 
+                    role: 'ai', 
+                    text: data.message 
                 }]);
             } else if (Array.isArray(data.reply) && data.reply.length > 0) {
                 // Format structured data response
                 const formattedData = JSON.stringify(data.reply, null, 2);
-                setMessages(prev => [...prev, {
-                    role: 'ai',
-                    text: `Here's what I found:\n\`\`\`json\n${formattedData}\n\`\`\``
+                setMessages(prev => [...prev, { 
+                    role: 'ai', 
+                    text: `Here's what I found:\n\`\`\`json\n${formattedData}\n\`\`\`` 
                 }]);
             } else {
-                setMessages(prev => [...prev, {
-                    role: 'ai',
-                    text: 'I processed your request successfully!'
+                setMessages(prev => [...prev, { 
+                    role: 'ai', 
+                    text: 'I processed your request successfully!' 
                 }]);
             }
         } catch (error) {
             console.error('Chatbot error:', error);
-            setMessages(prev => [...prev, {
-                role: 'ai',
-                text: `❌ Error: ${error.message}\n\nMake sure the chatbot backend is running on http://localhost:5000`
+            setMessages(prev => [...prev, { 
+                role: 'ai', 
+                text: `❌ Error: ${error.message}\n\nMake sure the chatbot backend is running on http://localhost:5000` 
             }]);
         } finally {
             setIsLoading(false);
@@ -256,32 +256,32 @@ const Chatbot = () => {
                     </div>
 
                     {/* Messages */}
-                    <div style={{
-                        flex: 1,
-                        padding: '16px',
-                        overflowY: 'auto',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '16px',
-                        backgroundColor: 'var(--background)'
+                    <div style={{ 
+                        flex: 1, 
+                        padding: '16px', 
+                        overflowY: 'auto', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '16px', 
+                        backgroundColor: 'var(--background)' 
                     }}>
                         {messages.map((msg, i) => (
-                            <div key={i} style={{
-                                display: 'flex',
-                                gap: '8px',
-                                flexDirection: msg.role === 'user' ? 'row-reverse' : 'row'
+                            <div key={i} style={{ 
+                                display: 'flex', 
+                                gap: '8px', 
+                                flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' 
                             }}>
                                 <div style={{
-                                    width: '32px',
-                                    height: '32px',
+                                    width: '32px', 
+                                    height: '32px', 
                                     borderRadius: '50%',
-                                    background: msg.role === 'ai'
-                                        ? 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)'
+                                    background: msg.role === 'ai' 
+                                        ? 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)' 
                                         : 'var(--accent)',
-                                    color: 'white',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
+                                    color: 'white', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
                                     flexShrink: 0,
                                     boxShadow: 'var(--shadow-sm)'
                                 }}>
@@ -308,13 +308,13 @@ const Chatbot = () => {
                         {isLoading && (
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                 <div style={{
-                                    width: '32px',
-                                    height: '32px',
+                                    width: '32px', 
+                                    height: '32px', 
                                     borderRadius: '50%',
                                     background: 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
-                                    color: 'white',
-                                    display: 'flex',
-                                    alignItems: 'center',
+                                    color: 'white', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
                                     justifyContent: 'center'
                                 }}>
                                     <Bot size={18} />
@@ -339,12 +339,12 @@ const Chatbot = () => {
                     </div>
 
                     {/* Input */}
-                    <div style={{
-                        padding: '12px',
-                        borderTop: '1px solid var(--border)',
-                        backgroundColor: 'var(--surface)',
-                        display: 'flex',
-                        gap: '8px'
+                    <div style={{ 
+                        padding: '12px', 
+                        borderTop: '1px solid var(--border)', 
+                        backgroundColor: 'var(--surface)', 
+                        display: 'flex', 
+                        gap: '8px' 
                     }}>
                         <input
                             type="text"
@@ -369,15 +369,15 @@ const Chatbot = () => {
                             onClick={handleSend}
                             disabled={isLoading || !input.trim()}
                             style={{
-                                width: '44px',
-                                height: '44px',
+                                width: '44px', 
+                                height: '44px', 
                                 borderRadius: '8px',
-                                background: isLoading || !input.trim()
-                                    ? 'var(--border)'
+                                background: isLoading || !input.trim() 
+                                    ? 'var(--border)' 
                                     : 'linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)',
                                 color: 'white',
-                                display: 'flex',
-                                alignItems: 'center',
+                                display: 'flex', 
+                                alignItems: 'center', 
                                 justifyContent: 'center',
                                 border: 'none',
                                 cursor: isLoading || !input.trim() ? 'not-allowed' : 'pointer',
