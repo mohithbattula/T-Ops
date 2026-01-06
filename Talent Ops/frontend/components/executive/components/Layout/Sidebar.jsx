@@ -49,15 +49,14 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         { icon: Users, label: 'Employees', path: '/executive-dashboard/employees' },
         { icon: UserCheck, label: 'Employee Status', path: '/executive-dashboard/employee-status' },
         { icon: CalendarOff, label: 'Leave Requests', path: '/executive-dashboard/leaves' },
-        { icon: Receipt, label: 'Payslips', path: '/executive-dashboard/payslips' },
-        { icon: FileCheck, label: 'Policies', path: '/executive-dashboard/policies' },
         { icon: DollarSign, label: 'Payroll', path: '/executive-dashboard/payroll' },
+        { icon: Receipt, label: 'Payslips', path: '/executive-dashboard/payslips' },
         { icon: FileText, label: 'Invoice', path: '/executive-dashboard/invoice' },
         { icon: Briefcase, label: 'Hiring Portal', path: '/executive-dashboard/hiring' },
         { icon: Network, label: 'Org Hierarchy', path: '/executive-dashboard/hierarchy' },
         { icon: Megaphone, label: 'Announcements', path: '/executive-dashboard/announcements' },
         { icon: MessageCircle, label: 'Messages', path: '/executive-dashboard/messages' },
-        { icon: Settings, label: 'Profile', path: '/executive-dashboard/settings' },
+        { icon: FileCheck, label: 'Policies', path: '/executive-dashboard/policies' },
     ];
 
     // Project-level menu items (Project Manager stuff)
@@ -244,6 +243,41 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
             {/* Logout */}
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', marginTop: '12px' }}>
+                <button
+                    onClick={() => navigate('/executive-dashboard/settings')}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: isCollapsed ? 'center' : 'flex-start',
+                        gap: '10px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        width: '100%',
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: location.pathname === '/executive-dashboard/settings' ? '#7C3AED' : 'transparent',
+                        color: location.pathname === '/executive-dashboard/settings' ? 'white' : 'rgba(255,255,255,0.7)',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        marginBottom: '8px'
+                    }}
+                    onMouseEnter={(e) => {
+                        if (location.pathname !== '/executive-dashboard/settings') {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                            e.currentTarget.style.color = 'white';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (location.pathname !== '/executive-dashboard/settings') {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+                        }
+                    }}
+                >
+                    <Settings size={18} />
+                    {!isCollapsed && <span>Profile</span>}
+                </button>
+
                 <button
                     onClick={() => navigate('/login')}
                     style={{

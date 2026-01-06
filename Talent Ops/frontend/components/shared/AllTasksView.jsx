@@ -5,7 +5,10 @@ import { supabaseRequest } from '../../lib/supabaseRequest';
 import { useProject } from '../employee/context/ProjectContext';
 
 const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId, addToast }) => {
-    const { currentProject } = useProject();
+    const { currentProject, projectRole: contextProjectRole } = useProject();
+    // Use context role if available (meaning we are in a project context), otherwise prop
+    const effectiveProjectRole = currentProject ? contextProjectRole : projectRole;
+
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [employees, setEmployees] = useState([]);
@@ -46,7 +49,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
         endDate: new Date().toISOString().split('T')[0],
         dueTime: '',
         priority: 'Medium',
-        allocatedHours: ''
+        allocatedHours: '',
+        requiredPhases: ['requirement_refiner', 'design_guidance', 'build_guidance', 'acceptance_criteria', 'deployment']
     });
 
     useEffect(() => {
@@ -197,8 +201,19 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                 }
 
                 // 1. Fetch simplified tasks for the current project
+                let query = supabase.from('tasks').select('*').eq('project_id', currentProject.id);
+
+                // Filter by role if not executive/manager/team_lead for this project
+                // We assume strict project-level permissions override global permissions for tasks view
+                const isProjectAdmin = ['manager', 'team_lead'].includes(effectiveProjectRole);
+
+                // If the user is NOT a project admin (and not a global executive viewing all), restrict to own tasks
+                if (!isProjectAdmin) {
+                    query = query.eq('assigned_to', userId);
+                }
+
                 tasksData = await supabaseRequest(
-                    supabase.from('tasks').select('*').eq('project_id', currentProject.id).order('id', { ascending: false }),
+                    query.order('id', { ascending: false }),
                     addToast
                 );
             }
@@ -281,7 +296,10 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                 due_time: newTask.dueTime || null,
                 priority: newTask.priority.toLowerCase(),
                 status: 'pending',
-                allocated_hours: parseFloat(newTask.allocatedHours)
+                allocated_hours: parseFloat(newTask.allocatedHours),
+                phase_validations: {
+                    active_phases: newTask.requiredPhases
+                }
             };
 
             await supabaseRequest(supabase.from('tasks').insert([taskToInsert]), addToast);
@@ -316,7 +334,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                 endDate: new Date().toISOString().split('T')[0],
                 dueTime: '',
                 priority: 'Medium',
-                allocatedHours: ''
+                allocatedHours: '',
+                requiredPhases: ['requirement_refiner', 'design_guidance', 'build_guidance', 'acceptance_criteria', 'deployment']
             });
             fetchData();
         } catch (error) {
@@ -523,19 +542,25 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
     // Lifecycle phases for progress visualization
     const LIFECYCLE_PHASES = [
         { key: 'requirement_refiner', label: 'Requirements', short: 'R' },
-        { key: 'design_guidance', label: 'Design', short: 'D' },
+        { key: 'design_guidance', label: 'Design', short: 'Ds' },
         { key: 'build_guidance', label: 'Build', short: 'B' },
         { key: 'acceptance_criteria', label: 'Acceptance', short: 'A' },
-        { key: 'deployment', label: 'Deployment', short: 'P' }
+        { key: 'deployment', label: 'Deployment', short: 'D' }
     ];
 
     const getPhaseIndex = (phase) => LIFECYCLE_PHASES.findIndex(p => p.key === phase);
 
     const LifecycleProgress = ({ currentPhase, subState, validations }) => {
-        const currentIndex = getPhaseIndex(currentPhase || 'requirement_refiner');
+        const activePhases = validations?.active_phases || LIFECYCLE_PHASES.map(p => p.key);
+        const filteredPhases = LIFECYCLE_PHASES.filter(p => activePhases.includes(p.key));
+
+        // Find index in the FILTERED list
+        const currentPhaseObj = filteredPhases.find(p => p.key === currentPhase) || filteredPhases[0];
+        const currentIndex = filteredPhases.findIndex(p => p.key === (currentPhase || filteredPhases[0]?.key));
+
         return (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {LIFECYCLE_PHASES.map((phase, idx) => {
+                {filteredPhases.map((phase, idx) => {
                     const validation = validations?.[phase.key];
                     const status = validation?.status;
                     let color = '#e5e7eb'; // Default Grey
@@ -572,7 +597,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                             }} title={phase.label}>
                                 {isCompleted ? '✓' : phase.short}
                             </div>
-                            {idx < LIFECYCLE_PHASES.length - 1 && (
+                            {idx < filteredPhases.length - 1 && (
                                 <div style={{ width: '12px', height: '2px', backgroundColor: idx < currentIndex && !isYellow ? '#10b981' : '#e5e7eb' }} />
                             )}
                         </React.Fragment>
@@ -599,16 +624,16 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                     <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#0f172a', margin: 0 }}>
-                        {userRole === 'manager' || userRole === 'team_lead' ? 'Team Tasks' : 'Your Tasks'}
+                        {(userRole === 'manager' || userRole === 'team_lead') && (!effectiveProjectRole || effectiveProjectRole === 'manager' || effectiveProjectRole === 'team_lead') ? 'Team Tasks' : 'Your Tasks'}
                     </h1>
                     <p style={{ color: '#64748b', marginTop: '4px', fontSize: '0.95rem' }}>
-                        {userRole === 'manager' || userRole === 'team_lead'
+                        {(userRole === 'manager' || userRole === 'team_lead') && (!effectiveProjectRole || effectiveProjectRole === 'manager' || effectiveProjectRole === 'team_lead')
                             ? 'Manage and track all team tasks in one place'
                             : 'Track your tasks through the lifecycle'}
                     </p>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-end' }}>
-                    {(userRole === 'manager' || userRole === 'executive') && (
+                    {(userRole === 'manager' || userRole === 'executive') && (!effectiveProjectRole || effectiveProjectRole === 'manager' || effectiveProjectRole === 'team_lead') && (
                         <button
                             onClick={() => setShowAddTaskModal(true)}
                             style={{
@@ -1203,6 +1228,58 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                 </div>
                             )}
 
+                            {/* Lifecycle Stages Selection */}
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
+                                    Required Lifecycle Stages <span style={{ color: '#ef4444' }}>*</span>
+                                </label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                    {LIFECYCLE_PHASES.map(phase => (
+                                        <label
+                                            key={phase.key}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                fontSize: '0.85rem',
+                                                cursor: 'pointer',
+                                                userSelect: 'none'
+                                            }}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={newTask.requiredPhases.includes(phase.key)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        const newPhases = [...newTask.requiredPhases, phase.key];
+                                                        // Sort by original order
+                                                        newPhases.sort((a, b) => {
+                                                            const idxA = LIFECYCLE_PHASES.findIndex(p => p.key === a);
+                                                            const idxB = LIFECYCLE_PHASES.findIndex(p => p.key === b);
+                                                            return idxA - idxB;
+                                                        });
+                                                        setNewTask({ ...newTask, requiredPhases: newPhases });
+                                                    } else {
+                                                        // Prevent unchecking all (require at least one)
+                                                        if (newTask.requiredPhases.length > 1) {
+                                                            setNewTask({
+                                                                ...newTask,
+                                                                requiredPhases: newTask.requiredPhases.filter(p => p !== phase.key)
+                                                            });
+                                                        }
+                                                    }
+                                                }}
+                                                style={{ accentColor: '#0f172a' }}
+                                            />
+                                            {phase.label}
+                                        </label>
+                                    ))}
+                                </div>
+                                <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>
+                                    Uncheck stages that are not needed for this task.
+                                </p>
+                            </div>
+
                             {/* Modal Footer */}
                             <div style={{
                                 marginTop: '12px',
@@ -1301,7 +1378,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                         <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             <div>
                                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>{selectedTask.title}</h3>
-                                <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: '1.5', margin: 0 }}>
+                                <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: '1.5', margin: 0, whiteSpace: 'pre-wrap' }}>
                                     {selectedTask.description || 'No description provided.'}
                                 </p>
                             </div>
@@ -1323,70 +1400,79 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                     letterSpacing: '0.05em'
                                 }}>Task Lifecycle Progress</label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                    {LIFECYCLE_PHASES.map((phase, idx) => {
-                                        const currentIndex = getPhaseIndex(selectedTask.lifecycle_state || 'requirement_refiner');
-                                        const validation = selectedTask.phase_validations?.[phase.key];
-                                        const status = validation?.status;
+                                    {(() => {
+                                        const activePhases = selectedTask.phase_validations?.active_phases || LIFECYCLE_PHASES.map(p => p.key);
+                                        const filteredPhases = LIFECYCLE_PHASES.filter(p => activePhases.includes(p.key));
 
-                                        // Color Logic
-                                        let color = '#e5e7eb'; // Default Grey
-                                        let isYellow = false;
+                                        return filteredPhases.map((phase, idx) => {
+                                            const currentPhaseKey = selectedTask.lifecycle_state || activePhases[0] || 'requirement_refiner';
 
-                                        if (idx < currentIndex) {
-                                            // Past Phase
-                                            if (status === 'pending') { color = '#f59e0b'; isYellow = true; } // Yellow
-                                            else if (status === 'rejected') color = '#fee2e2'; // Red
-                                            else color = '#10b981'; // Green
-                                        } else if (idx === currentIndex) {
-                                            // Current Phase
-                                            if (status === 'pending' || selectedTask.sub_state === 'pending_validation') { color = '#f59e0b'; isYellow = true; } // Yellow
-                                            else color = '#3b82f6'; // Blue
-                                        }
+                                            // Find index in the FILTERED list
+                                            const currentIndex = filteredPhases.findIndex(p => p.key === currentPhaseKey);
 
-                                        const isCompleted = color === '#10b981';
-                                        const isCurrent = idx === currentIndex;
+                                            const validation = selectedTask.phase_validations?.[phase.key];
+                                            const status = validation?.status;
 
-                                        return (
-                                            <React.Fragment key={phase.key}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                                    <div style={{
-                                                        width: '36px',
-                                                        height: '36px',
-                                                        borderRadius: '50%',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 700,
-                                                        backgroundColor: color,
-                                                        color: color === '#e5e7eb' ? '#9ca3af' : color === '#fee2e2' ? '#991b1b' : 'white',
-                                                        transition: 'all 0.3s',
-                                                        boxShadow: isCurrent ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
-                                                    }}>
-                                                        {isCompleted ? '✓' : phase.short}
+                                            // Color Logic
+                                            let color = '#e5e7eb'; // Default Grey
+                                            let isYellow = false;
+
+                                            if (idx < currentIndex) {
+                                                // Past Phase
+                                                if (status === 'pending') { color = '#f59e0b'; isYellow = true; } // Yellow
+                                                else if (status === 'rejected') color = '#fee2e2'; // Red
+                                                else color = '#10b981'; // Green
+                                            } else if (idx === currentIndex) {
+                                                // Current Phase
+                                                if (status === 'pending' || selectedTask.sub_state === 'pending_validation') { color = '#f59e0b'; isYellow = true; } // Yellow
+                                                else color = '#3b82f6'; // Blue
+                                            }
+
+                                            const isCompleted = color === '#10b981';
+                                            const isCurrent = idx === currentIndex;
+
+                                            return (
+                                                <React.Fragment key={phase.key}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                                        <div style={{
+                                                            width: '36px',
+                                                            height: '36px',
+                                                            borderRadius: '50%',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 700,
+                                                            backgroundColor: color,
+                                                            color: color === '#e5e7eb' ? '#9ca3af' : color === '#fee2e2' ? '#991b1b' : 'white',
+                                                            transition: 'all 0.3s',
+                                                            boxShadow: isCurrent ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
+                                                        }}>
+                                                            {isCompleted ? '✓' : phase.short}
+                                                        </div>
+                                                        <span style={{
+                                                            fontSize: '0.7rem',
+                                                            fontWeight: isCurrent ? 600 : 500,
+                                                            color: isCompleted || isCurrent || isYellow ? '#0f172a' : '#94a3b8',
+                                                            textAlign: 'center',
+                                                            maxWidth: '70px'
+                                                        }}>
+                                                            {phase.label}
+                                                        </span>
                                                     </div>
-                                                    <span style={{
-                                                        fontSize: '0.7rem',
-                                                        fontWeight: isCurrent ? 600 : 500,
-                                                        color: isCompleted || isCurrent || isYellow ? '#0f172a' : '#94a3b8',
-                                                        textAlign: 'center',
-                                                        maxWidth: '70px'
-                                                    }}>
-                                                        {phase.label}
-                                                    </span>
-                                                </div>
-                                                {idx < LIFECYCLE_PHASES.length - 1 && (
-                                                    <div style={{
-                                                        width: '24px',
-                                                        height: '3px',
-                                                        backgroundColor: idx < currentIndex && !isYellow ? '#10b981' : '#e5e7eb',
-                                                        borderRadius: '2px',
-                                                        marginBottom: '28px'
-                                                    }} />
-                                                )}
-                                            </React.Fragment>
-                                        );
-                                    })}
+                                                    {idx < filteredPhases.length - 1 && (
+                                                        <div style={{
+                                                            width: '24px',
+                                                            height: '3px',
+                                                            backgroundColor: idx < currentIndex && !isYellow ? '#10b981' : '#e5e7eb',
+                                                            borderRadius: '2px',
+                                                            marginBottom: '28px'
+                                                        }} />
+                                                    )}
+                                                </React.Fragment>
+                                            );
+                                        });
+                                    })()}
                                 </div>
                                 {selectedTask.sub_state === 'pending_validation' && (
                                     <div style={{

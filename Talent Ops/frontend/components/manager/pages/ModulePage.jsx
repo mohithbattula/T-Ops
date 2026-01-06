@@ -17,19 +17,26 @@ import PayrollPage from '../../shared/PayrollPage';
 import AnnouncementsPage from '../../shared/AnnouncementsPage';
 import { AddPolicyModal } from '../../shared/AddPolicyModal';
 import { useUser } from '../context/UserContext';
+import { useProject } from '../../employee/context/ProjectContext';
+import ProjectDocuments from '../../employee/pages/ProjectDocuments';
 
 const ModulePage = ({ title, type }) => {
     const { addToast } = useToast();
     const { userId, userRole } = useUser();
+    const { currentProject, projectRole } = useProject();
 
     // State for leave requests
     // State for leave requests
     const [leaveRequests, setLeaveRequests] = useState([]);
 
+    // ... (rest of states remain same)
+
     // State for Leave Details modal
     const [selectedLeaveRequest, setSelectedLeaveRequest] = useState(null);
     const [showLeaveDetailsModal, setShowLeaveDetailsModal] = useState(false);
     const [employeeTasks, setEmployeeTasks] = useState([]);
+
+    // ... (rest of states)
 
     const [remainingLeaves, setRemainingLeaves] = useState(0);
 
@@ -65,8 +72,22 @@ const ModulePage = ({ title, type }) => {
         const fetchData = async () => {
             try {
                 if (type === 'workforce') {
-                    // 1. Fetch all profiles
-                    const { data: profilesData, error: profileError } = await supabase
+                    let userIdsToFetch = null;
+
+                    // Filter by Project if selected
+                    if (currentProject?.id) {
+                        const { data: members } = await supabase
+                            .from('project_members')
+                            .select('user_id')
+                            .eq('project_id', currentProject.id);
+
+                        if (members) {
+                            userIdsToFetch = members.map(m => m.user_id);
+                        }
+                    }
+
+                    // 1. Fetch profiles
+                    let query = supabase
                         .from('profiles')
                         .select(`
                             id, 
@@ -75,6 +96,12 @@ const ModulePage = ({ title, type }) => {
                             role, 
                             created_at
                         `);
+
+                    if (userIdsToFetch) {
+                        query = query.in('id', userIdsToFetch);
+                    }
+
+                    const { data: profilesData, error: profileError } = await query;
 
                     if (profileError) throw profileError;
 
@@ -86,7 +113,12 @@ const ModulePage = ({ title, type }) => {
                     const projectMap = {};
                     if (assignments) {
                         assignments.forEach(a => {
-                            projectMap[a.user_id] = a.projects?.name;
+                            if (!projectMap[a.user_id]) {
+                                projectMap[a.user_id] = [];
+                            }
+                            if (a.projects?.name) {
+                                projectMap[a.user_id].push(a.projects.name);
+                            }
                         });
                     }
 
@@ -96,7 +128,7 @@ const ModulePage = ({ title, type }) => {
                             name: emp.full_name || 'N/A',
                             email: emp.email || 'N/A',
                             role: emp.role || 'N/A',
-                            dept: projectMap[emp.id] || 'Unassigned',
+                            dept: (projectMap[emp.id] && projectMap[emp.id].length > 0) ? projectMap[emp.id].join(', ') : 'Unassigned',
                             status: 'Active',
                             joinDate: emp.created_at ? new Date(emp.created_at).toLocaleDateString() : 'N/A'
                         })));
@@ -117,7 +149,12 @@ const ModulePage = ({ title, type }) => {
                     const projectMap = {};
                     if (assignments) {
                         assignments.forEach(a => {
-                            projectMap[a.user_id] = a.projects?.name;
+                            if (!projectMap[a.user_id]) {
+                                projectMap[a.user_id] = [];
+                            }
+                            if (a.projects?.name) {
+                                projectMap[a.user_id].push(a.projects.name);
+                            }
                         });
                     }
 
@@ -189,7 +226,7 @@ const ModulePage = ({ title, type }) => {
                             return {
                                 id: emp.id,
                                 name: emp.full_name || 'Unknown',
-                                dept: projectMap[emp.id] || 'Talent Ops',
+                                dept: (projectMap[emp.id] && projectMap[emp.id].length > 0) ? projectMap[emp.id].join(', ') : 'Talent Ops',
                                 availability: availability,
                                 task: currentTask,
                                 lastActive: lastActive
@@ -333,7 +370,7 @@ const ModulePage = ({ title, type }) => {
         if (type === 'leaves' || type === 'my-leaves') {
             fetchRemainingLeaves();
         }
-    }, [type, refreshTrigger]);
+    }, [type, refreshTrigger, currentProject?.id]);
 
     // Fetch Policies from Supabase
     React.useEffect(() => {
@@ -721,14 +758,15 @@ const ModulePage = ({ title, type }) => {
     };
 
     // Render specific demos for certain types
-    if (type === 'analytics') return <AnalyticsDemo />;
-    if (type === 'tasks') return <AllTasksView userRole={userRole} userId={userId} addToast={addToast} />;
+    if (type === 'analytics') return <AnalyticsDemo currentProject={currentProject} projectRole={projectRole} />;
+    if (type === 'tasks') return <AllTasksView userRole={userRole} projectRole={projectRole} userId={userId} addToast={addToast} />;
     if (title === 'Team Hierarchy' || title === 'Organizational Hierarchy') return <HierarchyDemo />;
     if (title === 'Project Hierarchy') return <ProjectHierarchyDemo />;
     if (title === 'Settings') return <SettingsDemo />;
     if (title === 'Announcements') return <AnnouncementsPage userRole={userRole} userId={userId} />;
     if (type === 'payroll') return <PayslipsPage userRole={userRole} userId={userId} addToast={addToast} />;
     if (type === 'payroll-generation') return <PayrollPage userRole={userRole} userId={userId} addToast={addToast} />;
+    if (type === 'documents') return <ProjectDocuments />;
 
     // Mock Data Configurations
     const configs = {

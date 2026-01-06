@@ -199,6 +199,29 @@ const PayrollFormModal = ({ isOpen, onClose, onSuccess }) => {
         }));
     };
 
+    const handleLopDaysChange = (employeeId, value) => {
+        setPayrollPreview(prev => prev.map(item => {
+            if (item.employee_id === employeeId) {
+                const lopDays = Math.max(0, parseFloat(value) || 0);
+                const lopAmount = calculateLOPAmount(item.basic_salary, item.total_working_days, lopDays);
+
+                return {
+                    ...item,
+                    lop_days: lopDays,
+                    lop_amount: lopAmount,
+                    net_salary: calculateNetSalary(
+                        item.basic_salary,
+                        item.hra,
+                        item.allowances,
+                        item.additional_deductions,
+                        lopAmount
+                    )
+                };
+            }
+            return item;
+        }));
+    };
+
     const handleGeneratePayroll = async () => {
         if (payrollPreview.length === 0) {
             setError('Please calculate preview first');
@@ -580,8 +603,23 @@ const PayrollFormModal = ({ isOpen, onClose, onSuccess }) => {
                                             <td style={{ padding: '12px', textAlign: 'center' }}>{row.total_working_days}</td>
                                             <td style={{ padding: '12px', textAlign: 'center', color: '#059669', fontWeight: 600 }}>{row.present_days}</td>
                                             <td style={{ padding: '12px', textAlign: 'center', color: '#2563eb' }}>{row.leave_days}</td>
-                                            <td style={{ padding: '12px', textAlign: 'center', color: row.lop_days > 0 ? '#dc2626' : '#6b7280', fontWeight: row.lop_days > 0 ? 600 : 400 }}>
-                                                {row.lop_days}
+                                            <td style={{ padding: '12px' }}>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.5"
+                                                    value={row.lop_days}
+                                                    onChange={(e) => handleLopDaysChange(row.employee_id, e.target.value)}
+                                                    style={{
+                                                        width: '70px',
+                                                        padding: '6px 8px',
+                                                        border: '1px solid #d1d5db',
+                                                        borderRadius: '6px',
+                                                        textAlign: 'center',
+                                                        color: row.lop_days > 0 ? '#dc2626' : '#374151',
+                                                        fontWeight: row.lop_days > 0 ? 600 : 400
+                                                    }}
+                                                />
                                             </td>
                                             <td style={{ padding: '12px', textAlign: 'right', color: '#dc2626' }}>
                                                 ₹{row.lop_amount?.toLocaleString()}

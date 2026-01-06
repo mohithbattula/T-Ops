@@ -16,11 +16,27 @@ const DashboardHome = () => {
     const navigate = useNavigate();
 
     // Helper to format date as YYYY-MM-DD for comparison (Local Time)
+    // Helper to format date as YYYY-MM-DD for comparison (Local Time)
     const formatDate = (date) => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
+    };
+
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    // Update time every minute
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const getGreeting = () => {
+        const hour = currentTime.getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 18) return 'Good afternoon';
+        return 'Good evening';
     };
 
     const today = new Date();
@@ -309,7 +325,7 @@ const DashboardHome = () => {
             {/* Header */}
             <div>
                 <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px' }}>
-                    Good morning, <span style={{ color: 'var(--accent)' }}>{userName}</span>
+                    {getGreeting()}, <span style={{ color: 'var(--accent)' }}>{userName}</span>
                 </h1>
                 <p style={{ color: '#64748b', fontSize: '1rem' }}>
                     Talent Ops wishes you a good and productive day. {employeeStats.active} employees active today. You have {filteredTimeline.length} events on {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.

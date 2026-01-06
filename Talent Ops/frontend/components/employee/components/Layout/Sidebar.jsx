@@ -54,7 +54,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         { icon: Megaphone, label: 'Announcements', path: '/employee-dashboard/announcements' },
         { icon: MessageCircle, label: 'Messages', path: '/employee-dashboard/messages' },
         { icon: Network, label: 'Org Hierarchy', path: '/employee-dashboard/org-hierarchy' },
-        { icon: Settings, label: 'Profile', path: '/employee-dashboard/settings' },
     ];
 
     // Role-based project menu configurations
@@ -395,6 +394,41 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
             {/* Logout */}
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', marginTop: '12px' }}>
+                <button
+                    onClick={() => navigate('/employee-dashboard/settings')}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: isCollapsed ? 'center' : 'flex-start',
+                        gap: '10px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        width: '100%',
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: location.pathname === '/employee-dashboard/settings' ? '#7C3AED' : 'transparent',
+                        color: location.pathname === '/employee-dashboard/settings' ? 'white' : 'rgba(255,255,255,0.7)',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        marginBottom: '8px'
+                    }}
+                    onMouseEnter={(e) => {
+                        if (location.pathname !== '/employee-dashboard/settings') {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                            e.currentTarget.style.color = 'white';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (location.pathname !== '/employee-dashboard/settings') {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+                        }
+                    }}
+                >
+                    <Settings size={18} />
+                    {!isCollapsed && <span>Profile</span>}
+                </button>
+
                 <button
                     onClick={() => navigate('/login')}
                     style={{

@@ -75,28 +75,51 @@ const ProjectManagement = ({ addToast = () => { } }) => {
     const addMember = async (userId) => {
         if (!selectedProject) return;
 
+        // Map 'consultant' to 'employee' for database compatibility
+        const dbRole = selectedRole === 'consultant' ? 'employee' : selectedRole;
+
         const insertData = {
             project_id: selectedProject.id,
             user_id: userId,
-            role: selectedRole
+            role: dbRole
         };
         console.log('🔍 Adding member with data:', insertData);
-        console.log('🔍 Selected project:', selectedProject);
 
         try {
+            // 1. Insert into project_members
             const { data, error } = await supabase.from('project_members').insert(insertData).select();
-            console.log('📝 Insert result - data:', data, 'error:', error);
-            if (error) throw error;
+
+            if (error) {
+                console.error('Project member insert failed:', error);
+                throw error;
+            }
+
+            console.log('📝 Project member added:', data);
+
+            // 2. Sync with team_members (best effort)
+            const teamMemberData = {
+                team_id: selectedProject.id,
+                profile_id: userId,
+                role_in_project: dbRole
+            };
+
+            const { error: teamError } = await supabase.from('team_members').insert(teamMemberData);
+            if (teamError) {
+                console.warn('Team member sync warning (might already exist):', teamError);
+            } else {
+                console.log('Team member synced');
+            }
+
             fetchProjectMembers(selectedProject.id);
             setShowAddMember(false);
             setSearchUser('');
-            addToast?.('Member added!', 'success');
+            addToast?.('Member added successfully!', 'success');
         } catch (error) {
             console.error('❌ Full error object:', error);
             if (error.code === '23505') {
                 addToast?.('User already in this project', 'error');
             } else {
-                addToast?.('Failed to add member: ' + error.message, 'error');
+                addToast?.('Failed to add member: ' + (error.message || 'Unknown error'), 'error');
             }
         }
     };
@@ -112,14 +135,50 @@ const ProjectManagement = ({ addToast = () => { } }) => {
         }
     };
 
-    const updateMemberRole = async (memberId, newRole) => {
+    const updateMemberRole = async (member, newRole) => {
         try {
-            const { error } = await supabase.from('project_members').update({ role: newRole }).eq('id', memberId);
-            if (error) throw error;
-            setProjectMembers(projectMembers.map(m => m.id === memberId ? { ...m, role: newRole } : m));
-            addToast?.('Role updated', 'success');
+            // Map 'consultant' to 'employee' for database compatibility if needed
+            // Assuming DB constraints allow 'employee', 'team_lead', 'manager'
+            const dbRole = newRole === 'consultant' ? 'employee' : newRole;
+
+            console.log(`Updating member ${member.id} role. UI Role: ${newRole}, DB Role: ${dbRole}`);
+
+            // Update project_members
+            const { error: errorProject } = await supabase
+                .from('project_members')
+                .update({ role: dbRole })
+                .eq('id', member.id);
+
+            if (errorProject) {
+                console.error('Project member update failed:', errorProject);
+                throw errorProject;
+            }
+
+            // Sync with team_members (best effort)
+            // project_id maps to team_id, user_id maps to profile_id
+            if (member.project_id && member.user_id) {
+                const { error: errorTeam } = await supabase
+                    .from('team_members')
+                    .update({ role_in_project: dbRole })
+                    .eq('team_id', member.project_id)
+                    .eq('profile_id', member.user_id);
+
+                if (errorTeam) console.warn('Team member sync warning:', errorTeam);
+            }
+
+            console.log('Role update successful');
+
+            // Update state locally
+            setProjectMembers(prev => prev.map(m =>
+                m.id === member.id ? { ...m, role: newRole } : m
+            ));
+
+            addToast?.('Role updated successfully', 'success');
         } catch (error) {
-            addToast?.('Failed to update role', 'error');
+            console.error('Failed to update role:', error);
+            addToast?.(`Update Failed: ${error.message || 'Unknown error'}`, 'error');
+            // Re-fetch to ensure UI is in sync
+            if (selectedProject?.id) fetchProjectMembers(selectedProject.id);
         }
     };
 
@@ -142,12 +201,14 @@ const ProjectManagement = ({ addToast = () => { } }) => {
     };
 
     const getRoleBadge = (role) => {
+        // Map 'employee' from DB to 'consultant' for UI display
+        const displayRole = role === 'employee' ? 'consultant' : role;
         const styles = {
             manager: { bg: '#fef3c7', color: '#b45309' },
             team_lead: { bg: '#dbeafe', color: '#1d4ed8' },
             consultant: { bg: '#f3f4f6', color: '#374151' }
         };
-        return styles[role] || styles.consultant;
+        return styles[displayRole] || styles.consultant;
     };
 
     const getStatusBadge = (status) => {
@@ -270,8 +331,11 @@ const ProjectManagement = ({ addToast = () => { } }) => {
                                                     </div>
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                    <select value={member.role} onChange={(e) => updateMemberRole(member.id, e.target.value)}
-                                                        style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: badge.bg, color: badge.color, fontWeight: 600, cursor: 'pointer' }}>
+                                                    <select
+                                                        value={member.role === 'employee' ? 'consultant' : (member.role?.toLowerCase() || 'consultant')}
+                                                        onChange={(e) => updateMemberRole(member, e.target.value)}
+                                                        style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: badge.bg, color: badge.color, fontWeight: 600, cursor: 'pointer' }}
+                                                    >
                                                         <option value="consultant">Consultant</option>
                                                         <option value="team_lead">Team Lead</option>
                                                         <option value="manager">Manager</option>

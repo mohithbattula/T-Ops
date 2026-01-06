@@ -111,7 +111,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         { icon: Network, label: 'Org Hierarchy', path: '/teamlead-dashboard/hierarchy' },
         { icon: Megaphone, label: 'Announcements', path: '/teamlead-dashboard/announcements' },
         { icon: MessageCircle, label: 'Messages', path: '/teamlead-dashboard/messages' },
-        { icon: Settings, label: 'Profile', path: '/teamlead-dashboard/settings' },
     ];
 
     // Project-level menu items
@@ -352,6 +351,41 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
             {/* Logout */}
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', marginTop: '12px' }}>
+                <button
+                    onClick={() => navigate('/teamlead-dashboard/settings')}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: isCollapsed ? 'center' : 'flex-start',
+                        gap: '10px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        width: '100%',
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: location.pathname === '/teamlead-dashboard/settings' ? 'var(--accent)' : 'transparent',
+                        color: location.pathname === '/teamlead-dashboard/settings' ? 'white' : 'rgba(255,255,255,0.7)',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        marginBottom: '8px'
+                    }}
+                    onMouseEnter={(e) => {
+                        if (location.pathname !== '/teamlead-dashboard/settings') {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                            e.currentTarget.style.color = 'white';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (location.pathname !== '/teamlead-dashboard/settings') {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+                        }
+                    }}
+                >
+                    <Settings size={18} />
+                    {!isCollapsed && <span>Profile</span>}
+                </button>
+
                 <button
                     onClick={() => navigate('/login')}
                     style={{

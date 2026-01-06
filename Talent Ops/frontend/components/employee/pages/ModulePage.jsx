@@ -505,18 +505,66 @@ const ModulePage = ({ title, type }) => {
         }
 
         try {
-            const { error } = await supabase
+            // Fetch the latest team_id from profile to ensure validity
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('team_id')
+                .eq('id', userId)
+                .single();
+
+            if (profileError) {
+                console.warn('Could not fetch latest team_id, using context fallback', profileError);
+            }
+
+            const currentTeamId = profileData?.team_id || null;
+            console.log('Submitting leave with team_id:', currentTeamId);
+
+            let insertError = null;
+
+            // Attempt 1: Try with the fetched team_id
+            const { error: attempt1Error } = await supabase
                 .from('leaves')
                 .insert([
                     {
                         employee_id: userId,
-                        team_id: teamId,
+                        team_id: currentTeamId,
                         from_date: leaveFormData.startDate,
                         to_date: leaveFormData.endDate,
                         reason: `${leaveFormData.leaveType}: ${leaveFormData.reason}`,
                         status: 'pending'
                     }
                 ]);
+
+            if (attempt1Error) {
+                console.warn('Attempt 1 with team_id failed:', attempt1Error);
+
+                // Check if it looks like an FK violation (409 or explicit FK message)
+                if (attempt1Error.code === '23503' || attempt1Error.code === '409' || attempt1Error.message?.includes('violates foreign key constraint')) {
+                    console.log('Retrying with team_id: null due to FK violation...');
+
+                    // Attempt 2: Retry with team_id = null
+                    const { error: attempt2Error } = await supabase
+                        .from('leaves')
+                        .insert([
+                            {
+                                employee_id: userId,
+                                team_id: null,
+                                from_date: leaveFormData.startDate,
+                                to_date: leaveFormData.endDate,
+                                reason: `${leaveFormData.leaveType}: ${leaveFormData.reason}`,
+                                status: 'pending'
+                            }
+                        ]);
+
+                    if (attempt2Error) {
+                        insertError = attempt2Error; // Both failed
+                    }
+                } else {
+                    insertError = attempt1Error; // Not an FK error, so just fail
+                }
+            }
+
+            if (insertError) throw insertError;
 
             if (error) throw error;
 

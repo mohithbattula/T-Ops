@@ -20,8 +20,10 @@ import {
     MessageCircle,
     Building2,
     FolderKanban,
-    FileText
+    FileText,
+    Check
 } from 'lucide-react';
+import { useProject } from '../../../employee/context/ProjectContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
@@ -32,6 +34,16 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         organization: true,
         project: true
     });
+    const { currentProject, setCurrentProject, userProjects, projectRole } = useProject();
+    const [showProjectPicker, setShowProjectPicker] = useState(false);
+
+    const getRoleBadge = (role) => {
+        switch (role) {
+            case 'manager': return { color: '#ef4444', label: 'Manager' };
+            case 'team_lead': return { color: '#eab308', label: 'Team Lead' };
+            default: return { color: '#22c55e', label: 'Consultant' };
+        }
+    };
 
     const toggleMenu = (label) => {
         if (isCollapsed) return;
@@ -47,24 +59,48 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         { icon: UserCheck, label: 'Employee Status', path: '/manager-dashboard/employee-status' },
         { icon: CalendarOff, label: 'Leave Requests', path: '/manager-dashboard/leaves' },
         { icon: CalendarOff, label: 'My Leaves', path: '/manager-dashboard/my-leaves' },
-        { icon: Receipt, label: 'Payslips', path: '/manager-dashboard/payslips' },
-        { icon: FileCheck, label: 'Policies', path: '/manager-dashboard/policies' },
         { icon: DollarSign, label: 'Payroll', path: '/manager-dashboard/payroll' },
+        { icon: Receipt, label: 'Payslips', path: '/manager-dashboard/payslips' },
         { icon: Network, label: 'Org Hierarchy', path: '/manager-dashboard/hierarchy' },
         { icon: Megaphone, label: 'Announcements', path: '/manager-dashboard/announcements' },
         { icon: MessageCircle, label: 'Messages', path: '/manager-dashboard/messages' },
-        { icon: Settings, label: 'Profile', path: '/manager-dashboard/settings' },
+        { icon: FileCheck, label: 'Policies', path: '/manager-dashboard/policies' },
     ];
 
-    // Project-level menu items
-    const projectMenuItems = [
-        { icon: Users, label: 'Project', path: '/manager-dashboard/employees' },
-        { icon: ListTodo, label: 'Tasks', path: '/manager-dashboard/tasks' },
-        { icon: BarChart2, label: 'Analytics', path: '/manager-dashboard/analytics' },
-        { icon: Network, label: 'Project Hierarchy', path: '/manager-dashboard/project-hierarchy' },
-        { icon: FileText, label: 'Documents', path: '/manager-dashboard/documents' },
+    // Role-based project menu configurations
+    const projectMenusByRole = {
+        consultant: [
+            { icon: Users, label: 'Project', path: '/manager-dashboard/employees' },
+            { icon: ListTodo, label: 'My Tasks', path: '/manager-dashboard/tasks' },
+            { icon: BarChart2, label: 'Analytics', path: '/manager-dashboard/analytics' },
+            { icon: Network, label: 'Hierarchy', path: '/manager-dashboard/project-hierarchy' },
+            { icon: FileText, label: 'Documents', path: '/manager-dashboard/documents' },
+        ],
+        employee: [
+            { icon: Users, label: 'Project', path: '/manager-dashboard/employees' },
+            { icon: ListTodo, label: 'My Tasks', path: '/manager-dashboard/tasks' },
+            { icon: BarChart2, label: 'Analytics', path: '/manager-dashboard/analytics' },
+            { icon: Network, label: 'Hierarchy', path: '/manager-dashboard/project-hierarchy' },
+            { icon: FileText, label: 'Documents', path: '/manager-dashboard/documents' },
+        ],
+        team_lead: [
+            { icon: Users, label: 'My Project', path: '/manager-dashboard/employees' },
+            { icon: ListTodo, label: 'Team Tasks', path: '/manager-dashboard/tasks' },
+            { icon: BarChart2, label: 'Analytics', path: '/manager-dashboard/analytics' },
+            { icon: Network, label: 'Hierarchy', path: '/manager-dashboard/project-hierarchy' },
+            { icon: FileText, label: 'Documents', path: '/manager-dashboard/documents' },
+        ],
+        manager: [
+            { icon: Users, label: 'Project', path: '/manager-dashboard/employees' },
+            { icon: ListTodo, label: 'Tasks', path: '/manager-dashboard/tasks' },
+            { icon: BarChart2, label: 'Analytics', path: '/manager-dashboard/analytics' },
+            { icon: Network, label: 'Project Hierarchy', path: '/manager-dashboard/project-hierarchy' },
+            { icon: FileText, label: 'Documents', path: '/manager-dashboard/documents' },
+        ]
+    };
 
-    ];
+    // Get menu items based on current project role
+    const projectMenuItems = projectMenusByRole[projectRole] || projectMenusByRole.consultant;
 
     // Menu item renderer
     const renderMenuItem = (item, index, keyPrefix) => {
@@ -190,8 +226,21 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 </button>
             </div>
 
+            {/* Hide scrollbar styles */}
+            <style>
+                {`
+                    .no-scrollbar::-webkit-scrollbar {
+                        display: none;
+                    }
+                    .no-scrollbar {
+                        -ms-overflow-style: none;  /* IE and Edge */
+                        scrollbar-width: none;  /* Firefox */
+                    }
+                `}
+            </style>
+
             {/* Scrollable Nav */}
-            <nav style={{
+            <nav className="no-scrollbar" style={{
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
@@ -214,21 +263,171 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                 )}
 
                 {/* Project Section */}
-                {renderSectionHeader(FolderKanban, 'Project', 'project')}
-                {expandedMenus.project && !isCollapsed && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        {projectMenuItems.map((item, idx) => renderMenuItem(item, idx, 'proj'))}
-                    </div>
-                )}
-                {isCollapsed && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        {projectMenuItems.map((item, idx) => renderMenuItem(item, idx, 'proj'))}
-                    </div>
+                {userProjects.length > 0 && (
+                    <>
+                        {/* Project Switcher Card */}
+                        {!isCollapsed && (
+                            <div style={{
+                                marginBottom: '12px',
+                                position: 'relative'
+                            }}>
+                                <div style={{
+                                    fontSize: '0.7rem',
+                                    color: '#94a3b8',
+                                    marginBottom: '8px',
+                                    fontWeight: 600,
+                                    paddingLeft: '4px'
+                                }}>
+                                    CURRENT PROJECT
+                                </div>
+                                <button
+                                    onClick={() => setShowProjectPicker(!showProjectPicker)}
+                                    style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '8px',
+                                        padding: '10px 12px',
+                                        color: 'white',
+                                        cursor: 'pointer',
+                                        fontSize: '0.9rem',
+                                        fontWeight: 500,
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{
+                                            width: '8px',
+                                            height: '8px',
+                                            borderRadius: '50%',
+                                            background: getRoleBadge(projectRole).color
+                                        }} />
+                                        <span>{currentProject?.name || 'Select...'}</span>
+                                    </div>
+                                    <ChevronDown size={16} style={{ transform: showProjectPicker ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                                </button>
+
+                                {/* Dropdown */}
+                                {showProjectPicker && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        left: 0,
+                                        right: 0,
+                                        background: '#2a2a4a',
+                                        borderRadius: '8px',
+                                        marginTop: '4px',
+                                        boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+                                        zIndex: 100,
+                                        overflow: 'hidden'
+                                    }}>
+                                        {userProjects.map((project) => (
+                                            <button
+                                                key={project.id}
+                                                onClick={() => {
+                                                    setCurrentProject(project.id);
+                                                    setShowProjectPicker(false);
+                                                }}
+                                                style={{
+                                                    width: '100%',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    padding: '12px 14px',
+                                                    border: 'none',
+                                                    background: currentProject?.id === project.id ? 'rgba(139,92,246,0.3)' : 'transparent',
+                                                    color: 'white',
+                                                    cursor: 'pointer',
+                                                    textAlign: 'left',
+                                                    borderBottom: '1px solid rgba(255,255,255,0.1)'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.background = currentProject?.id === project.id ? 'rgba(139,92,246,0.3)' : 'transparent'}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <span style={{
+                                                        width: '10px',
+                                                        height: '10px',
+                                                        borderRadius: '50%',
+                                                        background: getRoleBadge(project.role).color,
+                                                        flexShrink: 0
+                                                    }} />
+                                                    <div>
+                                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{project.name}</div>
+                                                        <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>{getRoleBadge(project.role).label}</div>
+                                                    </div>
+                                                </div>
+                                                {currentProject?.id === project.id && <Check size={16} style={{ color: '#8b5cf6' }} />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {renderSectionHeader(FolderKanban, currentProject?.name || 'Project', 'project')}
+                        {expandedMenus.project && !isCollapsed && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                {projectMenuItems.map((item, idx) => renderMenuItem(item, idx, 'proj'))}
+                            </div>
+                        )}
+                        {isCollapsed && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                {projectMenuItems.map((item, idx) => renderMenuItem(item, idx, 'proj'))}
+                            </div>
+                        )}
+                    </>
                 )}
             </nav>
 
             {/* Logout */}
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', marginTop: '12px' }}>
+                <button
+                    onClick={() => navigate('/manager-dashboard/settings')}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: isCollapsed ? 'center' : 'flex-start',
+                        gap: '10px',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        width: '100%',
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: location.pathname === '/manager-dashboard/settings' ? 'var(--accent)' : 'transparent',
+                        color: location.pathname === '/manager-dashboard/settings' ? 'white' : 'rgba(255,255,255,0.7)',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        marginBottom: '8px'
+                    }}
+                    onMouseEnter={(e) => {
+                        if (location.pathname !== '/manager-dashboard/settings') {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                            e.currentTarget.style.color = 'white';
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        if (location.pathname !== '/manager-dashboard/settings') {
+                            e.currentTarget.style.background = 'transparent';
+                            e.currentTarget.style.color = 'rgba(255,255,255,0.7)';
+                        }
+                    }}
+                >
+                    <Settings size={18} />
+                    {!isCollapsed && <span>Profile</span>}
+                </button>
+
                 <button
                     onClick={() => navigate('/login')}
                     style={{

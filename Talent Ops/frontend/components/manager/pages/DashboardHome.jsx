@@ -10,11 +10,13 @@ import { supabase } from '../../../lib/supabaseClient';
 import NotesTile from '../../shared/NotesTile';
 
 import AttendanceTracker from '../components/Dashboard/AttendanceTracker';
+import { useProject } from '../../employee/context/ProjectContext';
 
 
 const DashboardHome = () => {
     const { addToast } = useToast();
     const { userName } = useUser();
+    const { currentProject } = useProject();
     const navigate = useNavigate();
 
     // Helper to format date as YYYY-MM-DD for comparison (Local Time)
@@ -34,6 +36,20 @@ const DashboardHome = () => {
     const [showAddEventModal, setShowAddEventModal] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(today);
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    // Update time every minute
+    React.useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const getGreeting = () => {
+        const hour = currentTime.getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 18) return 'Good afternoon';
+        return 'Good evening';
+    };
 
     // Mock Data
     const [employeeStats, setEmployeeStats] = useState({ active: 0, away: 0, offline: 0, total: 0 });
@@ -54,49 +70,101 @@ const DashboardHome = () => {
     React.useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                // Fetch employees
-                const { data: employees } = await supabase
-                    .from('profiles')
-                    .select('id, full_name, role, team_id');
-
-                // Fetch real attendance data
                 const todayStr = new Date().toISOString().split('T')[0];
-                const { data: attendanceData } = await supabase
-                    .from('attendance')
-                    .select('employee_id, clock_in, clock_out')
-                    .eq('date', todayStr);
 
-                // Fetch approved leaves for today (Absent)
-                const { data: leavesData } = await supabase
-                    .from('leaves')
-                    .select('id')
-                    .eq('status', 'approved')
-                    .lte('from_date', todayStr)
-                    .gte('to_date', todayStr);
+                let employees = [];
+                let tasks = [];
+                let eventsData = [];
 
-                if (employees) {
-                    setAllEmployees(employees);
+                // 1. Fetch Data Based on Context
+                if (currentProject) {
+                    // Fetch Project Members
+                    const { data: members } = await supabase
+                        .from('project_members')
+                        .select('user_id')
+                        .eq('project_id', currentProject.id);
 
-                    let activeCount = 0;
+                    const memberIds = members?.map(m => m.user_id) || [];
+
+                    if (memberIds.length > 0) {
+                        const { data: empData } = await supabase
+                            .from('profiles')
+                            .select('id, full_name, role, team_id')
+                            .in('id', memberIds);
+                        employees = empData || [];
+                    }
+
+                    // Fetch Project Tasks
+                    const { data: taskData } = await supabase
+                        .from('tasks')
+                        .select('id, status, assigned_to, title, due_date, priority, project_id')
+                        .eq('project_id', currentProject.id);
+                    tasks = taskData || [];
+
+                    // Fetch Announcements (Keeping global for now, filtering can be added if needed)
+                    // Ideally check if announcement is for 'all' or specific team/project
+                    const { data: annData } = await supabase
+                        .from('announcements')
+                        .select('*')
+                        .order('event_time', { ascending: true });
+                    eventsData = annData || [];
+
+                } else {
+                    // Global View assignment
+                    const { data: empData } = await supabase
+                        .from('profiles')
+                        .select('id, full_name, role, team_id');
+                    employees = empData || [];
+
+                    const { data: taskData } = await supabase
+                        .from('tasks')
+                        .select('id, status, assigned_to, title, due_date, priority, project_id');
+                    tasks = taskData || [];
+
+                    const { data: annData } = await supabase
+                        .from('announcements')
+                        .select('*')
+                        .order('event_time', { ascending: true });
+                    eventsData = annData || [];
+                }
+
+                // 2. Fetch Attendance & Leaves for Stats Calculation
+                // Filter attendance/leaves by gathered employee IDs
+                const employeeIds = employees.map(e => e.id);
+                let activeCount = 0;
+                let absentCount = 0;
+
+                if (employeeIds.length > 0) {
+                    const { data: attendanceData } = await supabase
+                        .from('attendance')
+                        .select('employee_id, clock_in, clock_out')
+                        .eq('date', todayStr)
+                        .in('employee_id', employeeIds);
+
+                    const { data: leavesData } = await supabase
+                        .from('leaves')
+                        .select('id')
+                        .eq('status', 'approved')
+                        .lte('from_date', todayStr)
+                        .gte('to_date', todayStr)
+                        .in('employee_id', employeeIds);
+
                     if (attendanceData) {
                         activeCount = attendanceData.filter(a => a.clock_in && !a.clock_out).length;
                     }
-
-                    const absentCount = leavesData ? leavesData.length : 0;
-
-                    setEmployeeStats({
-                        total: employees.length,
-                        active: activeCount,
-                        absent: absentCount,
-                        away: 0,
-                        offline: Math.max(0, employees.length - activeCount - absentCount)
-                    });
+                    absentCount = leavesData ? leavesData.length : 0;
                 }
 
-                // Fetch tasks for stats and analytics
-                const { data: tasks } = await supabase
-                    .from('tasks')
-                    .select('id, status, assigned_to, title, due_date, priority');
+                setAllEmployees(employees); // For modal usage
+
+                // Update Stats
+                setEmployeeStats({
+                    total: employees.length,
+                    active: activeCount,
+                    absent: absentCount,
+                    away: 0,
+                    offline: Math.max(0, employees.length - activeCount - absentCount)
+                });
 
                 if (tasks) {
                     setTaskStats({
@@ -106,14 +174,8 @@ const DashboardHome = () => {
                     });
                 }
 
-                // Fetch announcements (events)
-                const { data: eventsData, error: eventsError } = await supabase
-                    .from('announcements')
-                    .select('*')
-                    .order('event_time', { ascending: true });
-
+                // Process Events
                 let combinedEvents = [];
-
                 if (eventsData) {
                     const formattedEvents = eventsData.map(event => ({
                         id: event.id,
@@ -134,19 +196,20 @@ const DashboardHome = () => {
                     const taskEvents = tasks
                         .filter(t => t.due_date)
                         .map(t => ({
-                            id: `task-${t.id}`, // Unique ID prefix
+                            id: `task-${t.id}`,
                             date: t.due_date,
-                            time: '09:00', // Default start time for tasks
+                            time: '09:00',
                             title: `Task: ${t.title}`,
                             location: `${t.priority} Priority`,
                             color: '#fef3c7', // Yellow for tasks
                             scope: 'task',
+                            type: 'task',
                             participants: []
                         }));
                     combinedEvents = [...combinedEvents, ...taskEvents];
                 }
 
-                // Sort by priority: Active > Future > Completed, then by time within each group
+                // Sort Events
                 combinedEvents.sort((a, b) => {
                     const getStatusPriority = (event) => {
                         if (event.type !== 'announcement') return 0;
@@ -155,60 +218,66 @@ const DashboardHome = () => {
                         if (status === 'future') return 2;
                         return 3;
                     };
-
                     const priorityA = getStatusPriority(a);
                     const priorityB = getStatusPriority(b);
-
                     if (priorityA !== priorityB) return priorityA - priorityB;
                     return a.time.localeCompare(b.time);
                 });
 
                 setTimeline(combinedEvents);
 
-                // Fetch projects
+                // Fetch Project List & Analytics
                 const { data: projectsData } = await supabase
                     .from('projects')
                     .select('id, name');
 
-                const projects = projectsData ? projectsData.map(p => ({ id: p.id, name: p.name })) : [];
+                let projects = projectsData ? projectsData.map(p => ({ id: p.id, name: p.name })) : [];
+
+                // If specific project selected, only show that one in analytics tile?
+                if (currentProject) {
+                    projects = projects.filter(p => p.id === currentProject.id);
+                }
 
                 if (projects.length > 0) setAllTeams(projects);
 
                 if (projects && employees && tasks) {
                     const analytics = projects.map(project => {
-                        const projectEmployees = employees.filter(e => e.team_id === project.id);
-                        const projectEmployeeIds = projectEmployees.map(e => e.id);
+                        // Re-fetch or filter logic?
+                        // If Global: Use global employees/tasks to filter by team/project ID.
+                        // If Project Context: 'employees' and 'tasks' are ALREADY filtered for this project.
 
-                        // Calculate Project Performance
-                        const projectTasks = tasks.filter(t => projectEmployeeIds.includes(t.assigned_to));
-                        const completedTasks = projectTasks.filter(t => ['completed', 'done'].includes(t.status?.toLowerCase())).length;
-                        const totalTasks = projectTasks.length;
+                        let projectEmployees = [];
+                        let projectTasks = [];
 
-                        const performance = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+                        if (currentProject) {
+                            // Context mode: All fetched data belongs to this project
+                            projectEmployees = employees;
+                            projectTasks = tasks;
+                        } else {
+                            // Global mode: Need to filter
+                            // Note: 'employees' from profiles has 'team_id' (legacy?). 
+                            // Best approach for analytics is rely on what we have.
+                            projectEmployees = employees.filter(e => e.team_id === project.id);
+                            projectTasks = tasks.filter(t => t.project_id === project.id);
+                        }
+
+                        const completedT = projectTasks.filter(t => ['completed', 'done'].includes(t.status?.toLowerCase())).length;
+                        const totalT = projectTasks.length;
+                        const performance = totalT > 0 ? Math.round((completedT / totalT) * 100) : 0;
 
                         let status = 'Steady';
                         let color = '#3b82f6'; // blue
-
-                        if (performance >= 80) {
-                            status = 'Excellent';
-                            color = '#15803d'; // green
-                        } else if (performance >= 50) {
-                            status = 'Good';
-                            color = '#0ea5e9'; // light blue
-                        } else if (performance > 0 && performance < 50) {
-                            status = 'Needs Improvement';
-                            color = '#dc2626'; // red
-                        } else {
-                            status = 'No Activity';
-                            color = '#94a3b8'; // gray
-                        }
+                        if (performance >= 80) { status = 'Excellent'; color = '#15803d'; }
+                        else if (performance >= 50) { status = 'Good'; color = '#0ea5e9'; }
+                        else if (performance > 0 && performance < 50) { status = 'Needs Improvement'; color = '#dc2626'; }
+                        else { status = 'No Activity'; color = '#94a3b8'; }
 
                         return {
                             id: project.id,
                             name: project.name,
                             count: projectEmployees.length,
                             performance: performance,
-                            projects: Math.floor(Math.random() * 10) + 5, // Placeholder
+                            projects: 0, // Placeholder
                             status: status,
                             color: color
                         };
@@ -222,7 +291,7 @@ const DashboardHome = () => {
         };
 
         fetchDashboardData();
-    }, [refreshTrigger]);
+    }, [refreshTrigger, currentProject]);
 
     // Real-time Subscription
     React.useEffect(() => {
@@ -329,7 +398,7 @@ const DashboardHome = () => {
             {/* Header */}
             <div>
                 <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px' }}>
-                    Good morning, <span style={{ color: 'var(--accent)' }}>{userName}</span>
+                    {getGreeting()}, <span style={{ color: 'var(--accent)' }}>{userName}</span>
                 </h1>
                 <p style={{ color: '#64748b', fontSize: '1rem' }}>
                     Talent Ops wishes you a good and productive day. {employeeStats.active} employees active today. You have {filteredTimeline.length} events on {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.
@@ -481,6 +550,8 @@ const DashboardHome = () => {
                 {/* Right Column: Timeline */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
 
+
+
                     {/* Calendar Widget */}
                     <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -595,7 +666,7 @@ const DashboardHome = () => {
                                             boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                                         }}
                                             onClick={() => {
-                                                if (event.scope === 'task') {
+                                                if (event.type === 'task') {
                                                     navigate('/manager-dashboard/tasks');
                                                 } else if (event.type === 'announcement') {
                                                     navigate('/manager-dashboard/announcements');
