@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Eye, Calendar, ChevronDown, X, Clock, ExternalLink, ThumbsUp, ThumbsDown, AlertTriangle, CheckCircle2, AlertCircle, Edit2, Trash2 } from 'lucide-react';
+import { Search, Plus, Eye, Calendar, ChevronDown, X, Clock, ExternalLink, ThumbsUp, ThumbsDown, AlertTriangle, CheckCircle2, AlertCircle, Edit2, Trash2, Upload, FileText, Send } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { supabaseRequest } from '../../lib/supabaseRequest';
 import { useProject } from '../employee/context/ProjectContext';
@@ -28,6 +28,14 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
     // Edit Task State
     const [showEditModal, setShowEditModal] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
+
+    // Proof Submission State
+    const [showProofModal, setShowProofModal] = useState(false);
+    const [taskForProof, setTaskForProof] = useState(null);
+    const [proofFile, setProofFile] = useState(null);
+    const [proofText, setProofText] = useState('');
+    const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     const handleAllocatedHoursChange = (e) => {
         const value = e.target.value;
@@ -72,20 +80,21 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             if (userRole === 'executive') {
                 // Fetch ALL employees for executives (excluding hidden admins)
                 formattedEmployees = await supabaseRequest(
-                    supabase.from('profiles').select('id, full_name').neq('id', userId).neq('is_hidden', true),
+                    supabase.from('profiles').select('id, full_name, avatar_url').neq('id', userId).neq('is_hidden', true),
                     addToast
                 ) || [];
             } else if (currentProject?.id) {
                 // Fetch only members of the current project
                 const data = await supabaseRequest(
-                    supabase.from('project_members').select('user_id, profiles!inner(id, full_name)').eq('project_id', currentProject.id),
+                    supabase.from('project_members').select('user_id, profiles!inner(id, full_name, avatar_url)').eq('project_id', currentProject.id),
                     addToast
                 );
 
                 // Map to flat structure expected by the UI
                 formattedEmployees = data?.map(item => ({
                     id: item.profiles.id,
-                    full_name: item.profiles.full_name
+                    full_name: item.profiles.full_name,
+                    avatar_url: item.profiles.avatar_url
                 })) || [];
             }
 
@@ -139,7 +148,10 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             due_date: task.due_date,
             priority: task.priority,
             status: task.status,
-            allocated_hours: task.allocated_hours || 0
+            status: task.status,
+            allocated_hours: task.allocated_hours || 0,
+            phase_validations: task.phase_validations || {},
+            requiredPhases: task.phase_validations?.active_phases || LIFECYCLE_PHASES.map(p => p.key)
         });
         setShowEditModal(true);
     };
@@ -167,7 +179,12 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                     due_date: editingTask.due_date,
                     priority: editingTask.priority.toLowerCase(),
                     status: statusValue,
-                    allocated_hours: parseFloat(editingTask.allocated_hours)
+                    status: statusValue,
+                    allocated_hours: parseFloat(editingTask.allocated_hours),
+                    phase_validations: {
+                        ...(editingTask.phase_validations || {}),
+                        active_phases: editingTask.requiredPhases
+                    }
                 })
                 .eq('id', editingTask.id);
 
@@ -236,11 +253,13 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             let profileMap = {};
             if (assigneeIds.length > 0) {
                 const profilesData = await supabaseRequest(
-                    supabase.from('profiles').select('id, full_name').in('id', assigneeIds),
+                    supabase.from('profiles').select('id, full_name, avatar_url').in('id', assigneeIds),
                     addToast
                 );
                 if (profilesData) {
-                    profilesData.forEach(p => profileMap[p.id] = p.full_name);
+                    profilesData.forEach(p => {
+                        profileMap[p.id] = { name: p.full_name, avatar: p.avatar_url };
+                    });
                 }
             }
 
@@ -264,7 +283,9 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             const enhancedTasks = (tasksData || []).map(task => {
                 return {
                     ...task,
-                    assignee_name: profileMap[task.assigned_to] || 'Unassigned',
+                    ...task,
+                    assignee_name: profileMap[task.assigned_to]?.name || 'Unassigned',
+                    assignee_avatar: profileMap[task.assigned_to]?.avatar,
                     project_name: (userRole === 'executive' ? projectMap[task.project_id] : currentProject?.name) || 'Unknown Project'
                 };
             });
@@ -632,6 +653,119 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
 
     const getPhaseIndex = (phase) => LIFECYCLE_PHASES.findIndex(p => p.key === phase);
 
+    const openProofModal = (task) => {
+        setTaskForProof(task);
+        setProofFile(null);
+        setProofText('');
+        setUploadProgress(0);
+        setShowProofModal(true);
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 10 * 1024 * 1024) {
+                addToast?.('File size must be less than 10MB', 'error');
+                return;
+            }
+            setProofFile(file);
+        }
+    };
+
+    const handleSubmitProof = async () => {
+        if (!proofFile && !proofText.trim()) {
+            addToast?.('Please upload a document OR enter a text message', 'error');
+            return;
+        }
+
+        setUploading(true);
+        setUploadProgress(10);
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            let proofUrl = null;
+
+            // 1. Upload File if present
+            if (proofFile) {
+                const fileExt = proofFile.name.split('.').pop();
+                const fileName = `${taskForProof.id}_${Date.now()}.${fileExt}`;
+                const filePath = `${user.id}/${fileName}`;
+
+                setUploadProgress(30);
+
+                const { error: uploadError } = await supabase.storage
+                    .from('task-proofs')
+                    .upload(filePath, proofFile, { cacheControl: '3600', upsert: false });
+
+                if (uploadError) throw uploadError;
+
+                const { data: urlData } = supabase.storage.from('task-proofs').getPublicUrl(filePath);
+                proofUrl = urlData?.publicUrl;
+                setUploadProgress(70);
+            }
+
+            // 2. Update Task
+            const currentPhase = taskForProof.lifecycle_state;
+            const currentIndex = getPhaseIndex(currentPhase);
+            const nextPhase = currentIndex < LIFECYCLE_PHASES.length - 2 ? LIFECYCLE_PHASES[currentIndex + 1].key : currentPhase;
+
+            const currentValidations = taskForProof.phase_validations || {};
+
+            // Preserve existing data if any, overwrite with new
+            const updatedPhaseData = {
+                ...(currentValidations[currentPhase] || {}),
+                status: 'pending',
+                submitted_at: new Date().toISOString()
+            };
+
+            if (proofUrl) updatedPhaseData.proof_url = proofUrl;
+            if (proofText) updatedPhaseData.proof_text = proofText;
+
+            const updatedValidations = {
+                ...currentValidations,
+                [currentPhase]: updatedPhaseData
+            };
+
+            const updates = {
+                phase_validations: updatedValidations,
+                updated_at: new Date().toISOString()
+            };
+
+            // Legacy column support
+            if (proofUrl) updates.proof_url = proofUrl;
+
+            // Advance Phase Logic
+            if (currentIndex < LIFECYCLE_PHASES.length - 2) {
+                updates.lifecycle_state = nextPhase;
+                updates.sub_state = 'in_progress';
+            }
+
+            const { error } = await supabase
+                .from('tasks')
+                .update(updates)
+                .eq('id', taskForProof.id);
+
+            if (error) throw error;
+
+            setUploadProgress(100);
+            addToast?.('Proof submitted successfully!', 'success');
+            setShowProofModal(false);
+            setTaskForProof(null);
+            setProofFile(null);
+            setProofText('');
+            fetchData(); // Refresh tasks
+
+        } catch (error) {
+            console.error('Submit proof error:', error);
+            addToast?.('Failed to submit proof: ' + error.message, 'error');
+        } finally {
+            setUploading(false);
+            setUploadProgress(0);
+        }
+    };
+
     const LifecycleProgress = ({ currentPhase, subState, validations }) => {
         let parsedValidations = validations;
         if (typeof validations === 'string') {
@@ -907,7 +1041,28 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                                     </div>
                                                 </td>
                                                 <td style={{ padding: '16px', verticalAlign: 'middle' }}>
-                                                    <span style={{ fontWeight: 500, color: '#0f172a', whiteSpace: 'nowrap' }}>{task.assignee_name}</span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <div style={{
+                                                            width: '24px',
+                                                            height: '24px',
+                                                            borderRadius: '50%',
+                                                            backgroundColor: '#e2e8f0',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            overflow: 'hidden',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 600,
+                                                            color: '#64748b'
+                                                        }}>
+                                                            {task.assignee_avatar ? (
+                                                                <img src={task.assignee_avatar} alt={task.assignee_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            ) : (
+                                                                task.assignee_name.charAt(0)
+                                                            )}
+                                                        </div>
+                                                        <span style={{ fontWeight: 500, color: '#0f172a', whiteSpace: 'nowrap' }}>{task.assignee_name}</span>
+                                                    </div>
                                                 </td>
                                                 <td style={{ padding: '16px', verticalAlign: 'middle' }}>
                                                     <LifecycleProgress currentPhase={task.lifecycle_state} subState={task.sub_state} validations={task.phase_validations} />
@@ -1013,6 +1168,32 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                                             >
                                                                 <Edit2 size={14} />
                                                                 Edit
+                                                            </button>
+                                                        )}
+
+                                                        {/* Submit Proof Button - Only for My Tasks */}
+                                                        {viewMode === 'my_tasks' && (task.sub_state === 'in_progress' || task.sub_state === 'pending_validation') && (
+                                                            <button
+                                                                onClick={() => openProofModal(task)}
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '6px',
+                                                                    padding: '8px 12px',
+                                                                    backgroundColor: task.sub_state === 'pending_validation' ? '#f59e0b' : '#8b5cf6',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    fontSize: '0.85rem',
+                                                                    fontWeight: 600,
+                                                                    cursor: 'pointer',
+                                                                    whiteSpace: 'nowrap'
+                                                                }}
+                                                                onMouseEnter={e => e.currentTarget.style.backgroundColor = task.sub_state === 'pending_validation' ? '#d97706' : '#7c3aed'}
+                                                                onMouseLeave={e => e.currentTarget.style.backgroundColor = task.sub_state === 'pending_validation' ? '#f59e0b' : '#8b5cf6'}
+                                                            >
+                                                                <Upload size={14} />
+                                                                {task.sub_state === 'pending_validation' ? 'Update Proof' : 'Submit'}
                                                             </button>
                                                         )}
 
@@ -1131,7 +1312,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                         Description
                                     </label>
                                     <textarea
-                                        placeholder="Enter task description"
+                                        placeholder="Enter task description (use new lines for points)"
                                         value={newTask.description}
                                         onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                                         style={{
@@ -1444,6 +1625,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                     </p>
                                 </div>
 
+
                                 {/* Modal Footer */}
                                 <div style={{
                                     marginTop: '12px',
@@ -1745,19 +1927,31 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                             {/* New System */}
                                             {selectedTask.phase_validations && Object.entries(selectedTask.phase_validations).map(([phaseKey, data]) => {
-                                                if (!data.proof_url) return null;
+                                                if (!data.proof_url && !data.proof_text) return null;
                                                 const phaseLabel = LIFECYCLE_PHASES.find(p => p.key === phaseKey)?.label || phaseKey;
                                                 return (
-                                                    <div key={phaseKey} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', backgroundColor: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                                                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>{phaseLabel}:</span>
-                                                            <span style={{ fontSize: '0.9rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
-                                                                {data.proof_url.split('/').pop()}
-                                                            </span>
+                                                    <div key={phaseKey} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', backgroundColor: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>{phaseLabel}:</span>
+                                                                {data.proof_url && (
+                                                                    <span style={{ fontSize: '0.9rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
+                                                                        {data.proof_url.split('/').pop()}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {data.proof_url && (
+                                                                <a href={data.proof_url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#3b82f6', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}>
+                                                                    View <ExternalLink size={12} />
+                                                                </a>
+                                                            )}
                                                         </div>
-                                                        <a href={data.proof_url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#3b82f6', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}>
-                                                            View <ExternalLink size={12} />
-                                                        </a>
+                                                        {data.proof_text && (
+                                                            <div style={{ fontSize: '0.85rem', color: '#475569', backgroundColor: '#f1f5f9', padding: '8px', borderRadius: '4px', marginTop: '4px' }}>
+                                                                <span style={{ fontWeight: 600, fontSize: '0.75rem', color: '#64748b', display: 'block', marginBottom: '2px' }}>NOTE:</span>
+                                                                {data.proof_text}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
                                             })}
@@ -1940,7 +2134,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                     <textarea
                                         value={editingTask.description}
                                         onChange={(e) => setEditingTask({ ...editingTask, description: e.target.value })}
-                                        placeholder="Enter task description"
+                                        placeholder="Enter task description (use new lines for points)"
                                         rows="3"
                                         style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '0.95rem', resize: 'vertical' }}
                                     />
@@ -2007,7 +2201,46 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                     </select>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                                {/* Lifecycle Stages Selection for Edit - Managers/Team Leads */}
+                                {(userRole === 'manager' || userRole === 'team_lead') && (
+                                    <div style={{ marginTop: '16px', marginBottom: '8px' }}>
+                                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
+                                            Required Lifecycle Stages <span style={{ color: '#ef4444' }}>*</span>
+                                        </label>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', padding: '12px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                                            {LIFECYCLE_PHASES.map(phase => (
+                                                <label key={phase.key} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={editingTask.requiredPhases ? editingTask.requiredPhases.includes(phase.key) : false}
+                                                        onChange={(e) => {
+                                                            const currentPhases = editingTask.requiredPhases || [];
+                                                            if (e.target.checked) {
+                                                                const newPhases = [...currentPhases, phase.key];
+                                                                // Sort to keep order
+                                                                newPhases.sort((a, b) => {
+                                                                    const idxA = LIFECYCLE_PHASES.findIndex(p => p.key === a);
+                                                                    const idxB = LIFECYCLE_PHASES.findIndex(p => p.key === b);
+                                                                    return idxA - idxB;
+                                                                });
+                                                                setEditingTask({ ...editingTask, requiredPhases: newPhases });
+                                                            } else {
+                                                                if (currentPhases.length > 1) {
+                                                                    setEditingTask({ ...editingTask, requiredPhases: currentPhases.filter(p => p !== phase.key) });
+                                                                }
+                                                            }
+                                                        }}
+                                                        disabled={editingTask.status === 'completed' || editingTask.status === 'cancelled'}
+                                                        style={{ accentColor: '#3b82f6', cursor: 'pointer' }}
+                                                    />
+                                                    {phase.label}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
                                     <button
                                         onClick={() => { setShowEditModal(false); setEditingTask(null); }}
                                         style={{ flex: 1, padding: '12px', borderRadius: '8px', fontWeight: 600, border: '1px solid #e2e8f0', backgroundColor: 'white', cursor: 'pointer', color: '#64748b' }}
@@ -2034,6 +2267,151 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                         Save Changes
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+            {/* Proof Submission Modal */}
+            {
+                showProofModal && taskForProof && (
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1001, backdropFilter: 'blur(4px)'
+                    }}>
+                        <div style={{ backgroundColor: 'white', padding: '32px', borderRadius: '20px', width: '550px', maxWidth: '90%', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                                <div style={{ backgroundColor: '#ede9fe', borderRadius: '12px', padding: '12px' }}>
+                                    <Upload size={24} color="#8b5cf6" />
+                                </div>
+                                <div>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: '#1e293b' }}>Submit Proof for Validation</h3>
+                                    <p style={{ color: '#64748b', fontSize: '0.9rem', margin: '4px 0 0 0' }}>{taskForProof.title}</p>
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#fef3c7', borderRadius: '12px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                <div style={{ flexShrink: 0, marginTop: '2px' }}><AlertTriangle size={18} color="#b45309" /></div>
+                                <div style={{ fontSize: '0.9rem', color: '#92400e', lineHeight: '1.5' }}>
+                                    <strong>Submission Required:</strong> Please upload a document OR enter a text description as proof of completion to proceed to the next phase.
+                                </div>
+                            </div>
+
+                            {/* File Upload Section */}
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#334155' }}>
+                                    Upload Document (Optional)
+                                </label>
+                                <div style={{
+                                    border: '2px dashed #e2e8f0',
+                                    borderRadius: '12px',
+                                    padding: '24px',
+                                    textAlign: 'center',
+                                    backgroundColor: proofFile ? '#f0fdf4' : '#f8fafc',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    borderColor: proofFile ? '#86efac' : '#e2e8f0'
+                                }}
+                                    onClick={() => document.getElementById('proof-file-input').click()}
+                                >
+                                    <input id="proof-file-input" type="file" onChange={handleFileChange} style={{ display: 'none' }}
+                                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.zip,.txt" />
+                                    {proofFile ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                                            <FileText size={32} color="#10b981" />
+                                            <div style={{ textAlign: 'left' }}>
+                                                <div style={{ fontWeight: 600, color: '#166534', fontSize: '0.95rem' }}>{proofFile.name}</div>
+                                                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{(proofFile.size / 1024).toFixed(1)} KB</div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <Upload size={32} color="#94a3b8" style={{ marginBottom: '12px' }} />
+                                            <div style={{ color: '#64748b', marginBottom: '4px', fontWeight: 500 }}>Click to upload file</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>PDF, DOC, Images, ZIP (max 10MB)</div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div style={{ width: '100%', height: '1px', backgroundColor: '#e2e8f0', margin: '24px 0' }}></div>
+
+                            {/* Text Input Section */}
+                            <div style={{ marginBottom: '24px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem', color: '#334155' }}>
+                                    Text Submission / Notes (Optional)
+                                </label>
+                                <textarea
+                                    value={proofText}
+                                    onChange={(e) => setProofText(e.target.value)}
+                                    placeholder="Enter details, links, or notes about your submission..."
+                                    rows="4"
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        borderRadius: '12px',
+                                        border: '1px solid #e2e8f0',
+                                        fontSize: '0.95rem',
+                                        resize: 'vertical',
+                                        outline: 'none',
+                                        fontFamily: 'inherit',
+                                        minHeight: '100px'
+                                    }}
+                                    onFocus={(e) => e.target.style.borderColor = '#8b5cf6'}
+                                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                />
+                            </div>
+
+                            {uploading && (
+                                <div style={{ marginBottom: '24px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.85rem', color: '#64748b' }}>
+                                        <span>Processing Submission...</span>
+                                        <span>{uploadProgress}%</span>
+                                    </div>
+                                    <div style={{ height: '6px', backgroundColor: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
+                                        <div style={{ height: '100%', width: `${uploadProgress}%`, backgroundColor: '#8b5cf6', transition: 'width 0.3s', borderRadius: '3px' }} />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                                <button
+                                    onClick={() => { setShowProofModal(false); setTaskForProof(null); setProofFile(null); setProofText(''); }}
+                                    disabled={uploading}
+                                    style={{
+                                        padding: '12px 24px',
+                                        borderRadius: '10px',
+                                        backgroundColor: 'white',
+                                        border: '1px solid #e2e8f0',
+                                        cursor: 'pointer',
+                                        fontWeight: 600,
+                                        color: '#64748b',
+                                        fontSize: '0.95rem'
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSubmitProof}
+                                    disabled={(!proofFile && !proofText.trim()) || uploading}
+                                    style={{
+                                        padding: '12px 24px',
+                                        borderRadius: '10px',
+                                        background: (!proofFile && !proofText.trim()) ? '#e2e8f0' : 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                                        color: (!proofFile && !proofText.trim()) ? '#94a3b8' : 'white',
+                                        border: 'none',
+                                        fontWeight: 600,
+                                        cursor: (!proofFile && !proofText.trim()) ? 'not-allowed' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        fontSize: '0.95rem',
+                                        boxShadow: (!proofFile && !proofText.trim()) ? 'none' : '0 4px 15px rgba(139, 92, 246, 0.3)'
+                                    }}
+                                >
+                                    <Send size={16} />
+                                    {uploading ? 'Submitting...' : 'Submit Proof'}
+                                </button>
                             </div>
                         </div>
                     </div>

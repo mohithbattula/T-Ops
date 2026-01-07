@@ -29,10 +29,26 @@ const LoginSummaryModal = ({ isOpen, onClose, userId }) => {
                 .order('created_at', { ascending: false });
 
             if (!error && data) {
-                // Filter out 'announcement' type immediately so they don't count towards totalUnread
-                const filteredData = data.filter(n => n.type !== 'announcement');
-                setNotifications(filteredData);
-                categorizeNotifications(filteredData);
+                // Filter out 'announcement' type immediately
+                const nonAnnouncementData = data.filter(n => n.type !== 'announcement');
+
+                // Filter based on last seen time from localStorage
+                const lastSeenTime = localStorage.getItem('last_login_summary_seen');
+                let filteredData = nonAnnouncementData;
+
+                if (lastSeenTime) {
+                    const lastSeenDate = new Date(lastSeenTime);
+                    filteredData = nonAnnouncementData.filter(n => new Date(n.created_at) > lastSeenDate);
+                }
+
+                // Only update state if there are new notifications
+                if (filteredData.length > 0) {
+                    setNotifications(filteredData);
+                    categorizeNotifications(filteredData);
+                } else {
+                    // If no new notifications, ensure we don't show empty modal
+                    setNotifications([]);
+                }
             }
         } catch (err) {
             console.error('Error fetching notifications:', err);
@@ -52,6 +68,8 @@ const LoginSummaryModal = ({ isOpen, onClose, userId }) => {
     };
 
     const handleDismiss = () => {
+        // Save current time as last seen
+        localStorage.setItem('last_login_summary_seen', new Date().toISOString());
         onClose();
     };
 
@@ -59,7 +77,7 @@ const LoginSummaryModal = ({ isOpen, onClose, userId }) => {
 
     const totalUnread = notifications.length;
 
-    if (totalUnread === 0) return null;
+    if (totalUnread === 0 && !loading) return null;
 
     return (
         <div style={{

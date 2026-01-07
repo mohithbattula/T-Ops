@@ -147,7 +147,12 @@ const ModulePage = ({ title, type }) => {
                             job_title,
                             employment_type,
                             created_at,
-                            join_date
+                            department,
+                            job_title,
+                            employment_type,
+                            created_at,
+                            join_date,
+                            avatar_url
                         `)
                         .neq('is_hidden', true);
 
@@ -309,7 +314,10 @@ const ModulePage = ({ title, type }) => {
                                 joinDate: emp.join_date ? new Date(emp.join_date).toLocaleDateString() : (emp.created_at ? new Date(emp.created_at).toLocaleDateString() : 'N/A'),
                                 performance: 'N/A',
                                 projects: projectMap[emp.id]?.length || 0,
-                                tasksCompleted: 0
+                                performance: 'N/A',
+                                projects: projectMap[emp.id]?.length || 0,
+                                tasksCompleted: 0,
+                                avatar_url: emp.avatar_url
                             };
                         });
 
@@ -1571,8 +1579,12 @@ const ModulePage = ({ title, type }) => {
                         <div style={{ padding: '32px' }}>
                             {/* Profile Section */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
-                                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 'bold', color: '#075985' }}>
-                                    {selectedEmployee.name.charAt(0)}
+                                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 'bold', color: '#075985', overflow: 'hidden' }}>
+                                    {selectedEmployee.avatar_url ? (
+                                        <img src={selectedEmployee.avatar_url} alt={selectedEmployee.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        selectedEmployee.name.charAt(0)
+                                    )}
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <h4 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '4px' }}>{selectedEmployee.name}</h4>

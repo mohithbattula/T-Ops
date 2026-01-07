@@ -6,6 +6,7 @@ import Chatbot from '../UI/Chatbot';
 import LoginSummaryModal from '../../../shared/LoginSummaryModal';
 import AnnouncementPopup from '../../../shared/AnnouncementPopup';
 import { supabase } from '../../../../lib/supabaseClient';
+import { MessageProvider } from '../../../shared/context/MessageContext';
 
 const Layout = ({ children }) => {
     const [isCollapsed, setIsCollapsed] = React.useState(false);
@@ -32,40 +33,42 @@ const Layout = ({ children }) => {
         setShowLoginSummary(true);
     };
 
-    React.useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsCollapsed(true);
-        }, 10000);
-        return () => clearTimeout(timer);
-    }, [location.pathname]);
+    // Removed auto-collapse timer
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh' }}>
-            <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(!isCollapsed)} />
-            <div style={{
-                marginLeft: isCollapsed ? '80px' : '260px',
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                transition: 'margin-left 0.3s ease'
-            }}>
-                <Header />
-                <main style={{ flex: 1, padding: 'var(--spacing-xl)', backgroundColor: 'var(--background)' }}>
-                    {children}
-                </main>
-                <Chatbot />
+        <MessageProvider>
+            <div style={{ display: 'flex', minHeight: '100vh' }}>
+                <Sidebar
+                    isCollapsed={isCollapsed}
+                    toggleSidebar={() => setIsCollapsed(!isCollapsed)}
+                    onMouseEnter={() => setIsCollapsed(false)}
+                    onMouseLeave={() => setIsCollapsed(true)}
+                />
+                <div style={{
+                    marginLeft: isCollapsed ? '80px' : '260px',
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'margin-left 0.3s ease'
+                }}>
+                    <Header />
+                    <main style={{ flex: 1, padding: 'var(--spacing-xl)', backgroundColor: 'var(--background)' }}>
+                        {children}
+                    </main>
+                    <Chatbot />
+                </div>
+                <AnnouncementPopup
+                    isOpen={showAnnouncements}
+                    onClose={handleAnnouncementsClose}
+                    userId={userId}
+                />
+                <LoginSummaryModal
+                    isOpen={showLoginSummary}
+                    onClose={() => setShowLoginSummary(false)}
+                    userId={userId}
+                />
             </div>
-            <AnnouncementPopup
-                isOpen={showAnnouncements}
-                onClose={handleAnnouncementsClose}
-                userId={userId}
-            />
-            <LoginSummaryModal
-                isOpen={showLoginSummary}
-                onClose={() => setShowLoginSummary(false)}
-                userId={userId}
-            />
-        </div>
+        </MessageProvider>
     );
 };
 

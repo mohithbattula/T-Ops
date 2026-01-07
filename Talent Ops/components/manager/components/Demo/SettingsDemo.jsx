@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Lock, Eye, EyeOff, Save, Shield, Edit2, Phone, MapPin } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, Save, Shield, Edit2, Phone, MapPin, Camera } from 'lucide-react';
 import { supabase } from '../../../../lib/supabaseClient';
 
 const SettingsDemo = () => {
@@ -7,6 +7,7 @@ const SettingsDemo = () => {
     const [loading, setLoading] = useState(true);
     const [editMode, setEditMode] = useState(false);
     const [editedProfile, setEditedProfile] = useState({});
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
     const [showPasswordForm, setShowPasswordForm] = useState(false);
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',
@@ -19,6 +20,56 @@ const SettingsDemo = () => {
         confirm: false
     });
     const [message, setMessage] = useState({ type: '', text: '' });
+
+    const handlePhotoUpload = async (e) => {
+        try {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Check file size (10MB limit)
+            if (file.size > 10 * 1024 * 1024) {
+                setMessage({ type: 'error', text: 'File size must be less than 10MB' });
+                return;
+            }
+
+            setUploadingPhoto(true);
+
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${userProfile.id}-${Math.random()}.${fileExt}`;
+            const filePath = `${fileName}`;
+
+            // Upload to Supabase Storage
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file);
+
+            if (uploadError) throw uploadError;
+
+            // Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            // Update Profile
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ avatar_url: publicUrl })
+                .eq('id', userProfile.id);
+
+            if (updateError) throw updateError;
+
+            // Update local state
+            setUserProfile({ ...userProfile, avatar_url: publicUrl });
+            setEditedProfile({ ...editedProfile, avatar_url: publicUrl });
+            setMessage({ type: 'success', text: 'Profile photo updated successfully!' });
+
+        } catch (error) {
+            console.error('Error uploading photo:', error);
+            setMessage({ type: 'error', text: 'Failed to upload profile photo' });
+        } finally {
+            setUploadingPhoto(false);
+        }
+    };
 
     useEffect(() => {
         fetchUserProfile();
@@ -216,6 +267,66 @@ const SettingsDemo = () => {
                             </button>
                         </div>
                     )}
+                </div>
+
+                {/* Profile Photo Section */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+                    <div style={{ position: 'relative' }}>
+                        <div style={{
+                            width: '120px',
+                            height: '120px',
+                            borderRadius: '50%',
+                            overflow: 'hidden',
+                            border: '4px solid white',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                            backgroundColor: '#e2e8f0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            {userProfile?.avatar_url ? (
+                                <img
+                                    src={userProfile.avatar_url}
+                                    alt="Profile"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                            ) : (
+                                <User size={64} color="#94a3b8" />
+                            )}
+                        </div>
+                        <label
+                            htmlFor="profile-photo-upload"
+                            style={{
+                                position: 'absolute',
+                                bottom: '0',
+                                right: '0',
+                                backgroundColor: 'var(--primary)',
+                                color: 'white',
+                                padding: '8px',
+                                borderRadius: '50%',
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                transition: 'transform 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        >
+                            <Camera size={16} />
+                        </label>
+                        <input
+                            id="profile-photo-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handlePhotoUpload}
+                            style={{ display: 'none' }}
+                            disabled={uploadingPhoto}
+                        />
+                    </div>
+                    {uploadingPhoto && <p style={{ marginTop: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Uploading...</p>}
+                    <p style={{ marginTop: '8px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Allowed JPG, GIF or PNG. Max size of 10MB</p>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>

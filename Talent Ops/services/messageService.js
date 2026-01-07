@@ -84,6 +84,37 @@ export const getConversationsByCategory = async (userId, category) => {
             };
         });
 
+        // Step 5: Self-healing for missing message previews
+        // If we have a timestamp but no message content, fetch it
+        const brokenConversations = conversationsWithIndexes.filter(c => {
+            const idx = c.conversation_indexes?.[0];
+            return idx && idx.last_message_at && !idx.last_message;
+        });
+
+        if (brokenConversations.length > 0) {
+            await Promise.all(brokenConversations.map(async (conv) => {
+                const { data: msgs } = await supabase
+                    .from('messages')
+                    .select('content')
+                    .eq('conversation_id', conv.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (msgs && msgs.length > 0) {
+                    const content = msgs[0].content;
+                    // Update local object immediately so UI shows it
+                    if (conv.conversation_indexes[0]) {
+                        conv.conversation_indexes[0].last_message = content;
+                    }
+
+                    // Background repair: Persist this fix to the DB index
+                    updateConversationIndex(conv.id, content).catch(err =>
+                        console.error('Failed to auto-repair conversation index:', err)
+                    );
+                }
+            }));
+        }
+
         return conversationsWithIndexes;
     } catch (error) {
         console.error('Error in getConversationsByCategory:', error);

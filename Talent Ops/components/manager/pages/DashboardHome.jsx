@@ -38,6 +38,10 @@ const DashboardHome = () => {
     const [selectedDate, setSelectedDate] = useState(today);
     const [currentTime, setCurrentTime] = useState(new Date());
 
+    // Active Employees Modal State
+    const [showActiveListModal, setShowActiveListModal] = useState(false);
+    const [activeEmployeesList, setActiveEmployeesList] = useState([]);
+
     // Update time every minute
     React.useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -133,6 +137,7 @@ const DashboardHome = () => {
                 const employeeIds = employees.map(e => e.id);
                 let activeCount = 0;
                 let absentCount = 0;
+                let activeList = [];
 
                 if (employeeIds.length > 0) {
                     const { data: attendanceData } = await supabase
@@ -150,20 +155,68 @@ const DashboardHome = () => {
                         .in('employee_id', employeeIds);
 
                     if (attendanceData) {
-                        activeCount = attendanceData.filter(a => a.clock_in && !a.clock_out).length;
+                        const activeRecords = attendanceData.filter(a => a.clock_in && !a.clock_out);
+                        activeCount = activeRecords.length;
+
+                        // Map active records to employee details
+                        const activeIds = activeRecords.map(a => a.employee_id);
+                        activeList = employees.filter(e => activeIds.includes(e.id));
                     }
                     absentCount = leavesData ? leavesData.length : 0;
                 }
 
                 setAllEmployees(employees); // For modal usage
 
-                // Update Stats
+                // --- GLOBAL STATS CALCULATION (Organization-wide data for Employees Card) ---
+
+                // 1. Fetch Global Total Employees
+                const { count: globalTotalCount } = await supabase
+                    .from('profiles')
+                    .select('*', { count: 'exact', head: true });
+
+                // 2. Fetch Global Active (Clocked In)
+                const { data: globalActiveAttendance } = await supabase
+                    .from('attendance')
+                    .select('employee_id')
+                    .eq('date', todayStr)
+                    .not('clock_in', 'is', null)
+                    .is('clock_out', null);
+
+                // 3. Fetch Global Absent (On Leave)
+                const { count: globalAbsentCount } = await supabase
+                    .from('leaves')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('status', 'approved')
+                    .lte('from_date', todayStr)
+                    .gte('to_date', todayStr);
+
+                let globalActiveList = [];
+                const globalActiveIds = globalActiveAttendance?.map(a => a.employee_id) || [];
+
+                // Get Profiles for Active List
+                if (globalActiveIds.length > 0) {
+                    const { data: globalActiveProfiles } = await supabase
+                        .from('profiles')
+                        .select('id, full_name, role, team_id')
+                        .in('id', globalActiveIds);
+                    globalActiveList = globalActiveProfiles || [];
+                }
+
+                setActiveEmployeesList(globalActiveList);
+
+                // Calculate Global Stats
+                const gTotal = globalTotalCount || 0;
+                const gActive = globalActiveIds.length;
+                const gAbsent = globalAbsentCount || 0;
+                const gOffline = Math.max(0, gTotal - gActive - gAbsent);
+
+                // Update Stats with GLOBAL values
                 setEmployeeStats({
-                    total: employees.length,
-                    active: activeCount,
-                    absent: absentCount,
+                    total: gTotal,
+                    active: gActive,
+                    absent: gAbsent,
                     away: 0,
-                    offline: Math.max(0, employees.length - activeCount - absentCount)
+                    offline: gOffline
                 });
 
                 if (tasks) {
@@ -227,41 +280,36 @@ const DashboardHome = () => {
                 setTimeline(combinedEvents);
 
                 // Fetch Project List & Analytics
+                // Fetch Project List & Analytics
                 const { data: projectsData } = await supabase
                     .from('projects')
                     .select('id, name');
 
                 let projects = projectsData ? projectsData.map(p => ({ id: p.id, name: p.name })) : [];
 
-                // If specific project selected, only show that one in analytics tile?
-                if (currentProject) {
-                    projects = projects.filter(p => p.id === currentProject.id);
-                }
+                // User Request: "I want to see all the statues of all projects"
+                // REMOVED filtering by currentProject so all projects are listed in the status card.
+                // if (currentProject) {
+                //     projects = projects.filter(p => p.id === currentProject.id);
+                // }
 
                 if (projects.length > 0) setAllTeams(projects);
 
-                if (projects && employees && tasks) {
+                // Fetch Global Tasks for Status Calculation (for ALL projects)
+                const { data: globalTasks } = await supabase
+                    .from('tasks')
+                    .select('id, status, project_id');
+                const allTasks = globalTasks || [];
+
+                if (projects) {
                     const analytics = projects.map(project => {
-                        // Re-fetch or filter logic?
-                        // If Global: Use global employees/tasks to filter by team/project ID.
-                        // If Project Context: 'employees' and 'tasks' are ALREADY filtered for this project.
-
-                        let projectEmployees = [];
-                        let projectTasks = [];
-
-                        if (currentProject) {
-                            // Context mode: All fetched data belongs to this project
-                            projectEmployees = employees;
-                            projectTasks = tasks;
-                        } else {
-                            // Global mode: Need to filter
-                            // Note: 'employees' from profiles has 'team_id' (legacy?). 
-                            // Best approach for analytics is rely on what we have.
-                            projectEmployees = employees.filter(e => e.team_id === project.id);
-                            projectTasks = tasks.filter(t => t.project_id === project.id);
-                        }
+                        // Calculate status based on Global Tasks
+                        const projectTasks = allTasks.filter(t => t.project_id === project.id);
 
                         const completedT = projectTasks.filter(t => ['completed', 'done'].includes(t.status?.toLowerCase())).length;
+                        const pendingT = projectTasks.filter(t => ['pending', 'to_do', 'to do'].includes(t.status?.toLowerCase())).length;
+                        const inProgressT = projectTasks.filter(t => ['in_progress', 'in progress'].includes(t.status?.toLowerCase())).length;
+
                         const totalT = projectTasks.length;
                         const performance = totalT > 0 ? Math.round((completedT / totalT) * 100) : 0;
 
@@ -275,11 +323,14 @@ const DashboardHome = () => {
                         return {
                             id: project.id,
                             name: project.name,
-                            count: projectEmployees.length,
+                            count: 0,
                             performance: performance,
-                            projects: 0, // Placeholder
+                            projects: 0,
                             status: status,
-                            color: color
+                            color: color,
+                            completedCount: completedT,
+                            inProgressCount: inProgressT,
+                            pendingCount: pendingT
                         };
                     });
                     setTeamAnalytics(analytics);
@@ -441,7 +492,14 @@ const DashboardHome = () => {
                             </div>
 
                             <div style={{ display: 'flex', gap: '32px', marginTop: '16px' }}>
-                                <div>
+                                <div
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowActiveListModal(true);
+                                    }}
+                                    style={{ cursor: 'pointer' }}
+                                    title="View Active Employees"
+                                >
                                     <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#000', textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{employeeStats.active}</span>
                                     <p style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#000' }}>Active</p>
                                 </div>
@@ -513,8 +571,8 @@ const DashboardHome = () => {
                                     style={{
                                         cursor: 'pointer',
                                         display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
+                                        flexDirection: 'column',
+                                        gap: '8px',
                                         padding: '12px 16px',
                                         backgroundColor: 'rgba(255,255,255,0.4)',
                                         borderRadius: '12px',
@@ -523,18 +581,34 @@ const DashboardHome = () => {
                                     onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(4px)'}
                                     onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(0)'}
                                 >
-                                    <span style={{ fontWeight: 'bold', color: '#14532d' }}>{team.name}</span>
-                                    <span style={{
-                                        fontSize: '0.75rem',
-                                        fontWeight: 'bold',
-                                        color: team.color,
-                                        backgroundColor: '#fff',
-                                        padding: '4px 8px',
-                                        borderRadius: '12px',
-                                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                                    }}>
-                                        {team.status}
-                                    </span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                        <span style={{ fontWeight: 'bold', color: '#14532d' }}>{team.name}</span>
+                                        <span style={{
+                                            fontSize: '0.75rem',
+                                            fontWeight: 'bold',
+                                            color: team.color,
+                                            backgroundColor: '#fff',
+                                            padding: '4px 8px',
+                                            borderRadius: '12px',
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                        }}>
+                                            {team.status}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: '#475569', fontWeight: '500' }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e' }}></div>
+                                            Completed: {team.completedCount || 0}
+                                        </span>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#3b82f6' }}></div>
+                                            In Progress: {team.inProgressCount || 0}
+                                        </span>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f59e0b' }}></div>
+                                            Pending: {team.pendingCount || 0}
+                                        </span>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -831,6 +905,62 @@ const DashboardHome = () => {
                     </div>
                 </div>
             )}
+            {showActiveListModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                    <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '24px', width: '450px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22c55e' }}></div>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Active Employees</h3>
+                            </div>
+                            <button onClick={() => setShowActiveListModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+                        </div>
+
+                        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '8px' }}>
+                            {activeEmployeesList.length > 0 ? (
+                                activeEmployeesList.map(emp => (
+                                    <div key={emp.id} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '16px',
+                                        padding: '12px',
+                                        backgroundColor: '#f8fafc',
+                                        borderRadius: '16px',
+                                        border: '1px solid #e2e8f0'
+                                    }}>
+                                        <div style={{
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '50%',
+                                            backgroundColor: '#e0f2fe',
+                                            color: '#0369a1',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontWeight: 'bold',
+                                            fontSize: '1rem'
+                                        }}>
+                                            {emp.full_name?.charAt(0) || 'U'}
+                                        </div>
+                                        <div>
+                                            <p style={{ fontWeight: 'bold', color: '#1e293b', margin: 0 }}>{emp.full_name}</p>
+                                            <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>{emp.role ? emp.role.replace('_', ' ') : 'Employee'}</p>
+                                        </div>
+                                        <div style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: 'bold', color: '#15803d', backgroundColor: '#dcfce7', padding: '4px 8px', borderRadius: '12px' }}>
+                                            Online
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
+                                    No active employees found.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
 
 

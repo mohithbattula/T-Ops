@@ -136,7 +136,7 @@ const ModulePage = ({ title, type }) => {
                 // 1. Fetch team members from project_members table joined with profiles
                 const { data: assignments, error: assignmentError } = await supabase
                     .from('project_members')
-                    .select('*, profiles:user_id(id, full_name, role, email, phone, location, created_at)')
+                    .select('*, profiles:user_id(id, full_name, role, email, phone, location, created_at, avatar_url)')
                     .eq('project_id', teamId);
 
                 console.log('Assignments fetched:', assignments, 'Error:', assignmentError);
@@ -205,7 +205,8 @@ const ModulePage = ({ title, type }) => {
                         phone: member.phone || 'N/A',
                         location: member.location || 'N/A',
                         status: status,
-                        joinDate: member.created_at ? new Date(member.created_at).toLocaleDateString() : 'N/A'
+                        joinDate: member.created_at ? new Date(member.created_at).toLocaleDateString() : 'N/A',
+                        avatar_url: member.avatar_url
                     };
                 });
 
@@ -238,7 +239,7 @@ const ModulePage = ({ title, type }) => {
                 // Explicitly select profile fields to avoid potential issues with dropped columns
                 const { data: assignments, error: assignmentError } = await supabase
                     .from('project_members')
-                    .select('*, profiles:user_id(id, full_name, email, role)')
+                    .select('*, profiles:user_id(id, full_name, email, role, avatar_url)')
                     .eq('project_id', teamId);
 
                 if (assignmentError) throw assignmentError;
@@ -352,7 +353,8 @@ const ModulePage = ({ title, type }) => {
                         dept: teamName,
                         availability: availability,
                         task: currentTask,
-                        lastActive: lastActive
+                        lastActive: lastActive,
+                        avatar_url: member.avatar_url
                     };
                 });
 
@@ -1380,8 +1382,12 @@ const ModulePage = ({ title, type }) => {
                         <div style={{ padding: '32px' }}>
                             {/* Profile Section */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
-                                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 'bold', color: '#075985' }}>
-                                    {selectedEmployee.name.charAt(0)}
+                                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 'bold', color: '#075985', overflow: 'hidden' }}>
+                                    {selectedEmployee.avatar_url ? (
+                                        <img src={selectedEmployee.avatar_url} alt={selectedEmployee.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        selectedEmployee.name.charAt(0)
+                                    )}
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <h4 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '4px' }}>{selectedEmployee.name}</h4>

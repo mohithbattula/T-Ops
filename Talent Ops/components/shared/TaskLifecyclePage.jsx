@@ -31,6 +31,7 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRol
     const [showProofModal, setShowProofModal] = useState(false);
     const [taskForProof, setTaskForProof] = useState(null);
     const [proofFile, setProofFile] = useState(null);
+    const [proofText, setProofText] = useState('');
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploading, setUploading] = useState(false);
 
@@ -154,6 +155,7 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRol
     const openProofModal = (task) => {
         setTaskForProof(task);
         setProofFile(null);
+        setProofText('');
         setUploadProgress(0);
 
         setShowProofModal(true);
@@ -171,8 +173,8 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRol
     };
 
     const uploadProofAndRequestValidation = async () => {
-        if (!proofFile || !taskForProof) {
-            addToast?.('Please select a file to upload', 'error');
+        if ((!proofFile && !proofText.trim()) || !taskForProof) {
+            addToast?.('Please upload a file OR enter text/notes', 'error');
             return;
         }
 
@@ -232,7 +234,8 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRol
             const { data, error } = await supabase.rpc('request_task_validation', {
                 p_task_id: taskForProof.id,
                 p_user_id: user.id,
-                p_proof_url: proofUrl
+                p_proof_url: proofUrl,
+                p_proof_text: proofText // Pass the text message
             });
 
             if (error) throw error;
@@ -421,36 +424,59 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRol
                         </div>
 
                         <div style={{ marginBottom: '24px' }}>
-                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem' }}>
-                                Upload Proof Document
-                            </label>
-                            <div style={{
-                                border: '2px dashed var(--border)',
-                                borderRadius: '12px',
-                                padding: '32px',
-                                textAlign: 'center',
-                                backgroundColor: proofFile ? '#f0fdf4' : 'var(--background)',
-                                cursor: 'pointer'
-                            }}
-                                onClick={() => document.getElementById('proof-file-input').click()}
-                            >
-                                <input id="proof-file-input" type="file" onChange={handleFileChange} style={{ display: 'none' }}
-                                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.zip,.txt" />
-                                {proofFile ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-                                        <FileText size={32} color="#10b981" />
-                                        <div>
-                                            <div style={{ fontWeight: 600, color: '#166534' }}>{proofFile.name}</div>
-                                            <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{(proofFile.size / 1024).toFixed(1)} KB</div>
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem' }}>
+                                    Upload Proof Document (Optional)
+                                </label>
+                                <div style={{
+                                    border: '2px dashed var(--border)',
+                                    borderRadius: '12px',
+                                    padding: '24px',
+                                    textAlign: 'center',
+                                    backgroundColor: proofFile ? '#f0fdf4' : 'var(--background)',
+                                    cursor: 'pointer'
+                                }}
+                                    onClick={() => document.getElementById('proof-file-input').click()}
+                                >
+                                    <input id="proof-file-input" type="file" onChange={handleFileChange} style={{ display: 'none' }}
+                                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.zip,.txt" />
+                                    {proofFile ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                                            <FileText size={32} color="#10b981" />
+                                            <div>
+                                                <div style={{ fontWeight: 600, color: '#166534' }}>{proofFile.name}</div>
+                                                <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{(proofFile.size / 1024).toFixed(1)} KB</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <Upload size={32} color="#9ca3af" style={{ marginBottom: '12px' }} />
-                                        <div style={{ color: 'var(--text-secondary)', marginBottom: '4px' }}>Click to upload</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>PDF, DOC, PNG, JPG, ZIP (max 10MB)</div>
-                                    </>
-                                )}
+                                    ) : (
+                                        <>
+                                            <Upload size={32} color="#9ca3af" style={{ marginBottom: '12px' }} />
+                                            <div style={{ color: 'var(--text-secondary)', marginBottom: '4px' }}>Click to upload</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>PDF, DOC, PNG, ZIP (max 10MB)</div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem' }}>
+                                    Text Message / Notes (Optional)
+                                </label>
+                                <textarea
+                                    value={proofText}
+                                    onChange={(e) => setProofText(e.target.value)}
+                                    placeholder="Enter any notes, links, or description..."
+                                    rows={3}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--border)',
+                                        backgroundColor: 'var(--background)',
+                                        fontSize: '0.9rem',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
                             </div>
                         </div>
 
@@ -510,18 +536,18 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRol
                         )}
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                            <button onClick={() => { setShowProofModal(false); setTaskForProof(null); setProofFile(null); }} disabled={uploading}
+                            <button onClick={() => { setShowProofModal(false); setTaskForProof(null); setProofFile(null); setProofText(''); }} disabled={uploading}
                                 style={{ padding: '12px 24px', borderRadius: '10px', backgroundColor: 'var(--background)', border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600 }}>
                                 Cancel
                             </button>
-                            <button onClick={uploadProofAndRequestValidation} disabled={!proofFile || uploading}
+                            <button onClick={uploadProofAndRequestValidation} disabled={(!proofFile && !proofText.trim()) || uploading}
                                 style={{
                                     padding: '12px 24px', borderRadius: '10px',
-                                    background: proofFile ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : '#e5e7eb',
-                                    color: proofFile ? 'white' : '#9ca3af', border: 'none', fontWeight: 600,
-                                    cursor: proofFile ? 'pointer' : 'not-allowed',
+                                    background: (proofFile || proofText.trim()) ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : '#e5e7eb',
+                                    color: (proofFile || proofText.trim()) ? 'white' : '#9ca3af', border: 'none', fontWeight: 600,
+                                    cursor: (proofFile || proofText.trim()) ? 'pointer' : 'not-allowed',
                                     display: 'flex', alignItems: 'center', gap: '8px',
-                                    boxShadow: proofFile ? '0 4px 15px rgba(139, 92, 246, 0.3)' : 'none'
+                                    boxShadow: (proofFile || proofText.trim()) ? '0 4px 15px rgba(139, 92, 246, 0.3)' : 'none'
                                 }}>
                                 <Send size={16} />
                                 {uploading ? 'Uploading...' : 'Submit for Validation'}

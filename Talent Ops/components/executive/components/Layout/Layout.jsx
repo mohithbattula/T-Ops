@@ -32,16 +32,16 @@ const Layout = ({ children }) => {
         setShowLoginSummary(true);
     };
 
-    React.useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsCollapsed(true);
-        }, 5000);
-        return () => clearTimeout(timer);
-    }, [location.pathname]);
+    // Removed auto-collapse timer
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh' }}>
-            <Sidebar isCollapsed={isCollapsed} toggleSidebar={() => setIsCollapsed(!isCollapsed)} />
+            <Sidebar
+                isCollapsed={isCollapsed}
+                toggleSidebar={() => setIsCollapsed(!isCollapsed)}
+                onMouseEnter={() => setIsCollapsed(false)}
+                onMouseLeave={() => setIsCollapsed(true)}
+            />
             <div style={{
                 marginLeft: isCollapsed ? '80px' : '260px',
                 flex: 1,

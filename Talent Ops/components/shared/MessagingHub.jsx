@@ -14,6 +14,7 @@ import {
     getOrCreateOrgConversation
 } from '../../services/messageService';
 import { sendNotification } from '../../services/notificationService';
+import { useMessages } from './context/MessageContext';
 import './MessagingHub.css';
 
 const MessagingHub = () => {
@@ -38,7 +39,7 @@ const MessagingHub = () => {
     const [selectedTeamMembers, setSelectedTeamMembers] = useState([]);
     const [teamName, setTeamName] = useState('');
     const [authLoading, setAuthLoading] = useState(true);
-    const [readConversations, setReadConversations] = useState(new Set());
+    const { markAsRead, lastReadTimes } = useMessages();
 
     // Get current user from Supabase auth
     useEffect(() => {
@@ -215,8 +216,8 @@ const MessagingHub = () => {
         setSelectedConversation(conversation);
         setLoading(true);
 
-        // Mark conversation as read
-        setReadConversations(prev => new Set([...prev, conversation.id]));
+        // Mark conversation as read globally
+        markAsRead(conversation.id);
 
         try {
             const msgs = await getConversationMessages(conversation.id);
@@ -312,8 +313,14 @@ const MessagingHub = () => {
                 messageInput,
                 attachments
             );
-            // Don't manually add the message - let the real-time subscription handle it
-            // This prevents duplicates
+
+            // Optimistically add message to state to fix "No messages yet" glitch
+            setMessages(prev => {
+                const exists = prev.some(m => m.id === newMessage.id);
+                if (exists) return prev;
+                return [...prev, newMessage];
+            });
+
             setMessageInput('');
             setAttachments([]);
             setErrorMessage(null);
@@ -386,6 +393,27 @@ const MessagingHub = () => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSendMessage();
+        }
+    };
+
+    const handlePaste = (e) => {
+        if (e.clipboardData && e.clipboardData.items) {
+            const items = e.clipboardData.items;
+            const files = [];
+
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const file = items[i].getAsFile();
+                    if (file) {
+                        files.push(file);
+                    }
+                }
+            }
+
+            if (files.length > 0) {
+                e.preventDefault(); // Prevent pasting the image binary string into text input
+                setAttachments(prev => [...prev, ...files]);
+            }
         }
     };
 
@@ -659,7 +687,10 @@ const MessagingHub = () => {
                         </div>
                     ) : (
                         filteredConversations.map(conv => {
-                            const isUnread = conv.conversation_indexes?.[0]?.last_message && !readConversations.has(conv.id);
+                            const lastMsgTime = conv.conversation_indexes?.[0]?.last_message_at ? new Date(conv.conversation_indexes[0].last_message_at).getTime() : 0;
+                            const lastReadTime = lastReadTimes[conv.id] || 0;
+                            const isUnread = lastMsgTime > lastReadTime;
+
                             return (
                                 <div
                                     key={conv.id}
@@ -851,10 +882,11 @@ const MessagingHub = () => {
                                 </label>
                                 <input
                                     type="text"
-                                    placeholder="Type a message..."
+                                    placeholder="Type a message... (Paste images directly)"
                                     value={messageInput}
                                     onChange={(e) => setMessageInput(e.target.value)}
                                     onKeyPress={handleKeyPress}
+                                    onPaste={handlePaste}
                                 />
                                 <button
                                     className="send-button"

@@ -119,9 +119,14 @@ const HierarchyDemo = () => {
                     justifyContent: 'center',
                     fontSize: '1.2rem',
                     fontWeight: 'bold',
-                    color: 'white'
+                    color: 'white',
+                    overflow: 'hidden'
                 }}>
-                    {data.full_name?.charAt(0) || '?'}
+                    {data.avatar_url ? (
+                        <img src={data.avatar_url} alt={data.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                        data.full_name?.charAt(0) || '?'
+                    )}
                 </div>
                 <p style={{ fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '4px', color: '#1e293b' }}>
                     {data.full_name || 'Unknown'}
@@ -375,9 +380,14 @@ const HierarchyDemo = () => {
                                     fontSize: '2.5rem',
                                     fontWeight: 'bold',
                                     color: 'white',
-                                    border: '4px solid #f8fafc'
+                                    border: '4px solid #f8fafc',
+                                    overflow: 'hidden'
                                 }}>
-                                    {selectedEmployee.full_name?.charAt(0) || '?'}
+                                    {selectedEmployee.avatar_url ? (
+                                        <img src={selectedEmployee.avatar_url} alt={selectedEmployee.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        selectedEmployee.full_name?.charAt(0) || '?'
+                                    )}
                                 </div>
                                 <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '4px', color: '#1e293b' }}>
                                     {selectedEmployee.full_name || 'Unknown'}

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const Sidebar = ({ isCollapsed, toggleSidebar }) => {
+const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -150,20 +150,23 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     );
 
     return (
-        <aside style={{
-            width: isCollapsed ? '80px' : '280px',
-            backgroundColor: '#1a1a2e',
-            color: 'white',
-            height: '100vh',
-            position: 'fixed',
-            left: 0,
-            top: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '16px',
-            zIndex: 1000,
-            transition: 'width 0.3s ease'
-        }}>
+        <aside
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            style={{
+                width: isCollapsed ? '80px' : '280px',
+                backgroundColor: '#1a1a2e',
+                color: 'white',
+                height: '100vh',
+                position: 'fixed',
+                left: 0,
+                top: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '16px',
+                zIndex: 1000,
+                transition: 'width 0.3s ease'
+            }}>
             <style>
                 {`
                     .no-scrollbar::-webkit-scrollbar {

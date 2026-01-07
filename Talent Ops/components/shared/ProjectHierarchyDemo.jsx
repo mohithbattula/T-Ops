@@ -233,9 +233,14 @@ const ProjectHierarchyDemo = ({ isEditingEnabled = false }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: '10px',
-                color: 'white'
+                color: 'white',
+                overflow: 'hidden'
             }}>
-                {Icon ? <Icon size={20} /> : <User size={20} />}
+                {member?.avatar_url ? (
+                    <img src={member.avatar_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                    Icon ? <Icon size={20} /> : <User size={20} />
+                )}
             </div>
             <h4 style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>{title}</h4>
             <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>{subtitle}</span>
@@ -250,8 +255,12 @@ const ProjectHierarchyDemo = ({ isEditingEnabled = false }) => {
                 <div style={{ backgroundColor: 'white', borderRadius: '16px', width: '400px', padding: '32px', position: 'relative' }} onClick={e => e.stopPropagation()}>
                     <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', border: 'none', background: 'none', cursor: 'pointer' }}><X size={20} /></button>
                     <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#7c3aed', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', margin: '0 auto 16px' }}>
-                            {employee.full_name?.charAt(0)}
+                        <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#7c3aed', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', margin: '0 auto 16px', overflow: 'hidden' }}>
+                            {employee.avatar_url ? (
+                                <img src={employee.avatar_url} alt={employee.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                employee.full_name?.charAt(0)
+                            )}
                         </div>
                         <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{employee.full_name}</h3>
                         <p style={{ color: '#64748b' }}>{employee.role}</p>

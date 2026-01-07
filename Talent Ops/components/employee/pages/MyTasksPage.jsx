@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Calendar, CheckCircle, Upload, FileText, Send, AlertCircle, Paperclip, ClipboardList, AlertTriangle, Eye } from 'lucide-react';
+import { Search, Calendar, CheckCircle, Upload, FileText, Send, AlertCircle, Paperclip, ClipboardList, AlertTriangle, Eye, Clock } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useProject } from '../context/ProjectContext';
 import { useToast } from '../context/ToastContext';
@@ -16,6 +16,7 @@ const MyTasksPage = () => {
     const [showProofModal, setShowProofModal] = useState(false);
     const [taskForProof, setTaskForProof] = useState(null);
     const [proofFile, setProofFile] = useState(null);
+    const [proofText, setProofText] = useState('');
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploading, setUploading] = useState(false);
 
@@ -79,6 +80,7 @@ const MyTasksPage = () => {
     const openProofModal = (task) => {
         setTaskForProof(task);
         setProofFile(null);
+        setProofText('');
         setUploadProgress(0);
         setShowProofModal(true);
     };
@@ -95,8 +97,8 @@ const MyTasksPage = () => {
     };
 
     const uploadProofAndRequestValidation = async () => {
-        if (!proofFile || !taskForProof) {
-            addToast?.('Please select a file to upload', 'error');
+        if ((!proofFile && !proofText.trim()) || !taskForProof) {
+            addToast?.('Please upload a file OR enter text/notes', 'error');
             return;
         }
 
@@ -146,6 +148,7 @@ const MyTasksPage = () => {
                 [currentPhase]: {
                     status: 'pending',
                     proof_url: proofUrl,
+                    proof_text: proofText,
                     submitted_at: new Date().toISOString()
                 }
             };
@@ -153,6 +156,7 @@ const MyTasksPage = () => {
             const updates = {
                 phase_validations: updatedValidations,
                 proof_url: proofUrl, // Keep latest proof in main column for compatibility
+                proof_text: proofText,
                 updated_at: new Date().toISOString()
             };
 
@@ -398,6 +402,7 @@ const MyTasksPage = () => {
                             <th style={{ padding: '16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>PROJECT</th>
                             <th style={{ padding: '16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>PRIORITY</th>
                             <th style={{ padding: '16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>LIFECYCLE</th>
+                            <th style={{ padding: '16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>ALLOCATED HOURS</th>
                             <th style={{ padding: '16px', textAlign: 'left', fontSize: '0.85rem', fontWeight: 600, color: '#64748b' }}>DUE DATE</th>
                             <th style={{ padding: '16px', textAlign: 'center', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', minWidth: '180px' }}>ACTIONS</th>
                         </tr>
@@ -453,6 +458,11 @@ const MyTasksPage = () => {
                                                 subState={task.sub_state}
                                                 validations={task.phase_validations}
                                             />
+                                        </td>
+                                        <td style={{ padding: '16px' }}>
+                                            <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 500 }}>
+                                                {task.allocated_hours ? `${task.allocated_hours} hrs` : '-'}
+                                            </span>
                                         </td>
                                         <td style={{ padding: '16px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#64748b' }}>
@@ -567,36 +577,80 @@ const MyTasksPage = () => {
                         </div>
 
                         <div style={{ marginBottom: '24px' }}>
-                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem' }}>
-                                Upload Proof Document
-                            </label>
-                            <div style={{
-                                border: '2px dashed var(--border)',
-                                borderRadius: '12px',
-                                padding: '32px',
-                                textAlign: 'center',
-                                backgroundColor: proofFile ? '#f0fdf4' : 'var(--background)',
-                                cursor: 'pointer'
-                            }}
-                                onClick={() => document.getElementById('proof-file-input').click()}
-                            >
-                                <input id="proof-file-input" type="file" onChange={handleFileChange} style={{ display: 'none' }}
-                                    accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.zip,.txt" />
-                                {proofFile ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-                                        <FileText size={32} color="#10b981" />
-                                        <div>
-                                            <div style={{ fontWeight: 600, color: '#166534' }}>{proofFile.name}</div>
-                                            <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{(proofFile.size / 1024).toFixed(1)} KB</div>
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem' }}>
+                                    Upload Proof Document (Optional)
+                                </label>
+                                <div style={{
+                                    border: '2px dashed var(--border)',
+                                    borderRadius: '12px',
+                                    padding: '24px',
+                                    textAlign: 'center',
+                                    backgroundColor: proofFile ? '#f0fdf4' : 'var(--background)',
+                                    cursor: 'pointer'
+                                }}
+                                    onClick={() => document.getElementById('proof-file-input').click()}
+                                >
+                                    <input id="proof-file-input" type="file" onChange={handleFileChange} style={{ display: 'none' }}
+                                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.zip,.txt" />
+                                    {proofFile ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                                            <FileText size={32} color="#10b981" />
+                                            <div>
+                                                <div style={{ fontWeight: 600, color: '#166534' }}>{proofFile.name}</div>
+                                                <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>{(proofFile.size / 1024).toFixed(1)} KB</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <Upload size={32} color="#9ca3af" style={{ marginBottom: '12px' }} />
-                                        <div style={{ color: 'var(--text-secondary)', marginBottom: '4px' }}>Click to upload</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>PDF, DOC, PNG, JPG, ZIP (max 10MB)</div>
-                                    </>
-                                )}
+                                    ) : (
+                                        <>
+                                            <Upload size={32} color="#9ca3af" style={{ marginBottom: '12px' }} />
+                                            <div style={{ color: 'var(--text-secondary)', marginBottom: '4px' }}>Click to upload</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>PDF, DOC, PNG, JPG, ZIP (max 10MB)</div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem' }}>
+                                    Text Message / Notes (Optional)
+                                </label>
+                                <textarea
+                                    value={proofText}
+                                    onChange={(e) => setProofText(e.target.value)}
+                                    placeholder="Enter any notes, links, or description..."
+                                    rows={3}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--border)',
+                                        backgroundColor: 'var(--background)',
+                                        fontSize: '0.9rem',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '0.9rem' }}>
+                                    Text Message / Notes (Optional)
+                                </label>
+                                <textarea
+                                    value={proofText}
+                                    onChange={(e) => setProofText(e.target.value)}
+                                    placeholder="Enter any notes, links, or description..."
+                                    rows={3}
+                                    style={{
+                                        width: '100%',
+                                        padding: '12px',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--border)',
+                                        backgroundColor: 'var(--background)',
+                                        fontSize: '0.9rem',
+                                        boxSizing: 'border-box'
+                                    }}
+                                />
                             </div>
                         </div>
 
@@ -613,18 +667,18 @@ const MyTasksPage = () => {
                         )}
 
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                            <button onClick={() => { setShowProofModal(false); setTaskForProof(null); setProofFile(null); }} disabled={uploading}
+                            <button onClick={() => { setShowProofModal(false); setTaskForProof(null); setProofFile(null); setProofText(''); }} disabled={uploading}
                                 style={{ padding: '12px 24px', borderRadius: '10px', backgroundColor: 'var(--background)', border: '1px solid var(--border)', cursor: 'pointer', fontWeight: 600 }}>
                                 Cancel
                             </button>
-                            <button onClick={uploadProofAndRequestValidation} disabled={!proofFile || uploading}
+                            <button onClick={uploadProofAndRequestValidation} disabled={(!proofFile && !proofText.trim()) || uploading}
                                 style={{
                                     padding: '12px 24px', borderRadius: '10px',
-                                    background: proofFile ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : '#e5e7eb',
-                                    color: proofFile ? 'white' : '#9ca3af', border: 'none', fontWeight: 600,
-                                    cursor: proofFile ? 'pointer' : 'not-allowed',
+                                    background: (proofFile || proofText.trim()) ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : '#e5e7eb',
+                                    color: (proofFile || proofText.trim()) ? 'white' : '#9ca3af', border: 'none', fontWeight: 600,
+                                    cursor: (proofFile || proofText.trim()) ? 'pointer' : 'not-allowed',
                                     display: 'flex', alignItems: 'center', gap: '8px',
-                                    boxShadow: proofFile ? '0 4px 15px rgba(139, 92, 246, 0.3)' : 'none'
+                                    boxShadow: (proofFile || proofText.trim()) ? '0 4px 15px rgba(139, 92, 246, 0.3)' : 'none'
                                 }}>
                                 <Send size={16} />
                                 {uploading ? 'Uploading...' : 'Submit for Validation'}
@@ -754,12 +808,12 @@ const MyTasksPage = () => {
 
                         <div style={{ marginBottom: '24px' }}>
                             <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>DESCRIPTION</label>
-                            <div style={{ fontSize: '1rem', color: '#334155', lineHeight: '1.6', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                            <div style={{ fontSize: '1rem', color: '#334155', lineHeight: '1.6', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', whiteSpace: 'pre-wrap' }}>
                                 {taskForView.description || 'No description provided.'}
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '24px' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>DUE DATE</label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', color: '#334155' }}>
@@ -771,6 +825,13 @@ const MyTasksPage = () => {
                                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>PHASE</label>
                                 <div style={{ fontSize: '1rem', color: '#334155', textTransform: 'capitalize' }}>
                                     {taskForView.lifecycle_state?.replace(/_/g, ' ') || 'Requirement Refiner'}
+                                </div>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>ALLOCATED HOURS</label>
+                                <div style={{ fontSize: '1rem', color: '#334155', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Clock size={18} color="#64748b" />
+                                    {taskForView.allocated_hours ? `${taskForView.allocated_hours} hrs` : '-'}
                                 </div>
                             </div>
                         </div>

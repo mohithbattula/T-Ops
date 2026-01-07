@@ -26,8 +26,9 @@ import {
 } from 'lucide-react';
 import { useProject } from '../../../employee/context/ProjectContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useMessages } from '../../../shared/context/MessageContext';
 
-const Sidebar = ({ isCollapsed, toggleSidebar }) => {
+const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => {
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -35,7 +36,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         organization: true,
         project: true
     });
+
     const { currentProject, setCurrentProject, userProjects, projectRole } = useProject();
+    const { unreadCount } = useMessages();
     const [showProjectPicker, setShowProjectPicker] = useState(false);
 
     const getRoleBadge = (role) => {
@@ -144,6 +147,32 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             >
                 <item.icon size={18} style={{ flexShrink: 0 }} />
                 {!isCollapsed && <span>{item.label}</span>}
+                {item.label === 'Messages' && unreadCount > 0 && (
+                    <div style={{
+                        marginLeft: 'auto',
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                        fontSize: '0.7rem',
+                        fontWeight: 'bold',
+                        padding: '2px 6px',
+                        borderRadius: '9999px',
+                        minWidth: '18px',
+                        textAlign: 'center'
+                    }}>
+                        {unreadCount}
+                    </div>
+                )}
+                {isCollapsed && item.label === 'Messages' && unreadCount > 0 && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        backgroundColor: '#ef4444',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%'
+                    }} />
+                )}
             </button>
         );
     };
@@ -187,20 +216,23 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     );
 
     return (
-        <aside style={{
-            width: isCollapsed ? '80px' : '280px',
-            backgroundColor: '#1a1a2e',
-            color: 'white',
-            height: '100vh',
-            position: 'fixed',
-            left: 0,
-            top: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '16px',
-            zIndex: 1000,
-            transition: 'width 0.3s ease'
-        }}>
+        <aside
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            style={{
+                width: isCollapsed ? '80px' : '280px',
+                backgroundColor: '#1a1a2e',
+                color: 'white',
+                height: '100vh',
+                position: 'fixed',
+                left: 0,
+                top: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '16px',
+                zIndex: 1000,
+                transition: 'width 0.3s ease'
+            }}>
             {/* Logo */}
             <div style={{
                 marginBottom: '20px',

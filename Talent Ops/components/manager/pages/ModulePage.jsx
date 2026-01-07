@@ -94,7 +94,9 @@ const ModulePage = ({ title, type }) => {
                             full_name, 
                             email, 
                             role, 
-                            created_at
+                            role, 
+                            created_at,
+                            avatar_url
                         `);
 
                     if (userIdsToFetch) {
@@ -130,7 +132,8 @@ const ModulePage = ({ title, type }) => {
                             role: emp.role || 'N/A',
                             dept: (projectMap[emp.id] && projectMap[emp.id].length > 0) ? projectMap[emp.id].join(', ') : 'Unassigned',
                             status: 'Active',
-                            joinDate: emp.created_at ? new Date(emp.created_at).toLocaleDateString() : 'N/A'
+                            joinDate: emp.created_at ? new Date(emp.created_at).toLocaleDateString() : 'N/A',
+                            avatar_url: emp.avatar_url
                         })));
                     }
                 } else if (type === 'status') {
@@ -1364,8 +1367,12 @@ const ModulePage = ({ title, type }) => {
                         <div style={{ padding: '32px' }}>
                             {/* Profile Section */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
-                                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 'bold', color: '#075985' }}>
-                                    {selectedEmployee.name.charAt(0)}
+                                <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 'bold', color: '#075985', overflow: 'hidden' }}>
+                                    {selectedEmployee.avatar_url ? (
+                                        <img src={selectedEmployee.avatar_url} alt={selectedEmployee.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                        selectedEmployee.name.charAt(0)
+                                    )}
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <h4 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '4px' }}>{selectedEmployee.name}</h4>
