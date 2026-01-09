@@ -12,7 +12,7 @@ import PayslipPreview from './PayslipPreview';
 import PayrollFormModal from '../PayrollFormModal';
 import './PayslipFormModal.css';
 
-const PayslipFormModal = ({ isOpen, onClose, onSuccess }) => {
+const PayslipFormModal = ({ isOpen, onClose, onSuccess, orgId }) => {
     const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -44,9 +44,9 @@ const PayslipFormModal = ({ isOpen, onClose, onSuccess }) => {
         if (isOpen) {
             setLoading(false); // Reset loading state when modal opens
             fetchEmployees();
-            generateNewPayslipNumber();
+            generateNewPayslipNumber(orgId);
         }
-    }, [isOpen]);
+    }, [isOpen, orgId]);
 
     useEffect(() => {
         if (selectedEmployee && selectedMonth) {
@@ -65,6 +65,7 @@ const PayslipFormModal = ({ isOpen, onClose, onSuccess }) => {
             const { data, error } = await supabase
                 .from('profiles')
                 .select('id, full_name, email, role')
+                .eq('org_id', orgId)
                 .order('full_name');
 
             if (error) {
@@ -96,9 +97,9 @@ const PayslipFormModal = ({ isOpen, onClose, onSuccess }) => {
         }
     };
 
-    const generateNewPayslipNumber = async () => {
+    const generateNewPayslipNumber = async (oId) => {
         console.log('🔢 Generating new payslip number...');
-        const number = await generatePayslipNumber();
+        const number = await generatePayslipNumber(oId);
         console.log('✅ Generated payslip number:', number);
         setPayslipNumber(number);
     };
@@ -139,6 +140,7 @@ const PayslipFormModal = ({ isOpen, onClose, onSuccess }) => {
                 .from('profiles')
                 .select('*')
                 .eq('id', selectedEmployee)
+                .eq('org_id', orgId)
                 .single();
 
             if (empError) throw empError;
@@ -153,6 +155,7 @@ const PayslipFormModal = ({ isOpen, onClose, onSuccess }) => {
                 .select('*')
                 .eq('employee_id', selectedEmployee)
                 .eq('month', monthStr)
+                .eq('org_id', orgId)
                 .single();
 
             console.log('Payroll query result:', { payroll, payrollError });
@@ -174,8 +177,8 @@ const PayslipFormModal = ({ isOpen, onClose, onSuccess }) => {
             }
 
             // Calculate attendance
-            const present = await calculatePresentDays(selectedEmployee, parseInt(selectedMonth), selectedYear);
-            const leaves = await calculateLeaveDays(selectedEmployee, parseInt(selectedMonth), selectedYear);
+            const present = await calculatePresentDays(selectedEmployee, parseInt(selectedMonth), selectedYear, orgId);
+            const leaves = await calculateLeaveDays(selectedEmployee, parseInt(selectedMonth), selectedYear, orgId);
 
             setPresentDays(present);
             setLeaveDays(leaves);
@@ -254,7 +257,8 @@ const PayslipFormModal = ({ isOpen, onClose, onSuccess }) => {
                 amount: payrollData.net_salary,
                 storage_url: storageUrl,
                 created_by: user?.id,
-                status: 'generated'
+                status: 'generated',
+                org_id: orgId
             };
 
             console.log('Attempting to insert payslip record:', insertData);
@@ -700,6 +704,7 @@ const PayslipFormModal = ({ isOpen, onClose, onSuccess }) => {
                 isOpen={showCreatePayroll}
                 onClose={() => setShowCreatePayroll(false)}
                 onSuccess={handlePayrollCreated}
+                orgId={orgId}
             />
         </div>
     );

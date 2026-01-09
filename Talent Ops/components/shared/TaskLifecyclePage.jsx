@@ -16,7 +16,7 @@ const LIFECYCLE_PHASES = [
 const getPhaseIndex = (phase) => LIFECYCLE_PHASES.findIndex(p => p.key === phase);
 const getPhaseLabel = (phase) => LIFECYCLE_PHASES.find(p => p.key === phase)?.label || phase;
 
-const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRole = null, currentProjectId = null, teamId = null }) => {
+const TaskLifecyclePage = ({ userRole = 'employee', userId, orgId, addToast, projectRole = null, currentProjectId = null, teamId = null }) => {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filterStatus, setFilterStatus] = useState('All');
@@ -51,7 +51,7 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRol
     useEffect(() => {
         fetchTasks();
         if (isManager && currentProjectId) fetchTeamMembers();
-    }, [userId, userRole, projectRole, currentProjectId]);
+    }, [userId, orgId, userRole, projectRole, currentProjectId]);
 
     const fetchTeamMembers = async () => {
         console.log('🔍 fetchTeamMembers called, currentProjectId:', currentProjectId);
@@ -64,7 +64,8 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRol
                     role,
                     profiles:user_id (id, full_name, email, role)
                 `)
-                .eq('project_id', currentProjectId);
+                .eq('project_id', currentProjectId)
+                .eq('org_id', orgId);
 
             console.log('📋 project_members query result:', { data, error, count: data?.length });
 
@@ -82,7 +83,8 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRol
                 console.log('⚠️ No project_members found, falling back to all profiles');
                 const { data: profiles, error: profError } = await supabase
                     .from('profiles')
-                    .select('id, full_name, email, role');
+                    .select('id, full_name, email, role')
+                    .eq('org_id', orgId);
                 if (!profError && profiles) setTeamMembers(profiles);
             }
         } catch (err) { console.error('Error fetching team members:', err); }
@@ -101,7 +103,8 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRol
                 project_id: currentProjectId,
                 team_id: teamId, // Ensure task is linked to the creator's team for visibility in ManagerTasks
                 status: 'pending', lifecycle_state: 'requirement_refiner', sub_state: 'in_progress',
-                allocated_hours: parseFloat(newTask.allocated_hours)
+                allocated_hours: parseFloat(newTask.allocated_hours),
+                org_id: orgId
             });
             if (error) throw error;
             addToast?.('Task created successfully!', 'success');
@@ -119,7 +122,7 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRol
             if (!user) return;
 
 
-            let query = supabase.from('tasks').select('*').eq('assigned_to', user.id);
+            let query = supabase.from('tasks').select('*').eq('assigned_to', user.id).eq('org_id', orgId);
             const { data: tasksData, error } = await query;
             if (error) throw error;
 
@@ -212,7 +215,8 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, addToast, projectRol
                     actual_hours: parseFloat(actualHours),
                     employee_justification: isOverage ? employeeJustification : null
                 })
-                .eq('id', taskForProof.id);
+                .eq('id', taskForProof.id)
+                .eq('org_id', orgId);
 
             if (updateError) throw updateError;
 

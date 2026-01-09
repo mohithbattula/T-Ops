@@ -7,6 +7,7 @@ interface EditEmployeeModalProps {
     onClose: () => void;
     onSuccess: () => void;
     employee: any;
+    orgId: string;
 }
 
 interface Team {
@@ -24,7 +25,7 @@ interface Department {
     department_name: string;
 }
 
-export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, onSuccess, employee }) => {
+export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, onClose, onSuccess, employee, orgId }) => {
     const [loading, setLoading] = useState(false);
     const [projects, setProjects] = useState<Project[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
@@ -76,13 +77,14 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                 joinDate: '',
             });
         }
-    }, [isOpen, employee]);
+    }, [isOpen, employee, orgId]);
 
     const fetchDepartments = async () => {
         console.log('Fetching departments...');
         const { data, error } = await supabase
             .from('departments')
             .select('id, department_name')
+            .eq('org_id', orgId)
             .order('department_name');
 
         if (error) {
@@ -100,6 +102,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                 .from('profiles')
                 .select('department, join_date, job_title, employment_type, monthly_leave_quota')
                 .eq('id', employee.id)
+                .eq('org_id', orgId)
                 .single();
 
             if (profile) {
@@ -122,6 +125,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
         const { data, error } = await supabase
             .from('projects')
             .select('id, name')
+            .eq('org_id', orgId)
             .order('name');
 
         if (error) {
@@ -138,7 +142,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
             const { data, error } = await supabase
                 .from('project_members')
                 .select('project_id')
-                .eq('user_id', employee.id);
+                .eq('user_id', employee.id)
+                .eq('org_id', orgId);
 
             if (data && data.length > 0) {
                 const projectIds = data.map(p => p.project_id);
@@ -160,6 +165,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                     .from('profiles')
                     .select('department')
                     .eq('id', employee.id)
+                    .eq('org_id', orgId)
                     .single();
 
                 if (profile?.department) {
@@ -188,6 +194,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                     .from('profiles')
                     .select('role')
                     .eq('id', user.id)
+                    .eq('org_id', orgId)
                     .single();
                 if (profile) {
                     setCurrentUserRole(profile.role);
@@ -205,6 +212,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                 .select('*')
                 .eq('employee_id', employee.id)
                 .eq('is_active', true)
+                .eq('org_id', orgId)
                 .single();
 
             if (error) {
@@ -254,7 +262,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                     monthly_leave_quota: formData.monthly_leave_quota,
                     join_date: formData.joinDate,
                 })
-                .eq('id', employee.id);
+                .eq('id', employee.id)
+                .eq('org_id', orgId);
 
             if (updateError) {
                 console.error('Update error details:', updateError);
@@ -265,7 +274,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
             const { data: currentAssignments } = await supabase
                 .from('project_members')
                 .select('project_id')
-                .eq('user_id', employee.id);
+                .eq('user_id', employee.id)
+                .eq('org_id', orgId);
 
             const currentProjectIds = currentAssignments?.map(a => a.project_id) || [];
 
@@ -282,7 +292,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                     .from('project_members')
                     .delete()
                     .eq('user_id', employee.id)
-                    .in('project_id', projectsToRemove);
+                    .in('project_id', projectsToRemove)
+                    .eq('org_id', orgId);
             }
 
             // Add to new projects
@@ -290,7 +301,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                 const newAssignments = projectsToAdd.map(projectId => ({
                     project_id: projectId,
                     user_id: employee.id,
-                    role: projectRole
+                    role: projectRole,
+                    org_id: orgId
                 }));
                 await supabase
                     .from('project_members')
@@ -303,7 +315,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                     .from('project_members')
                     .update({ role: projectRole })
                     .eq('user_id', employee.id)
-                    .in('project_id', selectedProjects);
+                    .in('project_id', selectedProjects)
+                    .eq('org_id', orgId);
             }
 
             console.log('Employee updated successfully');
@@ -337,7 +350,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                             .from('employee_finance')
                             .select('id')
                             .eq('employee_id', employee.id)
-                            .eq('is_active', true);
+                            .eq('is_active', true)
+                            .eq('org_id', orgId);
 
                         if (fetchError) {
                             console.error('Error fetching active records:', fetchError);
@@ -355,7 +369,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                                         is_active: false,
                                         effective_to: effectiveToStr,
                                     })
-                                    .eq('id', record.id);
+                                    .eq('id', record.id)
+                                    .eq('org_id', orgId);
 
                                 if (deactivateError) {
                                     console.error(`Error deactivating record ${record.id}:`, deactivateError);
@@ -373,7 +388,8 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                                 .from('employee_finance')
                                 .select('id')
                                 .eq('employee_id', employee.id)
-                                .eq('is_active', true);
+                                .eq('is_active', true)
+                                .eq('org_id', orgId);
 
                             if (checkError) {
                                 console.error('Error checking active records:', checkError);
@@ -399,6 +415,7 @@ export const EditEmployeeModal: React.FC<EditEmployeeModalProps> = ({ isOpen, on
                             effective_from: formData.effective_from,
                             is_active: true,
                             change_reason: changeReason,
+                            org_id: orgId
                         }]);
 
                     if (insertError) {

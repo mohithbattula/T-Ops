@@ -22,7 +22,7 @@ import ProjectDocuments from '../../employee/pages/ProjectDocuments';
 
 const ModulePage = ({ title, type }) => {
     const { addToast } = useToast();
-    const { userId, userRole } = useUser();
+    const { userId, userRole, orgId } = useUser();
     const { currentProject, projectRole } = useProject();
 
     // State for leave requests
@@ -79,7 +79,8 @@ const ModulePage = ({ title, type }) => {
                         const { data: members } = await supabase
                             .from('project_members')
                             .select('user_id')
-                            .eq('project_id', currentProject.id);
+                            .eq('project_id', currentProject.id)
+                            .eq('org_id', orgId);
 
                         if (members) {
                             userIdsToFetch = members.map(m => m.user_id);
@@ -97,7 +98,8 @@ const ModulePage = ({ title, type }) => {
                             role, 
                             created_at,
                             avatar_url
-                        `);
+                        `)
+                        .eq('org_id', orgId);
 
                     if (userIdsToFetch) {
                         query = query.in('id', userIdsToFetch);
@@ -110,7 +112,8 @@ const ModulePage = ({ title, type }) => {
                     // 2. Fetch project assignments from project_members
                     const { data: assignments } = await supabase
                         .from('project_members')
-                        .select('user_id, projects:project_id(name)');
+                        .select('user_id, projects:project_id(name)')
+                        .eq('org_id', orgId);
 
                     const projectMap = {};
                     if (assignments) {
@@ -140,14 +143,16 @@ const ModulePage = ({ title, type }) => {
                     // Fetch profiles
                     const { data: profiles, error: profileError } = await supabase
                         .from('profiles')
-                        .select('id, full_name');
+                        .select('id, full_name')
+                        .eq('org_id', orgId);
 
                     if (profileError) throw profileError;
 
                     // Fetch project assignments from project_members
                     const { data: assignments } = await supabase
                         .from('project_members')
-                        .select('user_id, projects:project_id(name)');
+                        .select('user_id, projects:project_id(name)')
+                        .eq('org_id', orgId);
 
                     const projectMap = {};
                     if (assignments) {
@@ -168,7 +173,8 @@ const ModulePage = ({ title, type }) => {
                     const { data: attendanceData, error: attendanceError } = await supabase
                         .from('attendance')
                         .select('employee_id, clock_in, clock_out, date, current_task')
-                        .eq('date', today);
+                        .eq('date', today)
+                        .eq('org_id', orgId);
 
                     console.log('📊 Team Status - Attendance Data:', attendanceData);
                     console.log('📊 Team Status - Profiles Count:', profiles?.length);
@@ -178,6 +184,7 @@ const ModulePage = ({ title, type }) => {
                         .from('leaves')
                         .select('employee_id')
                         .eq('status', 'approved')
+                        .eq('org_id', orgId)
                         .lte('from_date', today)
                         .gte('to_date', today);
 
@@ -246,14 +253,16 @@ const ModulePage = ({ title, type }) => {
                     // Fetch leaves and profiles separately to avoid join issues
                     const { data: leavesData, error: leavesError } = await supabase
                         .from('leaves')
-                        .select('*');
+                        .select('*')
+                        .eq('org_id', orgId);
 
                     if (leavesError) console.error('Error fetching leaves:', leavesError);
                     console.log('Manager Leaves Data RAW:', leavesData);
 
                     const { data: profilesData, error: profilesError } = await supabase
                         .from('profiles')
-                        .select('id, full_name');
+                        .select('id, full_name')
+                        .eq('org_id', orgId);
 
                     if (profilesError) console.error('Error fetching profiles:', profilesError);
                     console.log('Manager Profiles Data RAW:', profilesData);
@@ -314,7 +323,8 @@ const ModulePage = ({ title, type }) => {
                     const { data, error } = await supabase
                         .from('leaves')
                         .select('*')
-                        .eq('employee_id', user.id);
+                        .eq('employee_id', user.id)
+                        .eq('org_id', orgId);
 
                     if (error) {
                         console.error('Error fetching my leaves:', error);
@@ -362,6 +372,7 @@ const ModulePage = ({ title, type }) => {
                 .from('profiles')
                 .select('leaves_remaining')
                 .eq('id', user.id)
+                .eq('org_id', orgId)
                 .single();
 
             if (data) {
@@ -385,6 +396,7 @@ const ModulePage = ({ title, type }) => {
                         .from('policies')
                         .select('*')
                         .eq('status', 'Active')
+                        .eq('org_id', orgId)
                         .order('created_at', { ascending: false });
 
                     if (error) {
@@ -447,6 +459,7 @@ const ModulePage = ({ title, type }) => {
                 .from('tasks')
                 .select('*')
                 .eq('assigned_to', employeeId)
+                .eq('org_id', orgId)
                 .gte('due_date', startDate)
                 .lte('due_date', endDate);
 
@@ -607,7 +620,8 @@ const ModulePage = ({ title, type }) => {
                 const { error } = await supabase
                     .from('leaves')
                     .update({ status: dbStatus })
-                    .eq('id', item.id);
+                    .eq('id', item.id)
+                    .eq('org_id', orgId);
 
                 if (error) throw error;
 
@@ -623,6 +637,7 @@ const ModulePage = ({ title, type }) => {
                         .from('profiles')
                         .select('leaves_taken_this_month')
                         .eq('id', item.employee_id)
+                        .eq('org_id', orgId)
                         .single();
 
                     if (profileData) {
@@ -632,7 +647,8 @@ const ModulePage = ({ title, type }) => {
                         const { error: refundError } = await supabase
                             .from('profiles')
                             .update({ leaves_taken_this_month: newTaken })
-                            .eq('id', item.employee_id);
+                            .eq('id', item.employee_id)
+                            .eq('org_id', orgId);
 
                         if (refundError) console.error('Error refunding leave balance:', refundError);
                         else console.log(`Refunded ${diffDays} days to employee ${item.employee_id}`);
@@ -647,6 +663,7 @@ const ModulePage = ({ title, type }) => {
                     await supabase.from('notifications').insert({
                         receiver_id: item.employee_id,
                         sender_id: user.id,
+                        org_id: orgId,
                         sender_name: 'Management',
                         message: notificationMessage,
                         type: 'leave_status',
@@ -702,6 +719,7 @@ const ModulePage = ({ title, type }) => {
                 .from('leaves')
                 .insert([{
                     employee_id: user.id,
+                    org_id: orgId,
                     // team_id: user.team_id, // If we had team_id in context or fetched it
                     from_date: leaveFormData.startDate,
                     to_date: leaveFormData.endDate,
@@ -718,6 +736,7 @@ const ModulePage = ({ title, type }) => {
                     .from('profiles')
                     .select('monthly_leave_quota, leaves_taken_this_month')
                     .eq('id', user.id)
+                    .eq('org_id', orgId)
                     .single();
 
                 if (userError) throw userError;
@@ -727,7 +746,8 @@ const ModulePage = ({ title, type }) => {
                 const { error: updateError } = await supabase
                     .from('profiles')
                     .update({ leaves_taken_this_month: newTaken })
-                    .eq('id', user.id);
+                    .eq('id', user.id)
+                    .eq('org_id', orgId);
 
                 if (updateError) throw updateError;
                 setRemainingLeaves((userData.monthly_leave_quota || 0) - newTaken);
@@ -762,15 +782,15 @@ const ModulePage = ({ title, type }) => {
 
     // Render specific demos for certain types
     if (type === 'analytics') return <AnalyticsDemo currentProject={currentProject} projectRole={projectRole} userId={userId} />;
-    if (type === 'tasks') return <AllTasksView key="team-tasks" userRole={userRole} projectRole={projectRole} userId={userId} addToast={addToast} viewMode="team_tasks" />;
-    if (type === 'global-tasks') return <AllTasksView key="global-tasks" userRole={userRole} projectRole={projectRole} userId={userId} addToast={addToast} viewMode="global_tasks" />;
-    if (type === 'personal-tasks') return <AllTasksView key="personal-tasks" userRole={userRole} projectRole={projectRole} userId={userId} addToast={addToast} viewMode="my_tasks" />;
+    if (type === 'tasks') return <AllTasksView key="team-tasks" userRole={userRole} projectRole={projectRole} userId={userId} addToast={addToast} viewMode="team_tasks" orgId={orgId} />;
+    if (type === 'global-tasks') return <AllTasksView key="global-tasks" userRole={userRole} projectRole={projectRole} userId={userId} addToast={addToast} viewMode="global_tasks" orgId={orgId} />;
+    if (type === 'personal-tasks') return <AllTasksView key="personal-tasks" userRole={userRole} projectRole={projectRole} userId={userId} addToast={addToast} viewMode="my_tasks" orgId={orgId} />;
     if (title === 'Team Hierarchy' || title === 'Organizational Hierarchy') return <HierarchyDemo />;
     if (title === 'Project Hierarchy') return <ProjectHierarchyDemo />;
     if (title === 'Settings') return <SettingsDemo />;
-    if (title === 'Announcements') return <AnnouncementsPage userRole={userRole} userId={userId} />;
-    if (type === 'payroll') return <PayslipsPage userRole={userRole} userId={userId} addToast={addToast} />;
-    if (type === 'payroll-generation') return <PayrollPage userRole={userRole} userId={userId} addToast={addToast} />;
+    if (title === 'Announcements') return <AnnouncementsPage userRole={userRole} userId={userId} orgId={orgId} />;
+    if (type === 'payroll') return <PayslipsPage userRole={userRole} userId={userId} addToast={addToast} orgId={orgId} />;
+    if (type === 'payroll-generation') return <PayrollPage userRole={userRole} userId={userId} addToast={addToast} orgId={orgId} />;
     if (type === 'documents') return <ProjectDocuments />;
 
     // Mock Data Configurations
@@ -1845,6 +1865,7 @@ const ModulePage = ({ title, type }) => {
                 isOpen={showAddPolicyModal}
                 onClose={() => setShowAddPolicyModal(false)}
                 onSuccess={handlePolicySuccess}
+                orgId={orgId}
             />
         </div>
     );

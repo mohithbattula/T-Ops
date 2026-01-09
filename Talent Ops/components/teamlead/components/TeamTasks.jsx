@@ -5,7 +5,7 @@ import { useUser } from '../context/UserContext';
 import { supabase } from '../../../lib/supabaseClient';
 
 
-const TeamTasks = () => {
+const TeamTasks = ({ orgId }) => {
     // Add styles for dropdown options
     React.useEffect(() => {
         const style = document.createElement('style');
@@ -61,15 +61,15 @@ const TeamTasks = () => {
         setLoadingReview(true);
         try {
             // 1. Get Progress
-            const { data: progress } = await supabase.from('task_progress').select('*').eq('task_id', taskId).single();
+            const { data: progress } = await supabase.from('task_progress').select('*').eq('task_id', taskId).eq('org_id', orgId).single();
 
             // 2. Get Confirm Submission
-            const { data: submission } = await supabase.from('task_submissions').select('*').eq('task_id', taskId).order('submission_time', { ascending: false }).limit(1).single();
+            const { data: submission } = await supabase.from('task_submissions').select('*').eq('task_id', taskId).eq('org_id', orgId).order('submission_time', { ascending: false }).limit(1).single();
 
             // 3. Get Evidence
             let evidence = [];
             if (submission) {
-                const { data: evidenceData } = await supabase.from('task_evidence').select('*').eq('submission_id', submission.id);
+                const { data: evidenceData } = await supabase.from('task_evidence').select('*').eq('submission_id', submission.id).eq('org_id', orgId);
                 evidence = evidenceData || [];
             }
 
@@ -89,6 +89,7 @@ const TeamTasks = () => {
             await supabase.from('task_reviews').insert({
                 task_id: selectedTask.id,
                 reviewer_id: user.id,
+                org_id: orgId,
                 approved: true,
                 comment: 'Certification Approved via Dashboard',
                 reviewed_at: new Date()
@@ -118,6 +119,7 @@ const TeamTasks = () => {
             await supabase.from('task_reviews').insert({
                 task_id: selectedTask.id,
                 reviewer_id: user.id,
+                org_id: orgId,
                 approved: false,
                 comment: rejectionRemark,
                 reviewed_at: new Date()
@@ -176,6 +178,7 @@ const TeamTasks = () => {
             .from('teams')
             .select('team_name')
             .eq('id', teamId)
+            .eq('org_id', orgId)
             .single();
 
         if (error) {
@@ -192,7 +195,8 @@ const TeamTasks = () => {
             const { data: teamMembers, error: membersError } = await supabase
                 .from('profiles')
                 .select('id')
-                .eq('team_id', teamId);
+                .eq('team_id', teamId)
+                .eq('org_id', orgId);
 
             if (membersError) throw membersError;
 
@@ -208,6 +212,7 @@ const TeamTasks = () => {
                 .from('tasks')
                 .select('*')
                 .in('assigned_to', memberIds)
+                .eq('org_id', orgId)
                 .order('id', { ascending: false }); // Show latest tasks first
 
             if (tasksError) throw tasksError;
@@ -215,7 +220,8 @@ const TeamTasks = () => {
             // Fetch profiles for names
             const { data: profiles, error: profilesError } = await supabase
                 .from('profiles')
-                .select('id, full_name, email');
+                .select('id, full_name, email')
+                .eq('org_id', orgId);
 
             if (profilesError) throw profilesError;
 
@@ -232,7 +238,7 @@ const TeamTasks = () => {
                 let assignerMap = {};
 
                 if (assignerIds.length > 0) {
-                    const { data: assigners } = await supabase.from('profiles').select('id, full_name, email').in('id', assignerIds);
+                    const { data: assigners } = await supabase.from('profiles').select('id, full_name, email').in('id', assignerIds).eq('org_id', orgId);
                     if (assigners) assigners.forEach(a => assignerMap[a.id] = a.full_name || a.email);
                 }
 
@@ -256,7 +262,8 @@ const TeamTasks = () => {
         const { data } = await supabase
             .from('profiles')
             .select('id, full_name, email, role, team_id')
-            .eq('team_id', teamId);
+            .eq('team_id', teamId)
+            .eq('org_id', orgId);
 
         if (data) setEmployeesList(data);
     };
@@ -289,7 +296,8 @@ const TeamTasks = () => {
                     due_date: newTask.due_date,
                     due_time: newTask.due_time || null,
                     priority: newTask.priority.toLowerCase(),
-                    status: statusDb
+                    status: statusDb,
+                    org_id: orgId
                 }));
             } else {
                 tasksToInsert = [{
@@ -301,7 +309,8 @@ const TeamTasks = () => {
                     start_date: newTask.start_date,
                     due_date: newTask.due_date,
                     priority: newTask.priority.toLowerCase(),
-                    status: statusDb
+                    status: statusDb,
+                    org_id: orgId
                 }];
             }
 
@@ -367,7 +376,8 @@ const TeamTasks = () => {
             const { error } = await supabase
                 .from('tasks')
                 .update({ [field]: value })
-                .eq('id', taskId);
+                .eq('id', taskId)
+                .eq('org_id', orgId);
 
             if (error) throw error;
 

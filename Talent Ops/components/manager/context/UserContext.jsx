@@ -12,6 +12,7 @@ export const UserProvider = ({ children }) => {
     const [userTask, setUserTask] = useState('');
     const [lastActive, setLastActive] = useState('Now');
     const [userId, setUserId] = useState(null);
+    const [orgId, setOrgId] = useState(null);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -22,10 +23,10 @@ export const UserProvider = ({ children }) => {
                 if (user) {
                     setUserId(user.id);
 
-                    // Fetch user's profile to get full_name and role
+                    // Fetch user's profile to get full_name, role, and org_id
                     const { data: profile, error } = await supabase
                         .from('profiles')
-                        .select('full_name, email, role')
+                        .select('full_name, email, role, org_id')
                         .eq('id', user.id)
                         .single();
 
@@ -39,17 +40,20 @@ export const UserProvider = ({ children }) => {
                     if (profile) {
                         setUserName(profile.full_name || profile.email || 'User');
                         setUserRole(profile.role || 'User');
+                        setOrgId(profile.org_id);
                     }
                 } else {
                     setUserName('Guest');
                     setUserRole('Guest');
                     setUserId(null);
+                    setOrgId(null);
                 }
             } catch (err) {
                 console.error('Error in fetchUserData:', err);
                 setUserName('User');
                 setUserRole('User');
                 setUserId(null);
+                setOrgId(null);
             }
         };
 
@@ -61,6 +65,7 @@ export const UserProvider = ({ children }) => {
             userName, setUserName,
             userRole, setUserRole,
             userId,
+            orgId,
             userStatus, setUserStatus,
             userTask, setUserTask,
             lastActive, setLastActive

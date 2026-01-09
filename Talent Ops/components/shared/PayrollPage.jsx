@@ -4,7 +4,7 @@ import DataTable from '../employee/components/UI/DataTable';
 import PayrollFormModal from './PayrollFormModal';
 import { DollarSign, Eye, X } from 'lucide-react';
 
-const PayrollPage = ({ userRole, userId, addToast }) => {
+const PayrollPage = ({ userRole, userId, addToast, orgId }) => {
     const [payrolls, setPayrolls] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -39,6 +39,7 @@ const PayrollPage = ({ userRole, userId, addToast }) => {
             const { data: payrollData, error: payrollError } = await supabase
                 .from('payroll')
                 .select('*')
+                .eq('org_id', orgId)
                 .order('created_at', { ascending: false });
 
             if (payrollError) {
@@ -57,6 +58,7 @@ const PayrollPage = ({ userRole, userId, addToast }) => {
             const { data: profilesData, error: profilesError } = await supabase
                 .from('profiles')
                 .select('id, full_name, email')
+                .eq('org_id', orgId)
                 .in('id', employeeIds);
 
             if (profilesError) {
@@ -350,6 +352,7 @@ const PayrollPage = ({ userRole, userId, addToast }) => {
                     isOpen={showGenerateModal}
                     onClose={() => setShowGenerateModal(false)}
                     onSuccess={handlePayrollSuccess}
+                    orgId={orgId}
                 />
             )}
 

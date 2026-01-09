@@ -395,8 +395,18 @@ const MyTasksPage = () => {
             case 'pending_validation': return { bg: '#fef3c7', text: '#b45309' };
             case 'approved': return { bg: '#dcfce7', text: '#166534' };
             case 'rejected': return { bg: '#fee2e2', text: '#991b1b' };
+            case 'on_hold': return { bg: '#fee2e2', text: '#991b1b' };
             default: return { bg: '#f3f4f6', text: '#6b7280' };
         }
+    };
+
+    const getStatusColor = (status) => {
+        const s = status?.toLowerCase() || '';
+        if (s.includes('on_hold') || s.includes('on hold')) return { bg: '#fee2e2', text: '#991b1b' };
+        if (s.includes('completed')) return { bg: '#dcfce7', text: '#166534' };
+        if (s.includes('in_progress') || s.includes('in progress')) return { bg: '#dbeafe', text: '#1d4ed8' };
+        if (s.includes('pending')) return { bg: '#fef3c7', text: '#b45309' };
+        return { bg: '#f3f4f6', text: '#6b7280' };
     };
 
     // Lifecycle phases (copied for visual consistency)
@@ -949,7 +959,7 @@ const MyTasksPage = () => {
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>DUE DATE</label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', color: '#334155' }}>
@@ -963,11 +973,29 @@ const MyTasksPage = () => {
                                     {taskForView.lifecycle_state?.replace(/_/g, ' ') || 'Requirement Refiner'}
                                 </div>
                             </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>ALLOCATED HOURS</label>
                                 <div style={{ fontSize: '1rem', color: '#334155', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <Clock size={18} color="#64748b" />
                                     {taskForView.allocated_hours ? `${taskForView.allocated_hours} hrs` : '-'}
+                                </div>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '4px' }}>STATUS</label>
+                                <div style={{
+                                    display: 'inline-block',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 700,
+                                    color: getStatusColor(taskForView.status).text,
+                                    textTransform: 'uppercase',
+                                    backgroundColor: getStatusColor(taskForView.status).bg,
+                                    padding: '4px 10px',
+                                    borderRadius: '6px'
+                                }}>
+                                    {taskForView.status?.replace(/_/g, ' ') || 'Pending'}
                                 </div>
                             </div>
                         </div>

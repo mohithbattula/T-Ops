@@ -11,7 +11,7 @@ import { supabase } from '../lib/supabaseClient';
  * @param {string} category - 'myself' (DMs), 'team', or 'organization'
  * @returns {Promise<Array>} List of conversations
  */
-export const getConversationsByCategory = async (userId, category) => {
+export const getConversationsByCategory = async (userId, category, orgId) => {
     try {
         // Check if user is authenticated
         if (!userId) {
@@ -42,6 +42,11 @@ export const getConversationsByCategory = async (userId, category) => {
             .from('conversations')
             .select('*')
             .in('id', conversationIds);
+
+        // Filter by org_id, but also include conversations with NULL org_id (legacy conversations)
+        if (orgId) {
+            query = query.or(`org_id.eq.${orgId},org_id.is.null`);
+        }
 
         // Filter by conversation type based on category
         if (category === 'myself') {
@@ -395,6 +400,7 @@ export const getOrCreateOrgConversation = async (userId, orgId) => {
             .from('conversations')
             .select('*')
             .eq('type', 'everyone')
+            .eq('org_id', orgId)
             .maybeSingle();
 
         if (existing) {

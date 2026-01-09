@@ -14,7 +14,7 @@ import {
 import { X, FileText, CheckSquare, Square, Calculator, AlertTriangle } from 'lucide-react';
 import './payslip/PayslipFormModal.css';
 
-const PayrollFormModal = ({ isOpen, onClose, onSuccess }) => {
+const PayrollFormModal = ({ isOpen, onClose, onSuccess, orgId }) => {
     const [employees, setEmployees] = useState([]);
     const [selectedEmployees, setSelectedEmployees] = useState([]);
     const [selectAll, setSelectAll] = useState(false);
@@ -54,6 +54,7 @@ const PayrollFormModal = ({ isOpen, onClose, onSuccess }) => {
             const { data, error } = await supabase
                 .from('profiles')
                 .select('id, full_name, email, role')
+                .eq('org_id', orgId)
                 .order('full_name');
 
             if (error) {
@@ -115,14 +116,14 @@ const PayrollFormModal = ({ isOpen, onClose, onSuccess }) => {
 
             try {
                 // Check if payroll already exists
-                const exists = await checkPayrollExists(employeeId, monthYear);
+                const exists = await checkPayrollExists(employeeId, monthYear, orgId);
                 if (exists) {
                     warnings.push(`${employee.full_name}: Payroll already exists for ${monthYear}`);
                     continue;
                 }
 
                 // Fetch finance data
-                const financeData = await fetchEmployeeFinance(employeeId);
+                const financeData = await fetchEmployeeFinance(employeeId, orgId);
                 if (!financeData) {
                     warnings.push(`${employee.full_name}: No active salary data found`);
                     continue;
@@ -130,8 +131,8 @@ const PayrollFormModal = ({ isOpen, onClose, onSuccess }) => {
 
                 // Calculate attendance and leaves
                 const totalWorkingDays = getDaysInMonth(parseInt(selectedMonth), selectedYear);
-                const presentDays = await calculatePresentDays(employeeId, parseInt(selectedMonth), selectedYear);
-                const leaveDays = await calculateApprovedLeaveDays(employeeId, parseInt(selectedMonth), selectedYear);
+                const presentDays = await calculatePresentDays(employeeId, parseInt(selectedMonth), selectedYear, orgId);
+                const leaveDays = await calculateApprovedLeaveDays(employeeId, parseInt(selectedMonth), selectedYear, orgId);
 
                 // Calculate LOP
                 const lopDays = calculateLOPDays(totalWorkingDays, presentDays, leaveDays);
@@ -256,7 +257,8 @@ const PayrollFormModal = ({ isOpen, onClose, onSuccess }) => {
                         lop_days: item.lop_days,
                         net_salary: item.net_salary,
                         generated_by: user?.id,
-                        status: 'generated'
+                        status: 'generated',
+                        org_id: orgId
                     });
 
                 if (error) throw error;
@@ -270,7 +272,8 @@ const PayrollFormModal = ({ isOpen, onClose, onSuccess }) => {
                     message: notificationMessage,
                     type: 'payslip',
                     is_read: false,
-                    created_at: new Date().toISOString()
+                    created_at: new Date().toISOString(),
+                    org_id: orgId
                 });
 
                 successCount++;

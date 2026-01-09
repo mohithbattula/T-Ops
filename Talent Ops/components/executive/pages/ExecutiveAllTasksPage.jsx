@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
-import { Briefcase, ChevronRight, LayoutGrid, List } from 'lucide-react';
+import { Briefcase, ChevronRight, LayoutGrid } from 'lucide-react';
 import AllTasksView from '../../shared/AllTasksView';
 import { useUser } from '../context/UserContext';
 
-const ManagerAllTasksPage = () => {
+const ExecutiveAllTasksPage = () => {
+    console.log('🔵 ExecutiveAllTasksPage LOADED - Project Selection View');
     const { userId, orgId } = useUser();
     const [viewMode, setViewMode] = useState('projects'); // 'projects' or 'tasks'
     const [selectedProject, setSelectedProject] = useState(null);
@@ -19,7 +20,7 @@ const ManagerAllTasksPage = () => {
         try {
             setLoading(true);
 
-            // Fetch all active projects for the Manager view
+            // Fetch all active projects for the Executive view
             const { data: allProjects, error } = await supabase
                 .from('projects')
                 .select('id, name, status, description')
@@ -49,8 +50,8 @@ const ManagerAllTasksPage = () => {
     if (viewMode === 'tasks' && selectedProject) {
         return (
             <AllTasksView
-                userRole="manager"
-                projectRole="manager"
+                userRole="executive"
+                projectRole="executive"
                 userId={userId}
                 orgId={orgId}
                 projectId={selectedProject.id}
@@ -77,7 +78,7 @@ const ManagerAllTasksPage = () => {
                 <div style={{ padding: '40px', textAlign: 'center', color: '#64748b', backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                     <Briefcase size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
                     <p style={{ fontSize: '1.1rem', fontWeight: 500 }}>No active projects found</p>
-                    <p style={{ fontSize: '0.9rem' }}>You don't have any projects assigned as a manager yet.</p>
+                    <p style={{ fontSize: '0.9rem' }}>There are no active projects in the organization.</p>
                 </div>
             ) : (
                 <div style={{
@@ -175,4 +176,4 @@ const ManagerAllTasksPage = () => {
     );
 };
 
-export default ManagerAllTasksPage;
+export default ExecutiveAllTasksPage;

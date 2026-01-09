@@ -48,8 +48,8 @@ const AnalyticsDemo = () => {
 
             // Tasks Stats
             const totalTasks = tasks.length;
-            const completedTasks = tasks.filter(t => t.status === 'done' || t.status === 'Completed').length;
-            const activeTasks = tasks.filter(t => t.status === 'in_progress' || t.status === 'In Progress' || t.status === 'pending' || t.status === 'Pending').length;
+            const completedTasks = tasks.filter(t => t.status === 'completed').length;
+            const activeTasks = tasks.filter(t => t.status === 'in progress' || t.status === 'pending').length;
 
             const performanceRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
@@ -78,7 +78,7 @@ const AnalyticsDemo = () => {
                 // Count completed tasks for this month
                 const count = tasks.filter(t => {
                     const tDate = new Date(t.created_at || t.due_date); // Use created_at or due_date as proxy
-                    return (t.status === 'done' || t.status === 'Completed') &&
+                    return t.status === 'completed' &&
                         tDate.getMonth() === monthNum &&
                         tDate.getFullYear() === year;
                 }).length;

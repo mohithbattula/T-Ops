@@ -23,6 +23,8 @@ import ProjectManagement from '../executive/pages/ProjectManagement';
 import ProjectDocuments from '../employee/pages/ProjectDocuments';
 // @ts-ignore
 import RaiseTicketPage from '../shared/pages/RaiseTicketPage';
+// @ts-ignore
+import ExecutiveAllTasksPage from '../executive/pages/ExecutiveAllTasksPage';
 import RoleGuard from '../shared/RoleGuard';
 import '../executive/index.css';
 
@@ -45,7 +47,7 @@ export const ExecutiveDashboard = () => {
                                 <Route path="analytics" element={<ModulePage title="Analytics" type="analytics" />} />
                                 <Route path="projects" element={<ProjectManagement />} />
                                 <Route path="employees" element={<ModulePage title="Employees" type="workforce" />} />
-                                <Route path="tasks" element={<ModulePage title="Task Executive" type="tasks" />} />
+                                <Route path="tasks" element={<ExecutiveAllTasksPage />} />
                                 <Route path="leaves" element={<ModulePage title="Leave Requests" type="leaves" />} />
                                 <Route path="employee-status" element={<ModulePage title="Employee Status" type="status" />} />
                                 <Route path="payslips" element={<ModulePage title="Payslips" type="payroll" />} />

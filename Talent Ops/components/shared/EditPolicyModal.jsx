@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Upload, FileText } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
-export const EditPolicyModal = ({ isOpen, onClose, onSuccess, policy }) => {
+export const EditPolicyModal = ({ isOpen, onClose, onSuccess, policy, orgId }) => {
     const [formData, setFormData] = useState({
         title: '',
         category: 'General Policy',
@@ -35,6 +35,7 @@ export const EditPolicyModal = ({ isOpen, onClose, onSuccess, policy }) => {
                 const { data, error } = await supabase
                     .from('policy_categories')
                     .select('name')
+                    .eq('org_id', orgId)
                     .order('name');
 
                 if (data && data.length > 0) {
@@ -43,7 +44,8 @@ export const EditPolicyModal = ({ isOpen, onClose, onSuccess, policy }) => {
                     // Fallback to fetch distinct categories already used in policies
                     const { data: policiesData } = await supabase
                         .from('policies')
-                        .select('category');
+                        .select('category')
+                        .eq('org_id', orgId);
 
                     const usedCategories = policiesData ? [...new Set(policiesData.map(p => p.category))] : [];
                     // Merge with current defaults
@@ -68,7 +70,7 @@ export const EditPolicyModal = ({ isOpen, onClose, onSuccess, policy }) => {
         };
 
         fetchCategories();
-    }, [isOpen]);
+    }, [isOpen, orgId]);
 
     // Pre-fill form when policy changes or categories load
     useEffect(() => {
@@ -196,6 +198,7 @@ export const EditPolicyModal = ({ isOpen, onClose, onSuccess, policy }) => {
                     file_url: fileUrl
                 })
                 .eq('id', policy.id)
+                .eq('org_id', orgId)
                 .select();
 
             if (dbError) {

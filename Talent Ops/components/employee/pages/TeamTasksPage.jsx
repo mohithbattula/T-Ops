@@ -2,6 +2,7 @@ import React from 'react';
 import { useProject } from '../context/ProjectContext';
 import AllTasksView from '../../shared/AllTasksView';
 import { useToast } from '../context/ToastContext';
+import { useUser } from '../context/UserContext';
 
 /**
  * Wrapper component for AllTasksView that uses the project role
@@ -10,6 +11,7 @@ import { useToast } from '../context/ToastContext';
 const TeamTasksPage = () => {
     const { projectRole } = useProject();
     const { addToast } = useToast();
+    const { userId, orgId } = useUser();
 
     // Map project roles to the userRole expected by AllTasksView
     // manager and team_lead see all team tasks
@@ -22,6 +24,8 @@ const TeamTasksPage = () => {
         <AllTasksView
             userRole={userRole}
             projectRole={projectRole}  // Pass projectRole for validation permissions
+            userId={userId}
+            orgId={orgId}
             addToast={addToast}
         />
     );

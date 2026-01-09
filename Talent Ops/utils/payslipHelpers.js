@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabaseClient';
  * Format: PAY-YYYY-NNN (e.g., PAY-2025-001)
  * Ensures uniqueness by checking all existing payslips for the year
  */
-export const generatePayslipNumber = async () => {
+export const generatePayslipNumber = async (orgId) => {
     const year = new Date().getFullYear();
 
     try {
@@ -13,6 +13,7 @@ export const generatePayslipNumber = async () => {
         const { data, error } = await supabase
             .from('payslips')
             .select('payslip_number')
+            .eq('org_id', orgId)
             .like('payslip_number', `PAY-${year}-%`)
             .order('payslip_number', { ascending: false });
 
@@ -51,7 +52,7 @@ export const generatePayslipNumber = async () => {
 /**
  * Calculate present days for an employee in a given month
  */
-export const calculatePresentDays = async (employeeId, month, year) => {
+export const calculatePresentDays = async (employeeId, month, year, orgId) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
@@ -59,6 +60,7 @@ export const calculatePresentDays = async (employeeId, month, year) => {
         .from('attendance')
         .select('*')
         .eq('employee_id', employeeId)
+        .eq('org_id', orgId)
         .gte('date', startDate.toISOString().split('T')[0])
         .lte('date', endDate.toISOString().split('T')[0])
         .not('clock_in', 'is', null)
@@ -75,7 +77,7 @@ export const calculatePresentDays = async (employeeId, month, year) => {
 /**
  * Calculate leave days for an employee in a given month
  */
-export const calculateLeaveDays = async (employeeId, month, year) => {
+export const calculateLeaveDays = async (employeeId, month, year, orgId) => {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
 
@@ -83,6 +85,7 @@ export const calculateLeaveDays = async (employeeId, month, year) => {
         .from('leaves')
         .select('from_date, to_date')
         .eq('employee_id', employeeId)
+        .eq('org_id', orgId)
         .eq('status', 'approved')
         .or(`from_date.lte.${endDate.toISOString().split('T')[0]},to_date.gte.${startDate.toISOString().split('T')[0]}`);
 

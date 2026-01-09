@@ -5,11 +5,15 @@ import { supabase } from '../../../../lib/supabaseClient';
 const SettingsDemo = () => {
     const [userProfile, setUserProfile] = useState(null);
     const [teamName, setTeamName] = useState('');
+    const [departmentName, setDepartmentName] = useState('');
+    const [projectRoles, setProjectRoles] = useState([]);
+    const [compensationData, setCompensationData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [editMode, setEditMode] = useState(false);
     const [editedProfile, setEditedProfile] = useState({});
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
     const [showPasswordForm, setShowPasswordForm] = useState(false);
+    const [showCompensation, setShowCompensation] = useState(false);
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',
         newPassword: '',
@@ -92,17 +96,75 @@ const SettingsDemo = () => {
                     setUserProfile(fullProfile);
                     setEditedProfile(fullProfile);
 
-                    // Fetch team name if team_id exists
+                    // Fetch department name if department exists
+                    if (profile.department) {
+                        const { data: dept } = await supabase
+                            .from('departments')
+                            .select('department_name')
+                            .eq('id', profile.department)
+                            .single();
+
+                        if (dept) {
+                            setDepartmentName(dept.department_name);
+                        }
+                    }
+
+                    // Fetch primary project from team_id (which is actually project_id)
+                    let primaryProject = null;
                     if (profile.team_id) {
-                        const { data: team } = await supabase
-                            .from('teams')
-                            .select('team_name')
+                        const { data: project } = await supabase
+                            .from('projects')
+                            .select('name')
                             .eq('id', profile.team_id)
                             .single();
 
-                        if (team) {
-                            setTeamName(team.team_name);
+                        if (project) {
+                            primaryProject = {
+                                projectName: project.name,
+                                role: 'Member' // Default role for primary project
+                            };
                         }
+                    }
+
+                    // Fetch additional project assignments with roles from project_members
+                    const { data: projectAssignments } = await supabase
+                        .from('project_members')
+                        .select(`
+                            project_role,
+                            projects:project_id (
+                                name
+                            )
+                        `)
+                        .eq('employee_id', user.id);
+
+                    // Combine primary project with additional assignments
+                    const allProjects = [];
+                    if (primaryProject) {
+                        allProjects.push(primaryProject);
+                    }
+                    if (projectAssignments && projectAssignments.length > 0) {
+                        const additionalProjects = projectAssignments
+                            .filter(assignment => assignment.projects?.name !== primaryProject?.projectName)
+                            .map(assignment => ({
+                                projectName: assignment.projects?.name || 'Unknown Project',
+                                role: assignment.project_role || 'Member'
+                            }));
+                        allProjects.push(...additionalProjects);
+                    }
+
+                    if (allProjects.length > 0) {
+                        setProjectRoles(allProjects);
+                    }
+
+                    // Fetch compensation data
+                    const { data: financeData } = await supabase
+                        .from('employee_finance')
+                        .select('basic_salary, hra, allowances')
+                        .eq('employee_id', user.id)
+                        .single();
+
+                    if (financeData) {
+                        setCompensationData(financeData);
                     }
                 }
             }
@@ -523,6 +585,269 @@ const SettingsDemo = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Work Information Card */}
+            <div style={{
+                backgroundColor: 'var(--surface)',
+                borderRadius: '12px',
+                padding: '24px',
+                marginBottom: '24px',
+                boxShadow: 'var(--shadow-sm)',
+                border: '1px solid var(--border)'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                    <Users size={24} color="var(--primary)" />
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Work Information</h3>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                    {/* Job Title */}
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            color: 'var(--text-secondary)',
+                            marginBottom: '8px'
+                        }}>
+                            Job Title
+                        </label>
+                        <div style={{
+                            padding: '12px 16px',
+                            backgroundColor: 'var(--background)',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-primary)',
+                            fontWeight: 500
+                        }}>
+                            {userProfile?.job_title || 'Not assigned'}
+                        </div>
+                    </div>
+
+                    {/* Employment Type */}
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            color: 'var(--text-secondary)',
+                            marginBottom: '8px'
+                        }}>
+                            Employment Type
+                        </label>
+                        <div style={{
+                            padding: '12px 16px',
+                            backgroundColor: 'var(--background)',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-primary)',
+                            fontWeight: 500
+                        }}>
+                            {userProfile?.employment_type || 'Not specified'}
+                        </div>
+                    </div>
+
+                    {/* Department */}
+                    <div>
+                        <label style={{
+                            display: 'block',
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            color: 'var(--text-secondary)',
+                            marginBottom: '8px'
+                        }}>
+                            Department
+                        </label>
+                        <div style={{
+                            padding: '12px 16px',
+                            backgroundColor: 'var(--background)',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-primary)',
+                            fontWeight: 500
+                        }}>
+                            {departmentName || 'Not assigned'}
+                        </div>
+                    </div>
+
+                    {/* Project */}
+                    <div style={{ gridColumn: projectRoles.length > 1 ? '1 / -1' : 'auto' }}>
+                        <label style={{
+                            display: 'block',
+                            fontSize: '0.875rem',
+                            fontWeight: 600,
+                            color: 'var(--text-secondary)',
+                            marginBottom: '8px'
+                        }}>
+                            Project{projectRoles.length > 1 ? 's' : ''}
+                        </label>
+                        {projectRoles.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {projectRoles.map((assignment, index) => (
+                                    <div key={index} style={{
+                                        padding: '12px 16px',
+                                        backgroundColor: 'var(--background)',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border)',
+                                        color: 'var(--text-primary)',
+                                        fontWeight: 500,
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center'
+                                    }}>
+                                        <span>{assignment.projectName}</span>
+                                        <span style={{
+                                            fontSize: '0.75rem',
+                                            padding: '4px 12px',
+                                            borderRadius: '12px',
+                                            backgroundColor: '#e0f2fe',
+                                            color: '#075985',
+                                            fontWeight: 600
+                                        }}>
+                                            {assignment.role}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{
+                                padding: '12px 16px',
+                                backgroundColor: 'var(--background)',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border)',
+                                color: 'var(--text-secondary)',
+                                fontWeight: 500,
+                                fontStyle: 'italic'
+                            }}>
+                                No project assigned
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Compensation Details Card */}
+            {compensationData && (
+                <div style={{
+                    backgroundColor: 'var(--surface)',
+                    borderRadius: '12px',
+                    padding: '24px',
+                    marginBottom: '24px',
+                    boxShadow: 'var(--shadow-sm)',
+                    border: '1px solid var(--border)'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Compensation Details</h3>
+                        <button
+                            onClick={() => setShowCompensation(!showCompensation)}
+                            style={{
+                                padding: '8px 16px',
+                                backgroundColor: showCompensation ? 'var(--primary)' : 'var(--background)',
+                                color: showCompensation ? 'white' : 'var(--text-primary)',
+                                border: showCompensation ? 'none' : '1px solid var(--border)',
+                                borderRadius: '8px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontSize: '0.875rem',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!showCompensation) {
+                                    e.currentTarget.style.backgroundColor = '#f1f5f9';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!showCompensation) {
+                                    e.currentTarget.style.backgroundColor = 'var(--background)';
+                                }
+                            }}
+                        >
+                            {showCompensation ? <EyeOff size={16} /> : <Eye size={16} />}
+                            {showCompensation ? 'Hide Details' : 'View Details'}
+                        </button>
+                    </div>
+
+                    {showCompensation && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {/* Basic Salary */}
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '16px',
+                                backgroundColor: 'var(--background)',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border)'
+                            }}>
+                                <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                    Basic Salary
+                                </span>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                    ₹{compensationData.basic_salary?.toLocaleString('en-IN') || '0'}
+                                </span>
+                            </div>
+
+                            {/* House Rent Allowance */}
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '16px',
+                                backgroundColor: 'var(--background)',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border)'
+                            }}>
+                                <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                    House Rent Allowance
+                                </span>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                    ₹{compensationData.hra?.toLocaleString('en-IN') || '0'}
+                                </span>
+                            </div>
+
+                            {/* Other Allowances */}
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '16px',
+                                backgroundColor: 'var(--background)',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border)'
+                            }}>
+                                <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                    Other Allowances
+                                </span>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                    ₹{compensationData.allowances?.toLocaleString('en-IN') || '0'}
+                                </span>
+                            </div>
+
+                            {/* Total Monthly Compensation */}
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '20px',
+                                backgroundColor: '#f8fafc',
+                                borderRadius: '8px',
+                                border: '2px solid #e2e8f0',
+                                marginTop: '8px'
+                            }}>
+                                <span style={{ fontSize: '1.1rem', color: '#1e293b', fontWeight: 700 }}>
+                                    Total Monthly Compensation
+                                </span>
+                                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b' }}>
+                                    ₹{((compensationData.basic_salary || 0) + (compensationData.hra || 0) + (compensationData.allowances || 0)).toLocaleString('en-IN')}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Security Settings Card */}
             <div style={{

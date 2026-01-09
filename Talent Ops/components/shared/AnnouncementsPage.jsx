@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Calendar, MapPin, Clock, Users, User, X, Plus, CheckCircle2, Archive, AlertCircle, Trash2 } from 'lucide-react';
 
-const AnnouncementsPage = ({ userRole, userId }) => {
+const AnnouncementsPage = ({ userRole, userId, orgId }) => {
     const [announcements, setAnnouncements] = useState([]);
     const [filteredAnnouncements, setFilteredAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ const AnnouncementsPage = ({ userRole, userId }) => {
 
     useEffect(() => {
         fetchData();
-    }, [userRole, userId, showAddModal]);
+    }, [userRole, userId, orgId, showAddModal]);
 
     const fetchData = async () => {
         try {
@@ -53,6 +53,7 @@ const AnnouncementsPage = ({ userRole, userId }) => {
                 .from('profiles')
                 .select('team_id, full_name')
                 .eq('id', userId)
+                .eq('org_id', orgId)
                 .single();
             if (profile) {
                 setUserTeamId(profile.team_id);
@@ -63,6 +64,7 @@ const AnnouncementsPage = ({ userRole, userId }) => {
             const { data, error } = await supabase
                 .from('announcements')
                 .select('*')
+                .eq('org_id', orgId)
                 .order('event_date', { ascending: true });
 
             if (error) throw error;
@@ -103,7 +105,7 @@ const AnnouncementsPage = ({ userRole, userId }) => {
                 if (updates.length > 0) {
                     // Perform updates in background
                     updates.forEach(async (update) => {
-                        await supabase.from('announcements').update({ status: update.status }).eq('id', update.id);
+                        await supabase.from('announcements').update({ status: update.status }).eq('id', update.id).eq('org_id', orgId);
                     });
 
                     // Update local data immediately
@@ -258,7 +260,8 @@ const AnnouncementsPage = ({ userRole, userId }) => {
                         const { data: teams } = await supabase
                             .from('projects')
                             .select('name')
-                            .in('id', teamIds);
+                            .in('id', teamIds)
+                            .eq('org_id', orgId);
 
                         if (teams) {
                             setEventParticipants({
@@ -280,7 +283,8 @@ const AnnouncementsPage = ({ userRole, userId }) => {
                         const { data: profiles } = await supabase
                             .from('profiles')
                             .select('full_name')
-                            .in('id', empIds);
+                            .in('id', empIds)
+                            .eq('org_id', orgId);
 
                         if (profiles) {
                             setEventParticipants({
@@ -311,11 +315,11 @@ const AnnouncementsPage = ({ userRole, userId }) => {
             setLoadingOptions(true);
             try {
                 // Fetch Projects (instead of teams)
-                const { data: teams } = await supabase.from('projects').select('id, name');
+                const { data: teams } = await supabase.from('projects').select('id, name').eq('org_id', orgId);
                 if (teams) setAllTeams(teams.map(t => ({ id: t.id, name: t.name })));
 
                 // Fetch Employees
-                const { data: emps } = await supabase.from('profiles').select('id, full_name, team_id');
+                const { data: emps } = await supabase.from('profiles').select('id, full_name, team_id').eq('org_id', orgId);
                 if (emps) setAllEmployees(emps.map(e => ({ id: e.id, name: e.full_name, teamId: e.team_id })));
 
             } catch (e) {
@@ -362,7 +366,8 @@ const AnnouncementsPage = ({ userRole, userId }) => {
                 event_for: eventScope === 'my_team' ? 'employee' : eventScope,
                 teams: eventScope === 'team' ? selectedTeams : [],
                 employees: (eventScope === 'employee' || eventScope === 'my_team') ? selectedEmployees : [],
-                status: initialStatus
+                status: initialStatus,
+                org_id: orgId
             };
 
             let response = await supabase.from('announcements').insert(payload);
@@ -418,7 +423,8 @@ const AnnouncementsPage = ({ userRole, userId }) => {
                         message: `New Announcement: ${newEvent.title}`,
                         type: 'announcement',
                         is_read: false,
-                        created_at: new Date().toISOString()
+                        created_at: new Date().toISOString(),
+                        org_id: orgId
                     }));
 
                     const { error: notifError } = await supabase
@@ -446,7 +452,8 @@ const AnnouncementsPage = ({ userRole, userId }) => {
             const { error } = await supabase
                 .from('announcements')
                 .update({ status: newStatus })
-                .eq('id', eventId);
+                .eq('id', eventId)
+                .eq('org_id', orgId);
 
             if (error) {
                 // Graceful fallback if column missing
@@ -487,7 +494,8 @@ const AnnouncementsPage = ({ userRole, userId }) => {
             const { error } = await supabase
                 .from('announcements')
                 .delete()
-                .eq('id', eventId);
+                .eq('id', eventId)
+                .eq('org_id', orgId);
 
             if (error) throw error;
 

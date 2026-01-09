@@ -19,7 +19,7 @@ import ProjectDocuments from './ProjectDocuments';
 
 const ModulePage = ({ title, type }) => {
     const { addToast } = useToast();
-    const { currentTeam, userName, userId, teamId, userRole } = useUser();
+    const { currentTeam, userName, userId, teamId, orgId, userRole } = useUser();
     const { projectRole, currentProject } = useProject();
 
     // State for leave requests
@@ -60,7 +60,8 @@ const ModulePage = ({ title, type }) => {
             const { data, error } = await supabase
                 .from('leaves')
                 .select('*')
-                .eq('employee_id', user.id);
+                .eq('employee_id', user.id)
+                .eq('org_id', orgId);
 
             if (error) {
                 console.error('Error fetching leaves:', error);
@@ -120,6 +121,7 @@ const ModulePage = ({ title, type }) => {
                 .from('profiles')
                 .select('leaves_remaining')
                 .eq('id', user.id)
+                .eq('org_id', orgId)
                 .single();
 
             if (data) {
@@ -144,7 +146,8 @@ const ModulePage = ({ title, type }) => {
                 const { data: memberIds, error: memberError } = await supabase
                     .from('project_members')
                     .select('user_id')
-                    .eq('project_id', currentProject.id);
+                    .eq('project_id', currentProject.id)
+                    .eq('org_id', orgId);
 
                 if (memberError) throw memberError;
 
@@ -159,12 +162,13 @@ const ModulePage = ({ title, type }) => {
                 const { data: profiles, error: profileError } = await supabase
                     .from('profiles')
                     .select('*')
-                    .in('id', userIds);
+                    .in('id', userIds)
+                    .eq('org_id', orgId);
 
                 if (profileError) throw profileError;
 
                 // 2.1 Fetch Departments for mapping
-                const { data: deptData } = await supabase.from('departments').select('id, department_name');
+                const { data: deptData } = await supabase.from('departments').select('id, department_name').eq('org_id', orgId);
                 const deptMap = {};
                 if (deptData) {
                     deptData.forEach(d => deptMap[d.id] = d.department_name);
@@ -180,6 +184,7 @@ const ModulePage = ({ title, type }) => {
                     .from('attendance')
                     .select('employee_id, clock_in, clock_out')
                     .in('employee_id', userIds)
+                    .eq('org_id', orgId)
                     .eq('date', today);
 
                 const activeSet = new Set();
@@ -196,6 +201,7 @@ const ModulePage = ({ title, type }) => {
                     .from('leaves')
                     .select('employee_id')
                     .eq('status', 'approved')
+                    .eq('org_id', orgId)
                     .in('employee_id', userIds)
                     .lte('from_date', today)
                     .gte('to_date', today);
@@ -263,6 +269,7 @@ const ModulePage = ({ title, type }) => {
                         .from('policies')
                         .select('*')
                         .eq('status', 'Active')
+                        .eq('org_id', orgId)
                         .order('created_at', { ascending: false });
 
                     if (error) {
@@ -319,6 +326,7 @@ const ModulePage = ({ title, type }) => {
                 .from('tasks')
                 .select('*')
                 .eq('assigned_to', employeeId)
+                .eq('org_id', orgId)
                 .gte('due_date', startDate)
                 .lte('due_date', endDate);
 
@@ -384,7 +392,8 @@ const ModulePage = ({ title, type }) => {
             const { error: deleteError } = await supabase
                 .from('leaves')
                 .delete()
-                .eq('id', leaveRequest.id);
+                .eq('id', leaveRequest.id)
+                .eq('org_id', orgId);
 
             if (deleteError) throw deleteError;
 
@@ -394,6 +403,7 @@ const ModulePage = ({ title, type }) => {
                     .from('profiles')
                     .select('leaves_taken_this_month, monthly_leave_quota')
                     .eq('id', userId)
+                    .eq('org_id', orgId)
                     .single();
 
                 if (!userError && userData) {
@@ -401,7 +411,8 @@ const ModulePage = ({ title, type }) => {
                     await supabase
                         .from('profiles')
                         .update({ leaves_taken_this_month: newTaken })
-                        .eq('id', userId);
+                        .eq('id', userId)
+                        .eq('org_id', orgId);
 
                     // Update local remaining leaves state
                     setRemainingLeaves((userData.monthly_leave_quota || 0) - newTaken);
@@ -552,7 +563,7 @@ const ModulePage = ({ title, type }) => {
                     created_at: new Date().toISOString()
                 };
 
-                const { error } = await supabase.from('notifications').insert([notification]);
+                const { error } = await supabase.from('notifications').insert([{ ...notification, org_id: orgId }]);
                 if (error) console.error('Error sending approval notification:', error);
             };
             notifyEmployee();
@@ -583,6 +594,7 @@ const ModulePage = ({ title, type }) => {
                 .from('profiles')
                 .select('team_id')
                 .eq('id', userId)
+                .eq('org_id', orgId)
                 .single();
 
             if (profileError) {
@@ -600,6 +612,7 @@ const ModulePage = ({ title, type }) => {
                 .insert([
                     {
                         employee_id: userId,
+                        org_id: orgId,
                         team_id: currentTeamId,
                         from_date: leaveFormData.startDate,
                         to_date: leaveFormData.endDate,
@@ -621,6 +634,7 @@ const ModulePage = ({ title, type }) => {
                         .insert([
                             {
                                 employee_id: userId,
+                                org_id: orgId,
                                 team_id: null,
                                 from_date: leaveFormData.startDate,
                                 to_date: leaveFormData.endDate,
@@ -654,6 +668,7 @@ const ModulePage = ({ title, type }) => {
                     .from('profiles')
                     .select('monthly_leave_quota, leaves_taken_this_month')
                     .eq('id', userId)
+                    .eq('org_id', orgId)
                     .single();
 
                 if (userError) throw userError;
@@ -664,7 +679,8 @@ const ModulePage = ({ title, type }) => {
                 const { error: updateError } = await supabase
                     .from('profiles')
                     .update({ leaves_taken_this_month: newTaken })
-                    .eq('id', userId);
+                    .eq('id', userId)
+                    .eq('org_id', orgId);
 
                 if (updateError) throw updateError;
 
@@ -683,12 +699,14 @@ const ModulePage = ({ title, type }) => {
                     .from('profiles')
                     .select('id')
                     .eq('team_id', teamId)
+                    .eq('org_id', orgId)
                     .in('role', ['manager', 'team_lead']);
 
                 // 2. Find All Executives
                 const { data: executives } = await supabase
                     .from('profiles')
                     .select('id')
+                    .eq('org_id', orgId)
                     .eq('role', 'executive');
 
                 // 3. Combine recipients (Manager + Executives), excluding current user
@@ -702,6 +720,7 @@ const ModulePage = ({ title, type }) => {
                     const notificationRecords = Array.from(recipientIds).map(receiverId => ({
                         receiver_id: receiverId,
                         sender_id: senderId, // <--- Now using the explicitly fetched ID
+                        org_id: orgId,
                         sender_name: userName || 'Employee',
                         message: `${userName || 'Employee'} has applied for ${leaveFormData.leaveType}`,
                         type: 'leave_request',
@@ -736,6 +755,7 @@ const ModulePage = ({ title, type }) => {
                 .from('leaves')
                 .select('*')
                 .eq('employee_id', userId)
+                .eq('org_id', orgId)
                 .order('created_at', { ascending: false });
 
             if (!fetchError && newLeaves) {
@@ -786,14 +806,14 @@ const ModulePage = ({ title, type }) => {
 
     // Render specific demos for certain types
     if (type === 'analytics') return <AnalyticsDemo />;
-    if (type === 'tasks') return <TaskLifecyclePage userRole={userRole} userId={userId} addToast={addToast} projectRole={projectRole} currentProjectId={currentProject?.id} teamId={teamId} />;
+    if (type === 'tasks') return <TaskLifecyclePage userRole={userRole} userId={userId} addToast={addToast} projectRole={projectRole} currentProjectId={currentProject?.id} teamId={teamId} orgId={orgId} />;
     if (title === 'Team Hierarchy' || title === 'Organizational Hierarchy') return <HierarchyDemo />;
     if (title === 'Project Hierarchy') return <ProjectHierarchyDemo />;
     if (title === 'Settings') return <SettingsDemo />;
-    if (title === 'Announcements') return <AnnouncementsPage userRole={userRole} userId={userId} />;
+    if (title === 'Announcements') return <AnnouncementsPage userRole={userRole} userId={userId} orgId={orgId} />;
     if (type === 'status') return <StatusDemo />;
     if (type === 'project-documents') return <ProjectDocuments />;
-    if (type === 'payroll') return <PayslipsPage userRole={userRole} userId={userId} addToast={addToast} />;
+    if (type === 'payroll') return <PayslipsPage userRole={userRole} userId={userId} addToast={addToast} orgId={orgId} />;
 
     // Helper to filter data by team
     const filterData = (data) => {

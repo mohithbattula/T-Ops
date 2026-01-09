@@ -6,6 +6,7 @@ interface AddEmployeeModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    orgId: string;
 }
 
 interface Team {
@@ -23,7 +24,7 @@ interface Department {
     department_name: string;
 }
 
-export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, onSuccess }) => {
+export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onClose, onSuccess, orgId }) => {
     console.log('🔵 AddEmployeeModal rendered, isOpen:', isOpen);
     const [loading, setLoading] = useState(false);
     const [projects, setProjects] = useState<Project[]>([]);
@@ -52,13 +53,14 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onCl
             fetchProjects();
             fetchDepartments();
         }
-    }, [isOpen]);
+    }, [isOpen, orgId]);
 
     const fetchDepartments = async () => {
         console.log('Fetching departments...');
         const { data, error } = await supabase
             .from('departments')
             .select('id, department_name')
+            .eq('org_id', orgId)
             .order('department_name');
 
         if (error) {
@@ -74,6 +76,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onCl
         const { data, error } = await supabase
             .from('projects')
             .select('id, name')
+            .eq('org_id', orgId)
             .order('name');
 
         if (error) {
@@ -125,6 +128,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onCl
                         allowances: parseFloat(formData.allowances) || 0,
                         join_date: formData.joinDate,
                         employment_type: formData.employment_type,
+                        org_id: orgId
                     }),
                 }
             );
@@ -156,6 +160,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onCl
                         .from('profiles')
                         .select('id')
                         .eq('email', formData.email)
+                        .eq('org_id', orgId)
                         .single();
 
                     if (profileError) {
@@ -179,6 +184,7 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onCl
                             .from('profiles')
                             .update(updateData)
                             .eq('id', userId)
+                            .eq('org_id', orgId)
                             .select();
 
                         if (updateError) {
@@ -193,7 +199,8 @@ export const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({ isOpen, onCl
                     const projectAssignments = selectedProjects.map(projectId => ({
                         project_id: projectId,
                         user_id: userId,
-                        role: projectRole
+                        role: projectRole,
+                        org_id: orgId
                     }));
 
                     const { error: projectMemberError } = await supabase

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Upload, FileText } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
-export const AddPolicyModal = ({ isOpen, onClose, onSuccess }) => {
+export const AddPolicyModal = ({ isOpen, onClose, onSuccess, orgId }) => {
     const [formData, setFormData] = useState({
         title: '',
         category: 'General Policy',
@@ -23,6 +23,7 @@ export const AddPolicyModal = ({ isOpen, onClose, onSuccess }) => {
                 const { data, error } = await supabase
                     .from('policy_categories')
                     .select('name')
+                    .eq('org_id', orgId)
                     .order('name');
 
                 if (data && data.length > 0) {
@@ -32,7 +33,8 @@ export const AddPolicyModal = ({ isOpen, onClose, onSuccess }) => {
                     // Also fetch distinct categories already used in policies to be dynamic
                     const { data: policiesData } = await supabase
                         .from('policies')
-                        .select('category');
+                        .select('category')
+                        .eq('org_id', orgId);
 
                     const usedCategories = policiesData ? [...new Set(policiesData.map(p => p.category))] : [];
                     const defaultCategories = [
@@ -63,11 +65,10 @@ export const AddPolicyModal = ({ isOpen, onClose, onSuccess }) => {
                 ]);
             }
         };
-
         if (isOpen) {
             fetchCategories();
         }
-    }, [isOpen]);
+    }, [isOpen, orgId]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -163,9 +164,9 @@ export const AddPolicyModal = ({ isOpen, onClose, onSuccess }) => {
                     {
                         title: formData.title,
                         category: formData.category === 'Other' ? customCategory : formData.category,
-                        effective_date: formData.effective_date,
                         status: formData.status,
-                        file_url: publicUrl
+                        file_url: publicUrl,
+                        org_id: orgId
                     }
                 ])
                 .select();
@@ -185,19 +186,22 @@ export const AddPolicyModal = ({ isOpen, onClose, onSuccess }) => {
             // 4. Send Notification to All Employees
             const { data: allEmployees } = await supabase
                 .from('profiles')
-                .select('id');
+                .select('id')
+                .eq('org_id', orgId);
 
             if (allEmployees && allEmployees.length > 0) {
                 const { data: { user } } = await supabase.auth.getUser();
+                const notificationMessage = `New policy added: ${formData.title}`;
 
                 const notifications = allEmployees.map(emp => ({
                     receiver_id: emp.id,
                     sender_id: user?.id,
                     sender_name: 'HR Department',
-                    message: `New policy added: ${formData.title}`,
+                    message: notificationMessage,
                     type: 'policy',
                     is_read: false,
-                    created_at: new Date().toISOString()
+                    created_at: new Date().toISOString(),
+                    org_id: orgId
                 }));
 
                 const { error: notifError } = await supabase.from('notifications').insert(notifications);

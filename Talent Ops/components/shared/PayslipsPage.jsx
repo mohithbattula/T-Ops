@@ -4,7 +4,7 @@ import { Download, FileText, Calendar, DollarSign, Plus } from 'lucide-react';
 import DataTable from '../employee/components/UI/DataTable';
 import PayslipFormModal from './payslip/PayslipFormModal';
 
-const PayslipsPage = ({ userRole, userId, addToast }) => {
+const PayslipsPage = ({ userRole, userId, addToast, orgId }) => {
     const [payslips, setPayslips] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -27,7 +27,12 @@ const PayslipsPage = ({ userRole, userId, addToast }) => {
     useEffect(() => {
         const channel = supabase
             .channel('payslips-realtime')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'payslips' }, (payload) => {
+            .on('postgres_changes', {
+                event: '*',
+                schema: 'public',
+                table: 'payslips',
+                filter: `org_id=eq.${orgId}`
+            }, (payload) => {
                 console.log('Realtime Payslip Update:', payload);
                 setRefreshTrigger(prev => prev + 1);
             })
@@ -55,6 +60,7 @@ const PayslipsPage = ({ userRole, userId, addToast }) => {
             let payslipsQuery = supabase
                 .from('payslips')
                 .select('*')
+                .eq('org_id', orgId)
                 .order('month', { ascending: false });
 
             // Check if user is Executive or Manager (they see ALL payslips)
@@ -94,6 +100,7 @@ const PayslipsPage = ({ userRole, userId, addToast }) => {
             const { data: profilesData, error: profilesError } = await supabase
                 .from('profiles')
                 .select('id, full_name, email, role')
+                .eq('org_id', orgId)
                 .in('id', employeeIds);
 
             if (profilesError) {
@@ -418,6 +425,7 @@ const PayslipsPage = ({ userRole, userId, addToast }) => {
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
                 onSuccess={handlePayslipSuccess}
+                orgId={orgId}
             />
         </div>
     );

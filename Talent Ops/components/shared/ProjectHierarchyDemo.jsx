@@ -784,14 +784,14 @@ const ProjectHierarchyDemo = ({ isEditingEnabled = false }) => {
                                                             onClick={() => setSelectedEmployee(mgr)}
                                                         />
 
-                                                        {/* Down Line to Bottom Bar (if Leads exist) */}
-                                                        {project.leads.length > 0 && <div style={{ width: '2px', height: '20px', backgroundColor: '#cbd5e1' }}></div>}
+                                                        {/* Down Line to Bottom Bar (if Leads or Staff exist) */}
+                                                        {(project.leads.length > 0 || project.staff.length > 0) && <div style={{ width: '2px', height: '20px', backgroundColor: '#cbd5e1' }}></div>}
                                                     </div>
                                                 ))}
                                             </div>
 
-                                            {/* Bottom Horizontal Bar (Recombine for Leads) */}
-                                            {project.managers.length > 1 && project.leads.length > 0 && (
+                                            {/* Bottom Horizontal Bar (Recombine for Leads or Staff) */}
+                                            {project.managers.length > 1 && (project.leads.length > 0 || project.staff.length > 0) && (
                                                 <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', width: `${(project.managers.length - 1) * 240}px`, height: '2px', backgroundColor: '#cbd5e1' }}></div>
                                             )}
 
@@ -804,15 +804,15 @@ const ProjectHierarchyDemo = ({ isEditingEnabled = false }) => {
                                             {/* We need a single vertical line from the Bottom Bar Center to the Leads? */}
                                             {/* If multiple managers, we have Bottom Bar. */}
                                             {/* We need a line from that Bar Downwards. */}
-                                            {project.leads.length > 0 && (
+                                            {(project.leads.length > 0 || project.staff.length > 0) && (
                                                 <div style={{ width: '2px', height: '20px', backgroundColor: '#cbd5e1' }}></div>
                                             )}
                                         </div>
                                     ) : (
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                             <div style={{ padding: '10px', border: '1px dashed #cbd5e1', borderRadius: '8px', color: '#94a3b8' }}>No Manager</div>
-                                            {/* Connector to Leads */}
-                                            {project.leads.length > 0 && <div style={{ width: '2px', height: '40px', backgroundColor: '#cbd5e1' }}></div>}
+                                            {/* Connector to Leads or Staff */}
+                                            {(project.leads.length > 0 || project.staff.length > 0) && <div style={{ width: '2px', height: '40px', backgroundColor: '#cbd5e1' }}></div>}
                                         </div>
                                     )}
                                 </div>

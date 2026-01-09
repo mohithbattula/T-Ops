@@ -25,7 +25,7 @@ import ProjectAnalytics from '../../shared/ProjectAnalytics/ProjectAnalytics';
 
 const ModulePage = ({ title, type }) => {
     const { addToast } = useToast();
-    const { userId, userRole } = useUser();
+    const { userId, orgId, userRole } = useUser();
 
     // State for leave requests
     const [leaveRequests, setLeaveRequests] = useState([]);
@@ -114,11 +114,11 @@ const ModulePage = ({ title, type }) => {
         const fetchMetadata = async () => {
             try {
                 // Fetch Projects
-                const { data: projData } = await supabase.from('projects').select('id, name').order('name');
+                const { data: projData } = await supabase.from('projects').select('id, name').eq('org_id', orgId).order('name');
                 setProjects(projData || []);
 
                 // Fetch Departments
-                const { data: deptData } = await supabase.from('departments').select('id, department_name');
+                const { data: deptData } = await supabase.from('departments').select('id, department_name').eq('org_id', orgId);
                 setDepartments(deptData || []);
             } catch (err) {
                 console.error('Error fetching metadata:', err);
@@ -147,13 +147,10 @@ const ModulePage = ({ title, type }) => {
                             job_title,
                             employment_type,
                             created_at,
-                            department,
-                            job_title,
-                            employment_type,
-                            created_at,
                             join_date,
                             avatar_url
                         `)
+                        .eq('org_id', orgId)
                         .neq('is_hidden', true);
 
                     if (profilesError) {
@@ -172,7 +169,8 @@ const ModulePage = ({ title, type }) => {
                             projects:project_id (
                                 name
                             )
-                        `);
+                        `)
+                        .eq('org_id', orgId);
 
                     if (teamMembersError) {
                         console.error('Error fetching team members:', teamMembersError);
@@ -202,13 +200,15 @@ const ModulePage = ({ title, type }) => {
                     const { data: attendanceData, error: attendanceError } = await supabase
                         .from('attendance')
                         .select('employee_id, clock_in, clock_out, date, current_task')
-                        .eq('date', today);
+                        .eq('date', today)
+                        .eq('org_id', orgId);
 
                     // Fetch TODAY'S leaves for "On Leave" status
                     const { data: leavesData } = await supabase
                         .from('leaves')
                         .select('employee_id')
                         .eq('status', 'approved')
+                        .eq('org_id', orgId)
                         .lte('from_date', today)
                         .gte('to_date', today);
 
@@ -228,7 +228,7 @@ const ModulePage = ({ title, type }) => {
                     }
 
                     // 4. Fetch Teams for Dropdown
-                    const { data: teamsData, error: teamsError } = await supabase.from('teams').select('id, team_name');
+                    const { data: teamsData, error: teamsError } = await supabase.from('teams').select('id, team_name').eq('org_id', orgId);
                     if (teamsData) {
                         setTeamOptions(teamsData);
                     } else if (teamsError) {
@@ -343,7 +343,8 @@ const ModulePage = ({ title, type }) => {
                     // Fetch all leaves
                     const { data: leavesData, error: leavesError } = await supabase
                         .from('leaves')
-                        .select('*');
+                        .select('*')
+                        .eq('org_id', orgId);
 
                     if (leavesError) {
                         console.error('Error fetching leaves:', leavesError);
@@ -355,7 +356,8 @@ const ModulePage = ({ title, type }) => {
                     // Fetch profiles for name mapping
                     const { data: profilesData, error: profilesError } = await supabase
                         .from('profiles')
-                        .select('id, full_name');
+                        .select('id, full_name')
+                        .eq('org_id', orgId);
 
                     if (profilesError) console.error('Error fetching profiles:', profilesError);
 
@@ -429,6 +431,7 @@ const ModulePage = ({ title, type }) => {
                     const { data, error } = await supabase
                         .from('policies')
                         .select('*')
+                        .eq('org_id', orgId)
                         .order('created_at', { ascending: false });
 
                     if (error) {
@@ -465,7 +468,7 @@ const ModulePage = ({ title, type }) => {
 
         const sub = supabase
             .channel('executive_attendance_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, (payload) => {
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance', filter: `org_id=eq.${orgId}` }, (payload) => {
                 setRefreshTrigger(prev => prev + 1);
             })
             .subscribe();
@@ -481,6 +484,7 @@ const ModulePage = ({ title, type }) => {
                 .from('tasks')
                 .select('*')
                 .eq('assigned_to', employeeId)
+                .eq('org_id', orgId)
                 .gte('due_date', startDate)
                 .lte('due_date', endDate);
 
@@ -499,6 +503,7 @@ const ModulePage = ({ title, type }) => {
                 .select('*')
                 .eq('employee_id', employeeId)
                 .eq('is_active', true)
+                .eq('org_id', orgId)
                 .single();
 
             if (error) {
@@ -548,6 +553,7 @@ const ModulePage = ({ title, type }) => {
                         basic_salary: parseFloat(addEmployeeFormData.basic_salary),
                         hra: parseFloat(addEmployeeFormData.hra),
                         allowances: parseFloat(addEmployeeFormData.allowances) || 0,
+                        org_id: orgId
                     }),
                 }
             );
@@ -575,6 +581,7 @@ const ModulePage = ({ title, type }) => {
                     .from('profiles')
                     .select('id')
                     .eq('email', addEmployeeFormData.email)
+                    .eq('org_id', orgId)
                     .single();
 
                 if (profileError) {
@@ -591,7 +598,8 @@ const ModulePage = ({ title, type }) => {
                     await supabase
                         .from('profiles')
                         .update({ department: addEmployeeFormData.department_id })
-                        .eq('id', userId);
+                        .eq('id', userId)
+                        .eq('org_id', orgId);
                 }
 
                 // If a project was selected, add the user to project_members
@@ -603,6 +611,7 @@ const ModulePage = ({ title, type }) => {
                         .insert({
                             project_id: selectedProjectsForAdd[0],
                             user_id: userId,
+                            org_id: orgId,
                             role: addEmployeeFormData.role.toLowerCase()
                         });
 
@@ -618,6 +627,7 @@ const ModulePage = ({ title, type }) => {
                         .insert({
                             team_id: selectedProjectsForAdd[0],
                             profile_id: userId,
+                            org_id: orgId,
                             role_in_project: addEmployeeFormData.role.toLowerCase()
                         });
 
@@ -631,7 +641,8 @@ const ModulePage = ({ title, type }) => {
                     const { error: profileTeamIdError } = await supabase
                         .from('profiles')
                         .update({ team_id: selectedProjectsForAdd[0] })
-                        .eq('id', userId);
+                        .eq('id', userId)
+                        .eq('org_id', orgId);
 
                     if (profileTeamIdError) {
                         console.error('Error updating team_id in profiles:', profileTeamIdError);
@@ -854,7 +865,8 @@ const ModulePage = ({ title, type }) => {
                 const { error } = await supabase
                     .from('leaves')
                     .update({ status: dbStatus })
-                    .eq('id', item.id);
+                    .eq('id', item.id)
+                    .eq('org_id', orgId);
 
                 if (error) throw error;
 
@@ -870,6 +882,7 @@ const ModulePage = ({ title, type }) => {
                         .from('profiles')
                         .select('leaves_taken_this_month')
                         .eq('id', item.employee_id)
+                        .eq('org_id', orgId)
                         .single();
 
                     if (profileData) {
@@ -879,7 +892,8 @@ const ModulePage = ({ title, type }) => {
                         const { error: refundError } = await supabase
                             .from('profiles')
                             .update({ leaves_taken_this_month: newTaken })
-                            .eq('id', item.employee_id);
+                            .eq('id', item.employee_id)
+                            .eq('org_id', orgId);
 
                         if (refundError) console.error('Error refunding leave balance:', refundError);
                         else console.log(`Refunded ${diffDays} days to employee ${item.employee_id}`);
@@ -894,6 +908,7 @@ const ModulePage = ({ title, type }) => {
                     await supabase.from('notifications').insert({
                         receiver_id: item.employee_id,
                         sender_id: user.id,
+                        org_id: orgId,
                         sender_name: 'Management',
                         message: notificationMessage,
                         type: 'leave_status', // specific type
@@ -988,15 +1003,15 @@ const ModulePage = ({ title, type }) => {
 
     // Render specific demos for certain types
     if (type === 'analytics') return <AnalyticsDemo />;
-    if (type === 'tasks') return <AllTasksView userRole={userRole} userId={userId} addToast={addToast} />;
+    if (type === 'tasks') return <AllTasksView userRole={userRole} userId={userId} addToast={addToast} orgId={orgId} />;
     if (title === 'Team Hierarchy' || title === 'Organizational Hierarchy') return <HierarchyDemo />;
     if (title === 'Project Hierarchy') return <ProjectHierarchyDemo isEditingEnabled={true} />;
     if (title === 'Settings') return <SettingsDemo />;
-    if (title === 'Announcements') return <AnnouncementsPage userRole={userRole} userId={userId} />;
-    if (type === 'payroll') return <PayslipsPage userRole={userRole} userId={userId} addToast={addToast} />;
-    if (type === 'payroll-generation') return <PayrollPage userRole={userRole} userId={userId} addToast={addToast} />;
+    if (title === 'Announcements') return <AnnouncementsPage userRole={userRole} userId={userId} orgId={orgId} />;
+    if (type === 'payroll') return <PayslipsPage userRole={userRole} userId={userId} addToast={addToast} orgId={orgId} />;
+    if (type === 'payroll-generation') return <PayrollPage userRole={userRole} userId={userId} addToast={addToast} orgId={orgId} />;
     if (type === 'invoice') return <InvoiceGenerator />;
-    if (type === 'project-analytics') return <ProjectAnalytics userRole="executive" dashboardPrefix="/executive-dashboard" />;
+    if (type === 'project-analytics') return <ProjectAnalytics userRole="executive" dashboardPrefix="/executive-dashboard" orgId={orgId} />;
 
     // Mock Data Configurations
     const configs = {
@@ -1929,6 +1944,7 @@ const ModulePage = ({ title, type }) => {
             <AddEmployeeModal
                 isOpen={showAddEmployeeModal}
                 onClose={() => setShowAddEmployeeModal(false)}
+                orgId={orgId}
                 onSuccess={async () => {
                     addToast('Employee added successfully', 'success');
                     setShowAddEmployeeModal(false);
@@ -2140,6 +2156,7 @@ const ModulePage = ({ title, type }) => {
                     setSelectedEmployeeForEdit(null);
                 }}
                 employee={selectedEmployeeForEdit}
+                orgId={orgId}
                 onSuccess={async () => {
                     addToast('Employee updated successfully', 'success');
                     // Refresh employees list
@@ -2412,6 +2429,7 @@ const ModulePage = ({ title, type }) => {
                 isOpen={showAddPolicyModal}
                 onClose={() => setShowAddPolicyModal(false)}
                 onSuccess={handlePolicySuccess}
+                orgId={orgId}
             />
 
             {/* Edit Policy Modal */}
@@ -2420,13 +2438,10 @@ const ModulePage = ({ title, type }) => {
                 onClose={() => setShowEditPolicyModal(false)}
                 onSuccess={handlePolicySuccess}
                 policy={selectedPolicy}
+                orgId={orgId}
             />
         </div >
     );
 };
 
 export default ModulePage;
-
-
-
-

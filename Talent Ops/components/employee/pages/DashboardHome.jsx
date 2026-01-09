@@ -86,7 +86,7 @@ const DashboardHome = () => {
                     if (allEmps) {
                         setAllOrgEmployees(allEmps);
                         if (profileData && profileData.team_id) {
-                            setTeamMembers(allEmps.filter(e => e.team_id === profileData.team_id && e.id !== user.id));
+                            setTeamMembers(allEmps.filter(e => e.team_id === profileData.team_id));
                         }
                     }
 

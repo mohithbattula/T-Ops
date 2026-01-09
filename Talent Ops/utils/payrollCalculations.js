@@ -11,7 +11,7 @@ export const getDaysInMonth = (month, year) => {
 /**
  * Calculate present days from attendance records for a given month
  */
-export const calculatePresentDays = async (employeeId, month, year) => {
+export const calculatePresentDays = async (employeeId, month, year, orgId) => {
     try {
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
         const endDate = `${year}-${String(month).padStart(2, '0')}-${getDaysInMonth(month, year)}`;
@@ -20,6 +20,7 @@ export const calculatePresentDays = async (employeeId, month, year) => {
             .from('attendance')
             .select('date')
             .eq('employee_id', employeeId)
+            .eq('org_id', orgId)
             .gte('date', startDate)
             .lte('date', endDate);
 
@@ -40,7 +41,7 @@ export const calculatePresentDays = async (employeeId, month, year) => {
 /**
  * Calculate approved leave days for a given month (Paid Leaves only, capped at quota)
  */
-export const calculateApprovedLeaveDays = async (employeeId, month, year) => {
+export const calculateApprovedLeaveDays = async (employeeId, month, year, orgId) => {
     try {
         const startDate = new Date(year, month - 1, 1); // month is 1-indexed
         const endDate = new Date(year, month - 1, getDaysInMonth(month, year));
@@ -50,7 +51,8 @@ export const calculateApprovedLeaveDays = async (employeeId, month, year) => {
             .from('leaves')
             .select('from_date, to_date, reason')
             .eq('employee_id', employeeId)
-            .eq('status', 'approved');
+            .eq('status', 'approved')
+            .eq('org_id', orgId);
 
         if (leavesError) {
             console.error('Error fetching leaves:', leavesError);
@@ -62,6 +64,7 @@ export const calculateApprovedLeaveDays = async (employeeId, month, year) => {
             .from('profiles')
             .select('monthly_leave_quota')
             .eq('id', employeeId)
+            .eq('org_id', orgId)
             .single();
 
         const monthlyQuota = (profileData && profileData.monthly_leave_quota) ? profileData.monthly_leave_quota : 3; // Default to 3 if not set
@@ -107,13 +110,14 @@ export const calculateApprovedLeaveDays = async (employeeId, month, year) => {
 /**
  * Fetch active employee finance data
  */
-export const fetchEmployeeFinance = async (employeeId) => {
+export const fetchEmployeeFinance = async (employeeId, orgId) => {
     try {
         const { data, error } = await supabase
             .from('employee_finance')
             .select('*')
             .eq('employee_id', employeeId)
             .eq('is_active', true)
+            .eq('org_id', orgId)
             .single();
 
         if (error) {
@@ -157,13 +161,14 @@ export const calculateNetSalary = (basicSalary, hra, allowances, additionalDeduc
 /**
  * Check if payroll already exists for employee and month
  */
-export const checkPayrollExists = async (employeeId, monthYear) => {
+export const checkPayrollExists = async (employeeId, monthYear, orgId) => {
     try {
         const { data, error } = await supabase
             .from('payroll')
             .select('id')
             .eq('employee_id', employeeId)
             .eq('month', monthYear)
+            .eq('org_id', orgId)
             .single();
 
         if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
@@ -192,26 +197,26 @@ export const formatMonthYear = (month, year) => {
 /**
  * Generate payroll record for a single employee
  */
-export const generatePayrollRecord = async (employeeId, month, year, additionalDeductions, generatedBy) => {
+export const generatePayrollRecord = async (employeeId, month, year, additionalDeductions, generatedBy, orgId) => {
     try {
         const monthYear = formatMonthYear(month, year);
 
         // Check if payroll already exists
-        const exists = await checkPayrollExists(employeeId, monthYear);
+        const exists = await checkPayrollExists(employeeId, monthYear, orgId);
         if (exists) {
             throw new Error('Payroll already exists for this employee and month');
         }
 
         // Get employee finance data
-        const financeData = await fetchEmployeeFinance(employeeId);
+        const financeData = await fetchEmployeeFinance(employeeId, orgId);
         if (!financeData) {
             throw new Error('No active salary data found for employee');
         }
 
         // Calculate working days, present days, and leave days
         const totalWorkingDays = getDaysInMonth(month, year);
-        const presentDays = await calculatePresentDays(employeeId, month, year);
-        const leaveDays = await calculateApprovedLeaveDays(employeeId, month, year);
+        const presentDays = await calculatePresentDays(employeeId, month, year, orgId);
+        const leaveDays = await calculateApprovedLeaveDays(employeeId, month, year, orgId);
 
         // Calculate LOP
         const lopDays = calculateLOPDays(totalWorkingDays, presentDays, leaveDays);
@@ -239,7 +244,8 @@ export const generatePayrollRecord = async (employeeId, month, year, additionalD
                 lop_days: lopDays,
                 net_salary: netSalary,
                 generated_by: generatedBy,
-                status: 'generated'
+                status: 'generated',
+                org_id: orgId
             })
             .select()
             .single();

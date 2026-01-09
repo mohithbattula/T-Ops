@@ -14,6 +14,7 @@ export const UserProvider = ({ children }) => {
     const [lastActive, setLastActive] = useState('Now');
     const [userId, setUserId] = useState(null);
     const [teamId, setTeamId] = useState(null);
+    const [orgId, setOrgId] = useState(null);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -27,7 +28,7 @@ export const UserProvider = ({ children }) => {
                     // Fetch user's profile
                     const { data: profile, error } = await supabase
                         .from('profiles')
-                        .select('full_name, email, role')
+                        .select('full_name, email, role, org_id')
                         .eq('id', user.id)
                         .single();
 
@@ -36,12 +37,14 @@ export const UserProvider = ({ children }) => {
                         setUserName(user.email || 'User');
                         setUserRole('User');
                         setTeamId(null);
+                        setOrgId(null);
                         return;
                     }
 
                     if (profile) {
                         setUserName(profile.full_name || profile.email || 'User');
                         setUserRole(profile.role || 'User');
+                        setOrgId(profile.org_id);
 
                         // Fetch project assignment to replace deprecated team_id
                         const { data: projectMember } = await supabase
@@ -57,6 +60,7 @@ export const UserProvider = ({ children }) => {
                     setUserRole('Guest');
                     setUserId(null);
                     setTeamId(null);
+                    setOrgId(null);
                 }
             } catch (err) {
                 console.error('Error in fetchUserData:', err);
@@ -64,6 +68,7 @@ export const UserProvider = ({ children }) => {
                 setUserRole('User');
                 setUserId(null);
                 setTeamId(null);
+                setOrgId(null);
             }
         };
 
@@ -77,6 +82,7 @@ export const UserProvider = ({ children }) => {
             currentTeam, setCurrentTeam,
             userId,
             teamId,
+            orgId,
             userStatus, setUserStatus,
             userTask, setUserTask,
             lastActive, setLastActive,

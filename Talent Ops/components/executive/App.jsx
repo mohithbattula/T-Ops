@@ -5,7 +5,7 @@ import DashboardHome from './pages/DashboardHome';
 import ModulePage from './pages/ModulePage';
 import NotificationsPage from '../shared/NotificationsPage';
 import MessagingHub from '../shared/MessagingHub';
-import AllTasksView from '../shared/AllTasksView';
+import ExecutiveAllTasksPage from './pages/ExecutiveAllTasksPage';
 import { ToastProvider } from './context/ToastContext';
 import { UserProvider } from './context/UserContext';
 
@@ -16,23 +16,21 @@ function App() {
         <Router>
           <Layout>
             <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<DashboardHome />} />
-              <Route path="/analytics" element={<ModulePage title="Analytics" type="analytics" />} />
-              <Route path="/employees" element={<ModulePage title="Employees" type="workforce" />} />
-              <Route path="/tasks" element={<AllTasksView userRole="executive" />} />
-              <Route path="/leaves" element={<ModulePage title="Leave Requests" type="leaves" />} />
-              <Route path="/leaves" element={<ModulePage title="Leave Requests" type="leaves" />} />
-              <Route path="/employee-status" element={<ModulePage title="Employee Status" type="status" />} />
-              <Route path="/payslips" element={<ModulePage title="Payslips" type="payroll" />} />
-              <Route path="/hiring" element={<ModulePage title="Hiring Portal" type="recruitment" />} />
-              <Route path="/messages" element={<MessagingHub />} />
+              <Route path="/" element={<Navigate to="/executive-dashboard/dashboard" replace />} />
+              <Route path="/executive-dashboard/dashboard" element={<DashboardHome />} />
+              <Route path="/executive-dashboard/analytics" element={<ModulePage title="Analytics" type="analytics" />} />
+              <Route path="/executive-dashboard/employees" element={<ModulePage title="Employees" type="workforce" />} />
+              <Route path="/executive-dashboard/tasks" element={<ExecutiveAllTasksPage />} />
+              <Route path="/executive-dashboard/leaves" element={<ModulePage title="Leave Requests" type="leaves" />} />
+              <Route path="/executive-dashboard/employee-status" element={<ModulePage title="Employee Status" type="status" />} />
+              <Route path="/executive-dashboard/payslips" element={<ModulePage title="Payslips" type="payroll" />} />
+              <Route path="/executive-dashboard/hiring" element={<ModulePage title="Hiring Portal" type="recruitment" />} />
               <Route path="/executive-dashboard/messages" element={<MessagingHub />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/hierarchy" element={<ModulePage title="Organizational Hierarchy" type="default" />} />
-              <Route path="/audit" element={<ModulePage title="Audit Logs" type="default" />} />
-              <Route path="/settings" element={<ModulePage title="Settings" type="default" />} />
-              <Route path="/project-analytics" element={<ModulePage title="Project Analytics" type="project-analytics" />} />
+              <Route path="/executive-dashboard/notifications" element={<NotificationsPage />} />
+              <Route path="/executive-dashboard/hierarchy" element={<ModulePage title="Organizational Hierarchy" type="default" />} />
+              <Route path="/executive-dashboard/audit" element={<ModulePage title="Audit Logs" type="default" />} />
+              <Route path="/executive-dashboard/settings" element={<ModulePage title="Settings" type="default" />} />
+              <Route path="/executive-dashboard/project-analytics" element={<ModulePage title="Project Analytics" type="project-analytics" />} />
             </Routes>
           </Layout>
         </Router>

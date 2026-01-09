@@ -6,7 +6,7 @@ import { supabase } from '../../../../lib/supabaseClient';
 
 const AttendanceTracker = () => {
     const { addToast } = useToast();
-    const { setUserStatus, setUserTask, setLastActive, userId } = useUser();
+    const { setUserStatus, setUserTask, setLastActive, userId, orgId } = useUser();
     const [status, setStatus] = useState('checked-out'); // 'checked-out', 'checked-in', 'break'
     const [checkInTime, setCheckInTime] = useState(null);
     const [checkOutTime, setCheckOutTime] = useState(null);
@@ -18,7 +18,7 @@ const AttendanceTracker = () => {
     // Fetch Today's Attendance on Mount
     useEffect(() => {
         const fetchAttendance = async () => {
-            if (!userId) return;
+            if (!userId || !orgId) return;
 
             try {
                 const today = new Date().toISOString().split('T')[0];
@@ -26,6 +26,7 @@ const AttendanceTracker = () => {
                     .from('attendance')
                     .select('*')
                     .eq('employee_id', userId)
+                    .eq('org_id', orgId)
                     .eq('date', today)
                     .maybeSingle();
 
@@ -82,7 +83,7 @@ const AttendanceTracker = () => {
                     event: '*',
                     schema: 'public',
                     table: 'attendance',
-                    filter: `employee_id=eq.${userId}`
+                    filter: `employee_id=eq.${userId},org_id=eq.${orgId}`
                 },
                 (payload) => {
                     console.log('[REALTIME] Attendance changed:', payload);
@@ -139,6 +140,7 @@ const AttendanceTracker = () => {
                 // CHECK IN
                 const { error } = await supabase.from('attendance').insert({
                     employee_id: userId,
+                    org_id: orgId,
                     date: dateString,
                     clock_in: timeString
                 });
@@ -185,6 +187,7 @@ const AttendanceTracker = () => {
                     total_hours: totalHours
                 })
                 .eq('employee_id', userId)
+                .eq('org_id', orgId)
                 .eq('date', dateString);
 
             if (error) throw error;
@@ -294,6 +297,7 @@ const AttendanceTracker = () => {
                                         .from('attendance')
                                         .update({ current_task: currentTask })
                                         .eq('employee_id', userId)
+                                        .eq('org_id', orgId)
                                         .eq('date', today);
 
                                     if (error) {

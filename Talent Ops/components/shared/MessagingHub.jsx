@@ -40,6 +40,60 @@ const MessagingHub = () => {
     const [teamName, setTeamName] = useState('');
     const [authLoading, setAuthLoading] = useState(true);
     const { markAsRead, lastReadTimes } = useMessages();
+    const [showMembersModal, setShowMembersModal] = useState(false);
+    const [currentMembers, setCurrentMembers] = useState([]);
+    const [hoveredMessageId, setHoveredMessageId] = useState(null);
+
+    const getSenderName = (senderId) => {
+        const user = orgUsers.find(u => u.id === senderId);
+        return user?.full_name || user?.email || 'Unknown';
+    };
+
+    const fetchConversationMembers = async () => {
+        if (!selectedConversation) return;
+
+        if (selectedConversation.type === 'everyone') {
+            setCurrentMembers(orgUsers);
+            setShowMembersModal(true);
+            return;
+        }
+
+        try {
+            const { data } = await supabase
+                .from('conversation_members')
+                .select('user_id')
+                .eq('conversation_id', selectedConversation.id);
+
+            if (data) {
+                const memberIds = data.map(m => m.user_id);
+                const members = orgUsers.filter(u => memberIds.includes(u.id));
+                setCurrentMembers(members);
+                setShowMembersModal(true);
+            }
+        } catch (err) {
+            console.error('Error fetching members:', err);
+        }
+    };
+
+    const formatDividerDate = (dateString) => {
+        const date = new Date(dateString);
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        if (date.toDateString() === today.toDateString()) {
+            return 'Today';
+        } else if (date.toDateString() === yesterday.toDateString()) {
+            return 'Yesterday';
+        } else {
+            return date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric',
+                year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+            });
+        }
+    };
 
     // Get current user from Supabase auth
     useEffect(() => {
@@ -100,7 +154,6 @@ const MessagingHub = () => {
             const { data, error } = await supabase
                 .from('profiles')
                 .select('id, email, full_name, avatar_url, role')
-                .neq('id', userId)
                 .order('full_name', { ascending: true, nullsFirst: false });
 
             if (error) {
@@ -161,7 +214,7 @@ const MessagingHub = () => {
 
         setLoading(true);
         try {
-            const convs = await getConversationsByCategory(currentUserId, activeCategory);
+            const convs = await getConversationsByCategory(currentUserId, activeCategory, currentUserOrgId);
 
             // For DM conversations, fetch the other user's name
             let finalConvs = convs;
@@ -233,14 +286,21 @@ const MessagingHub = () => {
 
     // Delete Functions
     const deleteMessageForEveryone = async (messageId) => {
+        const msg = messages.find(m => m.id === messageId);
+        if (msg) {
+            const timeDiff = (new Date() - new Date(msg.created_at)) / (1000 * 60);
+            if (timeDiff > 5) {
+                alert('Messages can only be deleted within 5 minutes of sending.');
+                return;
+            }
+        }
         if (!confirm('Are you sure you want to delete this message for everyone?')) return;
         try {
             const { error } = await supabase
                 .from('messages')
                 .update({
                     content: 'This message was deleted',
-                    is_deleted: true,
-                    attachments: []
+                    is_deleted: true
                 })
                 .eq('id', messageId);
 
@@ -253,11 +313,19 @@ const MessagingHub = () => {
             ));
         } catch (err) {
             console.error('Error deleting message for everyone:', err);
-            alert('Failed to delete message');
+            alert(`Failed to delete message: ${err.message || 'Unknown error'}`);
         }
     };
 
     const deleteMessageForMe = async (messageId) => {
+        const msg = messages.find(m => m.id === messageId);
+        if (msg) {
+            const timeDiff = (new Date() - new Date(msg.created_at)) / (1000 * 60);
+            if (timeDiff > 5) {
+                alert('Messages can only be deleted within 5 minutes of sending.');
+                return;
+            }
+        }
         try {
             const { data: currentMsg } = await supabase
                 .from('messages')
@@ -280,6 +348,7 @@ const MessagingHub = () => {
             }
         } catch (err) {
             console.error('Error deleting message for me:', err);
+            alert(`Failed to delete message: ${err.message || 'Unknown error'}`);
         }
     };
 
@@ -736,6 +805,27 @@ const MessagingHub = () => {
                                         selectedConversation.type === 'team' ? 'Team Chat' : 'Organization'}
                                 </span>
                             </div>
+                            {(selectedConversation.type === 'team' || selectedConversation.type === 'everyone') && (
+                                <button
+                                    onClick={fetchConversationMembers}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        padding: '6px 12px',
+                                        borderRadius: '6px',
+                                        border: '1px solid #e5e7eb',
+                                        background: 'white',
+                                        cursor: 'pointer',
+                                        fontSize: '12px',
+                                        color: '#374151',
+                                        fontWeight: 500
+                                    }}
+                                >
+                                    <Users size={14} />
+                                    View Members
+                                </button>
+                            )}
                         </div>
 
                         <div className="messages-container">
@@ -755,82 +845,115 @@ const MessagingHub = () => {
                                     <p>No messages yet. Start the conversation!</p>
                                 </div>
                             ) : (
-                                messages.map(msg => (
-                                    <div
-                                        key={msg.id}
-                                        className={`message ${msg.sender_user_id === currentUserId ? 'sent' : 'received'}`}
-                                        style={{ position: 'relative', group: 'message-group' }}
-                                        onMouseEnter={(e) => {
-                                            const btn = document.getElementById(`delete-btn-${msg.id}`);
-                                            if (btn) btn.style.opacity = '1';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            const btn = document.getElementById(`delete-btn-${msg.id}`);
-                                            if (btn) btn.style.opacity = '0';
-                                        }}
-                                    >
-                                        <div className="message-bubble">
-                                            {/* Delete Actions (Only for Sender) */}
-                                            {msg.sender_user_id === currentUserId && !msg.is_deleted && (
-                                                <div
-                                                    id={`delete-btn-${msg.id}`}
-                                                    style={{
-                                                        position: 'absolute',
-                                                        top: '50%',
-                                                        right: '100%',
-                                                        transform: 'translateY(-50%)',
-                                                        marginRight: '8px',
-                                                        opacity: 0,
-                                                        transition: 'opacity 0.2s',
-                                                        display: 'flex',
-                                                        gap: '4px'
-                                                    }}
-                                                >
-                                                    <button
-                                                        onClick={() => deleteMessageForMe(msg.id)}
-                                                        title="Delete for me"
-                                                        style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: '#64748b' }}
-                                                    >
-                                                        <Trash2 size={12} /> Me
-                                                    </button>
-                                                    <button
-                                                        onClick={() => deleteMessageForEveryone(msg.id)}
-                                                        title="Delete for everyone"
-                                                        style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: '#ef4444' }}
-                                                    >
-                                                        <Trash2 size={12} /> All
-                                                    </button>
-                                                </div>
-                                            )}
+                                messages.map((msg, index) => {
+                                    const prevMsg = messages[index - 1];
+                                    const prevDate = prevMsg ? new Date(prevMsg.created_at).toDateString() : null;
+                                    const currDate = new Date(msg.created_at).toDateString();
+                                    const isNewDay = currDate !== prevDate;
 
-                                            <div className="message-content" style={{ fontStyle: msg.is_deleted ? 'italic' : 'normal', color: msg.is_deleted ? '#94a3b8' : 'inherit' }}>
-                                                {msg.is_deleted && <Trash2 size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />}
-                                                {msg.content}
-                                            </div>
-                                            {msg.attachments && msg.attachments.length > 0 && (
-                                                <div className="message-attachments">
-                                                    {msg.attachments.map(att => (
-                                                        <a
-                                                            key={att.id}
-                                                            href={att.url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="attachment-link"
-                                                        >
-                                                            📎 {att.file_name}
-                                                        </a>
-                                                    ))}
+                                    return (
+                                        <React.Fragment key={msg.id}>
+                                            {isNewDay && (
+                                                <div className="date-divider" style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    margin: '24px 0 12px 0',
+                                                    position: 'relative'
+                                                }}>
+                                                    <div style={{ height: '1px', background: '#e5e7eb', width: '100%', position: 'absolute' }}></div>
+                                                    <span style={{
+                                                        background: '#f9fafb',
+                                                        padding: '0 16px',
+                                                        fontSize: '11px',
+                                                        color: '#6b7280',
+                                                        fontWeight: 600,
+                                                        zIndex: 1,
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.05em'
+                                                    }}>
+                                                        {formatDividerDate(msg.created_at)}
+                                                    </span>
                                                 </div>
                                             )}
-                                            <div className="message-time">
-                                                {new Date(msg.created_at).toLocaleTimeString([], {
-                                                    hour: '2-digit',
-                                                    minute: '2-digit'
-                                                })}
+                                            <div
+                                                className={`message ${msg.sender_user_id === currentUserId ? 'sent' : 'received'}`}
+                                                style={{ position: 'relative', group: 'message-group' }}
+                                                onMouseEnter={() => setHoveredMessageId(msg.id)}
+                                                onMouseLeave={() => setHoveredMessageId(null)}
+                                            >
+                                                <div className="message-bubble">
+                                                    {/* Sender Name for Group Chats */}
+                                                    {(selectedConversation.type === 'team' || selectedConversation.type === 'everyone') && msg.sender_user_id !== currentUserId && (
+                                                        <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px', marginLeft: '2px', fontWeight: 600 }}>
+                                                            {getSenderName(msg.sender_user_id)}
+                                                        </div>
+                                                    )}
+                                                    {/* Delete Actions (Only for Sender, within 5 minutes) */}
+                                                    {msg.sender_user_id === currentUserId && !msg.is_deleted && (new Date() - new Date(msg.created_at)) < 5 * 60 * 1000 && hoveredMessageId === msg.id && (
+                                                        <div
+                                                            style={{
+                                                                position: 'absolute',
+                                                                top: '-35px',
+                                                                right: '0',
+                                                                background: 'white',
+                                                                borderRadius: '8px',
+                                                                padding: '4px',
+                                                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                                                display: 'flex',
+                                                                gap: '4px',
+                                                                zIndex: 10,
+                                                                border: '1px solid #e2e8f0',
+                                                                animation: 'fadeIn 0.2s ease'
+                                                            }}
+                                                        >
+                                                            <button
+                                                                onClick={() => deleteMessageForMe(msg.id)}
+                                                                title="Delete for me"
+                                                                style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: '#64748b' }}
+                                                            >
+                                                                <Trash2 size={12} /> Me
+                                                            </button>
+                                                            <button
+                                                                onClick={() => deleteMessageForEveryone(msg.id)}
+                                                                title="Delete for everyone"
+                                                                style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: '#ef4444' }}
+                                                            >
+                                                                <Trash2 size={12} /> All
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="message-content" style={{ fontStyle: msg.is_deleted ? 'italic' : 'normal', color: msg.is_deleted ? '#94a3b8' : 'inherit' }}>
+                                                        {msg.is_deleted && <Trash2 size={12} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />}
+                                                        {msg.content}
+                                                    </div>
+                                                    {msg.attachments && msg.attachments.length > 0 && (
+                                                        <div className="message-attachments">
+                                                            {msg.attachments.map(att => (
+                                                                <a
+                                                                    key={att.id}
+                                                                    href={att.url}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="attachment-link"
+                                                                >
+                                                                    📎 {att.file_name}
+                                                                </a>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    <div className="message-time">
+                                                        {new Date(msg.created_at).toLocaleTimeString([], {
+                                                            hour: '2-digit',
+                                                            minute: '2-digit'
+                                                        })}
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                ))
+                                        </React.Fragment>
+                                    );
+                                })
                             )}
                         </div>
 
@@ -989,6 +1112,7 @@ const MessagingHub = () => {
                                         </div>
                                     ) : (
                                         orgUsers
+                                            .filter(user => user.id !== currentUserId)
                                             .filter(user => {
                                                 if (!userSearchQuery) return true;
                                                 const query = userSearchQuery.toLowerCase();
@@ -1172,7 +1296,63 @@ const MessagingHub = () => {
                     </div>
                 )
             }
-        </div >
+
+            {/* View Members Modal */}
+            {
+                showMembersModal && (
+                    <div className="modal-overlay" onClick={() => setShowMembersModal(false)}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px', width: '90%', maxHeight: '80vh', background: 'white', borderRadius: '12px', padding: '1.5rem', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
+                            <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Group Members</h2>
+                                <button onClick={() => setShowMembersModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="user-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                {currentMembers.map(user => (
+                                    <div
+                                        key={user.id}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '12px',
+                                            borderBottom: '1px solid #f3f4f6'
+                                        }}
+                                    >
+                                        <div className="user-avatar" style={{
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '50%',
+                                            background: '#e5e7eb',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '16px',
+                                            fontWeight: 'bold',
+                                            color: '#6366f1'
+                                        }}>
+                                            {user.avatar_url ? (
+                                                <img src={user.avatar_url} alt={user.full_name} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                            ) : (
+                                                (user.full_name?.[0] || user.email?.[0] || '?').toUpperCase()
+                                            )}
+                                        </div>
+                                        <div className="user-info" style={{ flex: 1 }}>
+                                            <div className="user-name" style={{ fontWeight: '500', color: '#1f2937' }}>
+                                                {user.full_name || user.email} {user.id === currentUserId && '(You)'}
+                                            </div>
+                                            <div className="user-role" style={{ fontSize: '12px', color: '#6b7280', textTransform: 'capitalize' }}>
+                                                {user.role}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+        </div>
     );
 };
 

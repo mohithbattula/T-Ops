@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Eye, Calendar, ChevronDown, X, Clock, ExternalLink, ThumbsUp, ThumbsDown, AlertTriangle, CheckCircle2, AlertCircle, Edit2, Trash2, Upload, FileText, Send } from 'lucide-react';
+import { Search, Plus, Eye, Calendar, ChevronDown, X, Clock, ExternalLink, ThumbsUp, ThumbsDown, AlertTriangle, CheckCircle2, AlertCircle, Edit2, Trash2, Upload, FileText, Send, ListTodo } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import { supabaseRequest } from '../../lib/supabaseRequest';
 import { useProject } from '../employee/context/ProjectContext';
 
-const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId, addToast, viewMode = 'default', projectId, onBack }) => {
+const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId, orgId, addToast, viewMode = 'default', projectId, onBack }) => {
     const { currentProject, projectRole: contextProjectRole } = useProject();
 
     // Determine which project ID to use: Prop takes precedence over context
@@ -75,7 +75,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
         } else {
             setLoading(false);
         }
-    }, [userId, effectiveProjectId, userRole, viewMode]);
+    }, [userId, orgId, effectiveProjectId, userRole, viewMode]);
 
     const handleDeleteProof = async (task, phaseKey) => {
         if (!window.confirm('Are you sure you want to delete this proof?')) return;
@@ -118,7 +118,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             const { error } = await supabase
                 .from('tasks')
                 .update(updates)
-                .eq('id', task.id);
+                .eq('id', task.id)
+                .eq('org_id', orgId);
 
             if (error) throw error;
 
@@ -158,13 +159,13 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             if (userRole === 'executive') {
                 // Fetch ALL employees for executives (excluding hidden admins)
                 formattedEmployees = await supabaseRequest(
-                    supabase.from('profiles').select('id, full_name, avatar_url').neq('id', userId).neq('is_hidden', true),
+                    supabase.from('profiles').select('id, full_name, avatar_url').eq('org_id', orgId).neq('id', userId).neq('is_hidden', true),
                     addToast
                 ) || [];
             } else if (currentProject?.id) {
                 // Fetch only members of the current project
                 const data = await supabaseRequest(
-                    supabase.from('project_members').select('user_id, profiles!inner(id, full_name, avatar_url)').eq('project_id', currentProject.id),
+                    supabase.from('project_members').select('user_id, profiles!inner(id, full_name, avatar_url)').eq('project_id', currentProject.id).eq('org_id', orgId),
                     addToast
                 );
 
@@ -187,7 +188,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             const { error } = await supabase
                 .from('tasks')
                 .update({ [column]: value })
-                .eq('id', taskId);
+                .eq('id', taskId)
+                .eq('org_id', orgId);
 
             if (error) throw error;
             addToast?.('Task updated successfully', 'success');
@@ -203,7 +205,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             const { error } = await supabase
                 .from('tasks')
                 .delete()
-                .eq('id', taskId);
+                .eq('id', taskId)
+                .eq('org_id', orgId);
 
             if (error) throw error;
 
@@ -264,7 +267,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                         active_phases: editingTask.requiredPhases
                     }
                 })
-                .eq('id', editingTask.id);
+                .eq('id', editingTask.id)
+                .eq('org_id', orgId);
 
             if (error) throw error;
 
@@ -285,9 +289,16 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             let taskError = null;
 
             if (userRole === 'executive' || viewMode === 'global_tasks') {
-                // Fetch ALL tasks for executives (or global view) without JOIN to avoid 400 errors
+                // Fetch tasks for executives - filter by project if one is selected
+                let query = supabase.from('tasks').select('*, phase_validations').eq('org_id', orgId);
+
+                // If a specific project is selected, filter by that project
+                if (effectiveProjectId) {
+                    query = query.eq('project_id', effectiveProjectId);
+                }
+
                 tasksData = await supabaseRequest(
-                    supabase.from('tasks').select('*, phase_validations').order('id', { ascending: false }),
+                    query.order('id', { ascending: false }),
                     addToast
                 );
             } else {
@@ -298,7 +309,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
 
                 // 1. Fetch simplified tasks for the current project
                 // Explicitly select phase_validations to ensure lifecycle sync for team members
-                let query = supabase.from('tasks').select('*, phase_validations').eq('project_id', effectiveProjectId);
+                let query = supabase.from('tasks').select('*, phase_validations').eq('project_id', effectiveProjectId).eq('org_id', orgId);
 
                 // Filter by role if not executive/manager/team_lead for this project
                 // We assume strict project-level permissions override global permissions for tasks view
@@ -331,7 +342,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             let profileMap = {};
             if (assigneeIds.length > 0) {
                 const profilesData = await supabaseRequest(
-                    supabase.from('profiles').select('id, full_name, avatar_url').in('id', assigneeIds),
+                    supabase.from('profiles').select('id, full_name, avatar_url').in('id', assigneeIds).eq('org_id', orgId),
                     addToast
                 );
                 if (profilesData) {
@@ -347,7 +358,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                 const projectIds = [...new Set(tasksData.map(t => t.project_id).filter(Boolean))];
                 if (projectIds.length > 0) {
                     const projectsData = await supabaseRequest(
-                        supabase.from('projects').select('id, name').in('id', projectIds),
+                        supabase.from('projects').select('id, name').in('id', projectIds).eq('org_id', orgId),
                         addToast
                     );
 
@@ -407,6 +418,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                     .from('profiles')
                     .select('full_name')
                     .eq('id', user.id)
+                    .eq('org_id', orgId)
                     .single();
                 const senderName = senderProfile?.full_name || (userRole === 'manager' ? 'Management' : (userRole === 'team_lead' ? 'Team Lead' : 'Task Manager'));
 
@@ -424,7 +436,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                     allocated_hours: parseFloat(newTask.allocatedHours),
                     phase_validations: {
                         active_phases: newTask.requiredPhases
-                    }
+                    },
+                    org_id: orgId
                 }));
 
                 await supabaseRequest(supabase.from('tasks').insert(tasksToInsert), addToast);
@@ -437,7 +450,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                     message: `New task assigned: ${task.title}`,
                     type: 'task_assigned',
                     is_read: false,
-                    created_at: new Date().toISOString()
+                    created_at: new Date().toISOString(),
+                    org_id: orgId
                 }));
                 await supabase.from('notifications').insert(notifications);
 
@@ -457,7 +471,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                     allocated_hours: parseFloat(newTask.allocatedHours),
                     phase_validations: {
                         active_phases: newTask.requiredPhases
-                    }
+                    },
+                    org_id: orgId
                 };
 
                 await supabaseRequest(supabase.from('tasks').insert([taskToInsert]), addToast);
@@ -468,6 +483,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                         .from('profiles')
                         .select('full_name')
                         .eq('id', user.id)
+                        .eq('org_id', orgId)
                         .single();
 
                     const senderName = senderProfile?.full_name || (userRole === 'manager' ? 'Management' : (userRole === 'team_lead' ? 'Team Lead' : 'Task Manager'));
@@ -481,7 +497,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                             message: `New task assigned: ${newTask.title}`,
                             type: 'task_assigned',
                             is_read: false,
-                            created_at: new Date().toISOString()
+                            created_at: new Date().toISOString(),
+                            org_id: orgId
                         });
                     } else if (newTask.assignType === 'team' && employees.length > 0) {
                         // Team task - notify all team members
@@ -492,7 +509,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                             message: `New team task created: ${newTask.title}`,
                             type: 'task_assigned',
                             is_read: false,
-                            created_at: new Date().toISOString()
+                            created_at: new Date().toISOString(),
+                            org_id: orgId
                         }));
                         await supabase.from('notifications').insert(notifications);
                     }
@@ -589,7 +607,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             const { error } = await supabase
                 .from('tasks')
                 .update(updates)
-                .eq('id', selectedTask.id);
+                .eq('id', selectedTask.id)
+                .eq('org_id', orgId);
 
             if (error) throw error;
 
@@ -610,7 +629,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
 
                 // Sync to DB if completed
                 if (isLastPhaseApproved && selectedTask.status !== 'completed') {
-                    await supabase.from('tasks').update({ status: 'completed' }).eq('id', selectedTask.id);
+                    await supabase.from('tasks').update({ status: 'completed' }).eq('id', selectedTask.id).eq('org_id', orgId);
                 }
 
                 setSelectedTask({
@@ -654,6 +673,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', selectedTask.id)
+                .eq('org_id', orgId)
                 .eq('sub_state', 'pending_validation'); // Double-check in DB query
 
             if (error) throw error;
@@ -687,6 +707,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                 .from('profiles')
                 .select('full_name, email')
                 .eq('id', user.id)
+                .eq('org_id', orgId)
                 .single();
 
             const userName = profile?.full_name || profile?.email || 'Manager';
@@ -702,7 +723,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                     issues: updatedIssues,
                     updated_at: timestamp
                 })
-                .eq('id', taskWithIssue.id);
+                .eq('id', taskWithIssue.id)
+                .eq('org_id', orgId);
 
             if (error) throw error;
 
@@ -1003,7 +1025,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                             </button>
                         )}
                         <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#0f172a', margin: 0 }}>
-                            {viewMode === 'my_tasks' ? 'My Tasks' : (viewMode === 'team_tasks' ? 'All Project Tasks' : ((userRole === 'manager' || userRole === 'team_lead') && (!effectiveProjectRole || effectiveProjectRole === 'manager' || effectiveProjectRole === 'team_lead') ? 'Team Tasks' : 'Your Tasks'))}
+                            {viewMode === 'my_tasks' ? 'My Tasks' : (viewMode === 'team_tasks' ? 'All Project Tasks' : (userRole === 'executive' ? 'All Tasks' : ((userRole === 'manager' || userRole === 'team_lead') && (!effectiveProjectRole || effectiveProjectRole === 'manager' || effectiveProjectRole === 'team_lead') ? 'Team Tasks' : 'Your Tasks')))}
                         </h1>
                     </div>
                     <p style={{ color: '#64748b', marginTop: '4px', fontSize: '0.95rem' }}>
@@ -1113,9 +1135,9 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                     >
                         <option value="all">All Statuses</option>
                         <option value="pending">Pending</option>
-                        <option value="in progress">In Progress</option>
+                        <option value="in_progress">In Progress</option>
                         <option value="completed">Completed</option>
-                        <option value="on hold">On Hold</option>
+                        <option value="on_hold">On Hold</option>
                     </select>
                     <ChevronDown size={16} style={{
                         position: 'absolute',
@@ -1147,16 +1169,16 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                     overflow: 'hidden'
                 }}>
                     <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '800px' }}>
                             <thead>
                                 <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Task</th>
-                                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Assignee</th>
-                                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lifecycle</th>
-                                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Due Date</th>
-                                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Est. Hours</th>
-                                    <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Priority</th>
-                                    <th style={{ padding: '16px', textAlign: 'center', fontWeight: 600, fontSize: '0.75rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', minWidth: '160px' }}>Actions</th>
+                                    <th style={{ padding: '10px', textAlign: 'left', fontWeight: 600, fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Task</th>
+                                    <th style={{ padding: '10px', textAlign: 'left', fontWeight: 600, fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Assignee</th>
+                                    <th style={{ padding: '10px', textAlign: 'left', fontWeight: 600, fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Lifecycle</th>
+                                    <th style={{ padding: '10px', textAlign: 'left', fontWeight: 600, fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Due</th>
+                                    <th style={{ padding: '10px', textAlign: 'left', fontWeight: 600, fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Hrs</th>
+                                    <th style={{ padding: '10px', textAlign: 'left', fontWeight: 600, fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Priority</th>
+                                    <th style={{ padding: '10px', textAlign: 'center', fontWeight: 600, fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em', minWidth: '140px' }}>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1178,11 +1200,12 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                                 onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f8fafc'}
                                                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'white'}
                                             >
-                                                <td style={{ padding: '16px', verticalAlign: 'middle', maxWidth: '250px' }}>
+                                                <td style={{ padding: '12px', verticalAlign: 'middle', maxWidth: '200px' }}>
                                                     <div style={{
                                                         fontWeight: 600,
                                                         color: '#0f172a',
-                                                        lineHeight: '1.4',
+                                                        fontSize: '0.85rem',
+                                                        lineHeight: '1.3',
                                                         display: '-webkit-box',
                                                         WebkitLineClamp: 2,
                                                         WebkitBoxOrient: 'vertical',
@@ -1192,18 +1215,18 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                                         {task.title}
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '16px', verticalAlign: 'middle' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <td style={{ padding: '12px', verticalAlign: 'middle' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                         <div style={{
-                                                            width: '24px',
-                                                            height: '24px',
+                                                            width: '20px',
+                                                            height: '20px',
                                                             borderRadius: '50%',
                                                             backgroundColor: '#e2e8f0',
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             justifyContent: 'center',
                                                             overflow: 'hidden',
-                                                            fontSize: '0.75rem',
+                                                            fontSize: '0.65rem',
                                                             fontWeight: 600,
                                                             color: '#64748b'
                                                         }}>
@@ -1213,54 +1236,55 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                                                 task.assignee_name.charAt(0)
                                                             )}
                                                         </div>
-                                                        <span style={{ fontWeight: 500, color: '#0f172a', whiteSpace: 'nowrap' }}>{task.assignee_name}</span>
+                                                        <span style={{ fontWeight: 500, color: '#0f172a', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{task.assignee_name}</span>
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '16px', verticalAlign: 'middle' }}>
+                                                <td style={{ padding: '12px', verticalAlign: 'middle' }}>
                                                     <LifecycleProgress currentPhase={task.lifecycle_state} subState={task.sub_state} validations={task.phase_validations} taskStatus={task.status} />
                                                 </td>
-                                                <td style={{ padding: '16px', verticalAlign: 'middle' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', whiteSpace: 'nowrap' }}>
-                                                        <Calendar size={14} />
-                                                        <span style={{ fontSize: '0.9rem' }}>
-                                                            {task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : 'No Date'}
+                                                <td style={{ padding: '12px', verticalAlign: 'middle' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                                                        <Calendar size={12} />
+                                                        <span style={{ fontSize: '0.75rem' }}>
+                                                            {task.due_date ? new Date(task.due_date).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' }) : '-'}
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '16px', verticalAlign: 'middle' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', whiteSpace: 'nowrap' }}>
-                                                        <Clock size={14} />
-                                                        <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>
-                                                            {task.allocated_hours ? `${task.allocated_hours} hrs` : '-'}
+                                                <td style={{ padding: '12px', verticalAlign: 'middle' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                                                        <Clock size={12} />
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: 500 }}>
+                                                            {task.allocated_hours ? `${task.allocated_hours}h` : '-'}
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '16px', verticalAlign: 'middle' }}>
+                                                <td style={{ padding: '12px', verticalAlign: 'middle' }}>
                                                     <div style={{ position: 'relative', display: 'inline-block' }}>
                                                         <select
                                                             value={task.priority || 'medium'}
                                                             onChange={(e) => handleUpdateTask(task.id, 'priority', e.target.value.toLowerCase())}
                                                             style={{
-                                                                padding: '6px 28px 6px 12px',
+                                                                padding: '4px 24px 4px 10px',
                                                                 backgroundColor: priorityStyle.bg,
                                                                 color: priorityStyle.text,
                                                                 border: 'none',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.75rem',
+                                                                borderRadius: '4px',
+                                                                fontSize: '0.7rem',
                                                                 fontWeight: 700,
                                                                 textTransform: 'uppercase',
                                                                 cursor: 'pointer',
                                                                 outline: 'none',
-                                                                appearance: 'none'
+                                                                appearance: 'none',
+                                                                minWidth: '80px'
                                                             }}
                                                         >
                                                             <option value="high">HIGH</option>
                                                             <option value="medium">MEDIUM</option>
                                                             <option value="low">LOW</option>
                                                         </select>
-                                                        <ChevronDown size={12} style={{
+                                                        <ChevronDown size={10} style={{
                                                             position: 'absolute',
-                                                            right: '8px',
+                                                            right: '6px',
                                                             top: '50%',
                                                             transform: 'translateY(-50%)',
                                                             pointerEvents: 'none',
@@ -1269,20 +1293,20 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                                     </div>
                                                 </td>
 
-                                                <td style={{ padding: '16px', verticalAlign: 'middle', textAlign: 'center' }}>
-                                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
+                                                <td style={{ padding: '12px', verticalAlign: 'middle', textAlign: 'center' }}>
+                                                    <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', alignItems: 'center' }}>
                                                         <button
                                                             onClick={() => setSelectedTask(task)}
                                                             style={{
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
-                                                                gap: '6px',
-                                                                padding: '8px 12px',
+                                                                gap: '4px',
+                                                                padding: '6px 10px',
                                                                 backgroundColor: '#f1f5f9',
                                                                 color: '#0f172a',
                                                                 border: 'none',
-                                                                borderRadius: '6px',
-                                                                fontSize: '0.85rem',
+                                                                borderRadius: '4px',
+                                                                fontSize: '0.75rem',
                                                                 fontWeight: 600,
                                                                 cursor: 'pointer',
                                                                 whiteSpace: 'nowrap'
@@ -1290,7 +1314,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                                             onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e2e8f0'}
                                                             onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f1f5f9'}
                                                         >
-                                                            <Eye size={14} />
+                                                            <Eye size={12} />
                                                             View
                                                         </button>
 
@@ -1304,13 +1328,13 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                                                 style={{
                                                                     display: 'inline-flex',
                                                                     alignItems: 'center',
-                                                                    gap: '6px',
-                                                                    padding: '8px 12px',
+                                                                    gap: '4px',
+                                                                    padding: '6px 10px',
                                                                     backgroundColor: '#3b82f6',
                                                                     color: 'white',
                                                                     border: 'none',
-                                                                    borderRadius: '6px',
-                                                                    fontSize: '0.85rem',
+                                                                    borderRadius: '4px',
+                                                                    fontSize: '0.75rem',
                                                                     fontWeight: 600,
                                                                     cursor: 'pointer',
                                                                     whiteSpace: 'nowrap'
@@ -1318,7 +1342,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                                                 onMouseEnter={e => e.currentTarget.style.backgroundColor = '#2563eb'}
                                                                 onMouseLeave={e => e.currentTarget.style.backgroundColor = '#3b82f6'}
                                                             >
-                                                                <Edit2 size={14} />
+                                                                <Edit2 size={12} />
                                                                 Edit
                                                             </button>
                                                         )}
