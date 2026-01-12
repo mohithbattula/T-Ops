@@ -76,31 +76,35 @@ const AttendanceTracker = () => {
 
         // ========== REALTIME SUBSCRIPTION ==========
         // Listen for changes to attendance table (when chatbot clocks in/out)
-        const today = new Date().toISOString().split('T')[0];
-        const channel = supabase
-            .channel('attendance-changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*', // INSERT, UPDATE, DELETE
-                    schema: 'public',
-                    table: 'attendance',
-                    filter: `employee_id=eq.${userId},org_id=eq.${orgId}`
-                },
-                (payload) => {
-                    console.log('[REALTIME] Attendance changed:', payload);
-                    // Refetch attendance data
-                    fetchAttendance();
-                }
-            )
-            .subscribe();
+        // ========== REALTIME SUBSCRIPTION ==========
+        if (userId && orgId) {
+            const channel = supabase
+                .channel(`teamlead-attendance-${userId}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'attendance',
+                        filter: `employee_id=eq.${userId}`
+                    },
+                    (payload) => {
+                        console.log('[REALTIME] Attendance changed:', payload);
+                        // Refetch attendance data when any change occurs
+                        fetchAttendance();
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('[REALTIME] Subscription status:', status);
+                });
 
-        // Cleanup subscription on unmount
-        return () => {
-            supabase.removeChannel(channel);
-        };
+            return () => {
+                console.log('[REALTIME] Cleaning up subscription');
+                supabase.removeChannel(channel);
+            };
+        }
         // ========== END REALTIME ==========
-    }, [userId]);
+    }, [userId, orgId]);
 
     // Timer logic
     useEffect(() => {

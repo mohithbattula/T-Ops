@@ -15,13 +15,41 @@ const AttendanceTracker = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [loading, setLoading] = useState(true);
 
+    // Helper Functions (defined before useEffect to avoid hoisting issues)
+    const formatTime = (date) => {
+        if (!date) return '--:--';
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const formatDuration = (seconds) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
     // Fetch Today's Attendance on Mount
     useEffect(() => {
         const fetchAttendance = async () => {
-            if (!userId || !orgId) return;
+            if (!userId || !orgId) {
+                console.log('[ATTENDANCE] Missing userId or orgId:', { userId, orgId });
+                return;
+            }
 
             try {
                 const today = new Date().toISOString().split('T')[0];
+                console.log('[ATTENDANCE] Fetching attendance for:', { userId, orgId, today });
+
+                // DEBUG: Fetch ALL attendance records for today to see what's in the database
+                const { data: allRecords } = await supabase
+                    .from('attendance')
+                    .select('*')
+                    .eq('date', today);
+
+                console.log('[ATTENDANCE] ALL records for today:', allRecords);
+                console.log('[ATTENDANCE] Total records found:', allRecords?.length || 0);
+
+                // Now fetch with filters
                 const { data, error } = await supabase
                     .from('attendance')
                     .select('*')
@@ -31,17 +59,53 @@ const AttendanceTracker = () => {
                     .maybeSingle();
 
                 if (error) {
-                    console.error('Error fetching attendance:', error);
+                    console.error('[ATTENDANCE] Error fetching attendance:', error);
                     return;
                 }
 
+                console.log('[ATTENDANCE] Fetched data:', data);
+                console.log('[ATTENDANCE] Query parameters:', {
+                    employee_id: userId,
+                    org_id: orgId,
+                    date: today,
+                    userIdType: typeof userId,
+                    orgIdType: typeof orgId
+                });
+
+                // DEBUG: If data is null but allRecords has data, show the mismatch
+                if (!data && allRecords && allRecords.length > 0) {
+                    console.warn('[ATTENDANCE] ⚠️ MISMATCH DETECTED!');
+                    console.warn('[ATTENDANCE] Records exist but query returned null');
+                    console.warn('[ATTENDANCE] Comparing values:');
+                    allRecords.forEach((record, index) => {
+                        console.warn(`Record ${index + 1}:`, {
+                            db_employee_id: record.employee_id,
+                            db_org_id: record.org_id,
+                            db_date: record.date,
+                            query_employee_id: userId,
+                            query_org_id: orgId,
+                            query_date: today,
+                            employee_id_match: record.employee_id === userId,
+                            org_id_match: record.org_id === orgId,
+                            date_match: record.date === today
+                        });
+                    });
+                }
+
                 if (data) {
+                    // Load current task if exists
+                    if (data.current_task) {
+                        setCurrentTask(data.current_task);
+                        setUserTask(data.current_task);
+                    }
+
                     // Parse Check In Time
                     if (data.clock_in) {
                         const [h, m, s] = data.clock_in.split(':');
                         const inTime = new Date();
                         inTime.setHours(h, m, s || 0);
                         setCheckInTime(inTime);
+                        console.log('[ATTENDANCE] Check-in time set:', formatTime(inTime));
 
                         // If NOT checked out yet
                         if (!data.clock_out) {
@@ -53,20 +117,32 @@ const AttendanceTracker = () => {
                             const now = new Date();
                             const diff = Math.floor((now - inTime) / 1000);
                             setElapsedTime(diff > 0 ? diff : 0);
+                            console.log('[ATTENDANCE] Status: checked-in, elapsed:', diff);
                         } else {
                             // Already checked out
                             const [oh, om, os] = data.clock_out.split(':');
                             const outTime = new Date();
                             outTime.setHours(oh, om, os || 0);
                             setCheckOutTime(outTime);
-                            setStatus('checked-out'); // Or 'completed'
+                            setStatus('checked-out');
                             setUserStatus('Offline');
                             setLastActive(formatTime(outTime));
+                            console.log('[ATTENDANCE] Status: checked-out at', formatTime(outTime));
                         }
+                    } else {
+                        console.log('[ATTENDANCE] No clock_in data found');
                     }
+                } else {
+                    console.log('[ATTENDANCE] No attendance record found for today');
+                    // Reset to default state
+                    setStatus('checked-out');
+                    setCheckInTime(null);
+                    setCheckOutTime(null);
+                    setCurrentTask('');
+                    setUserStatus('Offline');
                 }
             } catch (err) {
-                console.error('Unexpected error:', err);
+                console.error('[ATTENDANCE] Unexpected error:', err);
             } finally {
                 setLoading(false);
             }
@@ -75,28 +151,34 @@ const AttendanceTracker = () => {
         fetchAttendance();
 
         // ========== REALTIME SUBSCRIPTION ==========
-        const channel = supabase
-            .channel('employee-attendance-changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'attendance',
-                    filter: `employee_id=eq.${userId},org_id=eq.${orgId}`
-                },
-                (payload) => {
-                    console.log('[REALTIME] Attendance changed:', payload);
-                    fetchAttendance();
-                }
-            )
-            .subscribe();
+        if (userId && orgId) {
+            const channel = supabase
+                .channel(`employee-attendance-${userId}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'attendance',
+                        filter: `employee_id=eq.${userId}`
+                    },
+                    (payload) => {
+                        console.log('[REALTIME] Attendance changed:', payload);
+                        // Refetch attendance data when any change occurs
+                        fetchAttendance();
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('[REALTIME] Subscription status:', status);
+                });
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
+            return () => {
+                console.log('[REALTIME] Cleaning up subscription');
+                supabase.removeChannel(channel);
+            };
+        }
         // ========== END REALTIME ==========
-    }, [userId]);
+    }, [userId, orgId]);
 
     // Timer logic
     useEffect(() => {
@@ -113,18 +195,6 @@ const AttendanceTracker = () => {
         return () => clearInterval(interval);
     }, [status, checkInTime]);
 
-    const formatTime = (date) => {
-        if (!date) return '--:--';
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    };
-
-    const formatDuration = (seconds) => {
-        const h = Math.floor(seconds / 3600);
-        const m = Math.floor((seconds % 3600) / 60);
-        const s = seconds % 60;
-        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-    };
-
     const handleMainAction = async () => {
         if (!userId) {
             addToast('User ID not found. Please refresh.', 'error');
@@ -138,14 +208,26 @@ const AttendanceTracker = () => {
         try {
             if (status === 'checked-out') {
                 // CHECK IN
-                const { error } = await supabase.from('attendance').insert({
+                console.log('[CHECK-IN] Attempting check-in with:', {
                     employee_id: userId,
                     org_id: orgId,
                     date: dateString,
                     clock_in: timeString
                 });
 
-                if (error) throw error;
+                const { data, error } = await supabase.from('attendance').insert({
+                    employee_id: userId,
+                    org_id: orgId,
+                    date: dateString,
+                    clock_in: timeString
+                }).select();
+
+                if (error) {
+                    console.error('[CHECK-IN] Error:', error);
+                    throw error;
+                }
+
+                console.log('[CHECK-IN] Success! Inserted data:', data);
 
                 setStatus('checked-in');
                 setCheckInTime(now);

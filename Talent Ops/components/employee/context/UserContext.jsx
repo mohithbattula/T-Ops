@@ -62,7 +62,7 @@ export const UserProvider = ({ children }) => {
                         for (const session of openSessions) {
                             if (session.date === today) {
                                 // Valid ongoing session for today
-                                setUserStatus(session.status === 'break' ? 'Away' : 'Online');
+                                setUserStatus('Online'); // User is online if they have an active session
                                 if (session.current_task) {
                                     setUserTask(session.current_task);
                                 }
@@ -80,8 +80,7 @@ export const UserProvider = ({ children }) => {
                                         .from('attendance')
                                         .update({
                                             clock_out: clockOutTime,
-                                            total_hours: totalHours,
-                                            status: 'present' // Reset status to present (e.g. if they were stuck on break)
+                                            total_hours: totalHours
                                         })
                                         .eq('id', session.id);
 

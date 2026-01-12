@@ -75,28 +75,34 @@ const AttendanceTracker = () => {
         fetchAttendance();
 
         // ========== REALTIME SUBSCRIPTION ==========
-        const channel = supabase
-            .channel('manager-attendance-changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'attendance',
-                    filter: `employee_id=eq.${userId},org_id=eq.${orgId}`
-                },
-                (payload) => {
-                    console.log('[REALTIME] Attendance changed:', payload);
-                    fetchAttendance();
-                }
-            )
-            .subscribe();
+        if (userId && orgId) {
+            const channel = supabase
+                .channel(`manager-attendance-${userId}`)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'attendance',
+                        filter: `employee_id=eq.${userId}`
+                    },
+                    (payload) => {
+                        console.log('[REALTIME] Attendance changed:', payload);
+                        // Refetch attendance data when any change occurs
+                        fetchAttendance();
+                    }
+                )
+                .subscribe((status) => {
+                    console.log('[REALTIME] Subscription status:', status);
+                });
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
+            return () => {
+                console.log('[REALTIME] Cleaning up subscription');
+                supabase.removeChannel(channel);
+            };
+        }
         // ========== END REALTIME ==========
-    }, [userId]);
+    }, [userId, orgId]);
 
     // Timer logic
     useEffect(() => {

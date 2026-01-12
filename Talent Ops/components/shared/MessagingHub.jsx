@@ -894,32 +894,76 @@ const MessagingHub = () => {
                                                         <div
                                                             style={{
                                                                 position: 'absolute',
-                                                                top: '-35px',
-                                                                right: '0',
+                                                                top: '-32px',
+                                                                right: '8px',
                                                                 background: 'white',
-                                                                borderRadius: '8px',
-                                                                padding: '4px',
-                                                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                                                borderRadius: '6px',
+                                                                padding: '2px',
+                                                                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
                                                                 display: 'flex',
-                                                                gap: '4px',
+                                                                gap: '2px',
                                                                 zIndex: 10,
-                                                                border: '1px solid #e2e8f0',
-                                                                animation: 'fadeIn 0.2s ease'
+                                                                border: '1px solid #e5e7eb',
+                                                                animation: 'fadeIn 0.15s ease'
                                                             }}
                                                         >
                                                             <button
                                                                 onClick={() => deleteMessageForMe(msg.id)}
                                                                 title="Delete for me"
-                                                                style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: '#64748b' }}
+                                                                style={{
+                                                                    background: 'transparent',
+                                                                    border: 'none',
+                                                                    borderRadius: '4px',
+                                                                    padding: '6px 10px',
+                                                                    cursor: 'pointer',
+                                                                    color: '#64748b',
+                                                                    fontSize: '12px',
+                                                                    fontWeight: 500,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px',
+                                                                    transition: 'all 0.15s ease'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.currentTarget.style.background = '#f1f5f9';
+                                                                    e.currentTarget.style.color = '#475569';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.background = 'transparent';
+                                                                    e.currentTarget.style.color = '#64748b';
+                                                                }}
                                                             >
-                                                                <Trash2 size={12} /> Me
+                                                                <Trash2 size={14} />
+                                                                <span>Me</span>
                                                             </button>
                                                             <button
                                                                 onClick={() => deleteMessageForEveryone(msg.id)}
                                                                 title="Delete for everyone"
-                                                                style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: '#ef4444' }}
+                                                                style={{
+                                                                    background: 'transparent',
+                                                                    border: 'none',
+                                                                    borderRadius: '4px',
+                                                                    padding: '6px 10px',
+                                                                    cursor: 'pointer',
+                                                                    color: '#ef4444',
+                                                                    fontSize: '12px',
+                                                                    fontWeight: 500,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px',
+                                                                    transition: 'all 0.15s ease'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.currentTarget.style.background = '#fee2e2';
+                                                                    e.currentTarget.style.color = '#dc2626';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.background = 'transparent';
+                                                                    e.currentTarget.style.color = '#ef4444';
+                                                                }}
                                                             >
-                                                                <Trash2 size={12} /> All
+                                                                <Trash2 size={14} />
+                                                                <span>All</span>
                                                             </button>
                                                         </div>
                                                     )}
