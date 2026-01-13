@@ -231,194 +231,444 @@ const ProjectManagement = ({ addToast = () => { } }) => {
     }
 
     return (
-        <div style={{ display: 'flex', gap: '24px', height: 'calc(100vh - 120px)' }}>
-            {/* Projects List */}
-            <div style={{ width: '280px', backgroundColor: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <FolderOpen size={18} /> Projects
-                    </h3>
-                    <button onClick={() => setShowAddProject(true)} style={{ background: '#8b5cf6', border: 'none', borderRadius: '8px', padding: '6px', cursor: 'pointer', color: 'white' }}>
-                        <Plus size={18} />
-                    </button>
-                </div>
-                <div style={{ flex: 1, overflowY: 'auto' }}>
-                    {projects.map(project => (
-                        <div key={project.id} onClick={() => { setSelectedProject(project); fetchProjectMembers(project.id); }}
-                            style={{
-                                padding: '14px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)',
-                                backgroundColor: selectedProject?.id === project.id ? '#ede9fe' : 'transparent',
-                                borderLeft: selectedProject?.id === project.id ? '3px solid #8b5cf6' : '3px solid transparent'
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Premium Dark Header */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+                borderRadius: '20px',
+                padding: '32px 36px',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
+            }}>
+                {/* Subtle Grid Pattern */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: `
+                        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '32px 32px',
+                    pointerEvents: 'none'
+                }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
+                    <div>
+                        {/* Badge and Subtitle */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                            <span style={{
+                                background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                                color: 'white',
+                                padding: '6px 14px',
+                                borderRadius: '20px',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase',
+                                boxShadow: '0 4px 12px rgba(139,92,246,0.4)'
                             }}>
-                            <div style={{ fontWeight: 600 }}>{project.name}</div>
-                            <div style={{
-                                fontSize: '0.75rem',
-                                padding: '2px 8px',
-                                borderRadius: '12px',
-                                backgroundColor: getStatusBadge(project.status).bg,
-                                color: getStatusBadge(project.status).color,
-                                fontWeight: 600,
-                                textTransform: 'capitalize',
-                                display: 'inline-block',
-                                marginTop: '4px'
-                            }}>
-                                {project.status || 'active'}
-                            </div>
+                                EXECUTIVE
+                            </span>
+                            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.5rem' }}>●</span>
+                            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', fontWeight: 500 }}>
+                                Organization Management
+                            </span>
                         </div>
-                    ))}
+
+                        {/* Main Title with Gradient */}
+                        <h1 style={{
+                            fontSize: '2rem',
+                            fontWeight: 800,
+                            background: 'linear-gradient(135deg, #ffffff 0%, #94a3b8 50%, #8b5cf6 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            marginBottom: '8px',
+                            letterSpacing: '-0.02em'
+                        }}>
+                            Project <span style={{
+                                background: 'linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text'
+                            }}>Management</span>
+                        </h1>
+
+                        {/* Description */}
+                        <p style={{
+                            color: 'rgba(255,255,255,0.6)',
+                            fontSize: '0.95rem',
+                            maxWidth: '500px',
+                            lineHeight: 1.5
+                        }}>
+                            Create projects, manage team members, and oversee organizational workflow.
+                        </p>
+                    </div>
+
+                    {/* Stats Cards */}
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                        <div style={{
+                            background: 'rgba(255,255,255,0.08)',
+                            borderRadius: '14px',
+                            padding: '16px 24px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#8b5cf6' }}>{projects.length}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>Projects</div>
+                        </div>
+                        <div style={{
+                            background: 'rgba(255,255,255,0.08)',
+                            borderRadius: '14px',
+                            padding: '16px 24px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#10b981' }}>{projectMembers.length}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>Members</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Project Members */}
-            <div style={{ flex: 1, backgroundColor: 'var(--surface)', borderRadius: '16px', border: '1px solid var(--border)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                {selectedProject ? (
-                    <>
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{selectedProject.name}</h2>
-                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{projectMembers.length} members</p>
-                            </div>
-                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                <select
-                                    value={selectedProject.status || 'active'}
-                                    onChange={(e) => updateProjectStatus(selectedProject.id, e.target.value)}
+            {/* Main Content - Two Column Layout */}
+            <div style={{ display: 'flex', gap: '24px', minHeight: '500px' }}>
+                {/* Projects List - Left Sidebar */}
+                <div style={{
+                    width: '320px',
+                    backgroundColor: 'white',
+                    borderRadius: '20px',
+                    border: '1px solid #e2e8f0',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.06)'
+                }}>
+                    <div style={{
+                        padding: '20px 24px',
+                        borderBottom: '1px solid #e2e8f0',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)'
+                    }}>
+                        <h3 style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem', color: '#0f172a' }}>
+                            <FolderOpen size={20} color="#8b5cf6" /> Projects
+                        </h3>
+                        <button onClick={() => setShowAddProject(true)} style={{
+                            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '10px',
+                            cursor: 'pointer',
+                            color: 'white',
+                            boxShadow: '0 4px 12px rgba(139,92,246,0.3)',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <Plus size={18} />
+                        </button>
+                    </div>
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+                        {projects.map(project => {
+                            const isSelected = selectedProject?.id === project.id;
+                            const status = getStatusBadge(project.status);
+                            return (
+                                <div
+                                    key={project.id}
+                                    onClick={() => { setSelectedProject(project); fetchProjectMembers(project.id); }}
                                     style={{
-                                        padding: '10px 16px',
-                                        borderRadius: '10px',
-                                        border: '2px solid var(--border)',
-                                        backgroundColor: getStatusBadge(selectedProject.status).bg,
-                                        color: getStatusBadge(selectedProject.status).color,
-                                        fontWeight: 600,
+                                        padding: '16px 18px',
                                         cursor: 'pointer',
-                                        fontSize: '0.9rem',
-                                        textTransform: 'capitalize'
+                                        borderRadius: '14px',
+                                        backgroundColor: isSelected ? '#f5f3ff' : 'white',
+                                        border: isSelected ? '2px solid #8b5cf6' : '2px solid transparent',
+                                        transition: 'all 0.2s ease',
+                                        marginBottom: '8px',
+                                        boxShadow: isSelected ? '0 4px 16px rgba(139,92,246,0.15)' : 'none'
                                     }}
                                 >
-                                    <option value="active">Active</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="deactivated">Deactivated</option>
-                                </select>
-                                <button onClick={() => setShowAddMember(true)} style={{
-                                    padding: '10px 20px', borderRadius: '10px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                                    color: 'white', border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px'
-                                }}>
-                                    <UserPlus size={18} /> Add Member
-                                </button>
+                                    <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: '8px', fontSize: '0.95rem' }}>{project.name}</div>
+                                    <div style={{
+                                        fontSize: '0.7rem',
+                                        padding: '4px 10px',
+                                        borderRadius: '12px',
+                                        backgroundColor: status.bg,
+                                        color: status.color,
+                                        fontWeight: 600,
+                                        textTransform: 'capitalize',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}>
+                                        <status.icon size={12} />
+                                        {project.status || 'active'}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Project Members - Right Panel */}
+                <div style={{
+                    flex: 1,
+                    backgroundColor: 'white',
+                    borderRadius: '20px',
+                    border: '1px solid #e2e8f0',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.06)'
+                }}>
+                    {selectedProject ? (
+                        <>
+                            <div style={{
+                                padding: '24px 28px',
+                                borderBottom: '1px solid #e2e8f0',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                background: 'linear-gradient(135deg, #fafafa 0%, #f8fafc 100%)'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                    <div style={{
+                                        width: '48px',
+                                        height: '48px',
+                                        borderRadius: '14px',
+                                        background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 4px 12px rgba(139,92,246,0.3)'
+                                    }}>
+                                        <Users size={24} color="white" />
+                                    </div>
+                                    <div>
+                                        <h2 style={{ fontSize: '1.35rem', fontWeight: 700, color: '#0f172a', letterSpacing: '-0.025em' }}>{selectedProject.name}</h2>
+                                        <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '4px' }}>{projectMembers.length} team members</p>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                    <select
+                                        value={selectedProject.status || 'active'}
+                                        onChange={(e) => updateProjectStatus(selectedProject.id, e.target.value)}
+                                        style={{
+                                            padding: '10px 16px',
+                                            borderRadius: '10px',
+                                            border: '2px solid var(--border)',
+                                            backgroundColor: getStatusBadge(selectedProject.status).bg,
+                                            color: getStatusBadge(selectedProject.status).color,
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            fontSize: '0.9rem',
+                                            textTransform: 'capitalize'
+                                        }}
+                                    >
+                                        <option value="active">Active</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="deactivated">Deactivated</option>
+                                    </select>
+                                    <button onClick={() => setShowAddMember(true)} style={{
+                                        padding: '12px 24px',
+                                        borderRadius: '12px',
+                                        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                                        color: 'white',
+                                        border: 'none',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '10px',
+                                        boxShadow: '0 4px 14px rgba(139,92,246,0.35)',
+                                        transition: 'all 0.2s ease',
+                                        fontSize: '0.9rem'
+                                    }}>
+                                        <UserPlus size={18} /> Add Member
+                                    </button>
+                                </div>
+                            </div>
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '20px 28px' }}>
+                                {projectMembers.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '60px 40px', color: 'var(--text-secondary)' }}>
+                                        <div style={{
+                                            width: '80px',
+                                            height: '80px',
+                                            borderRadius: '50%',
+                                            backgroundColor: '#f1f5f9',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            margin: '0 auto 16px'
+                                        }}>
+                                            <Users size={36} style={{ color: '#94a3b8' }} />
+                                        </div>
+                                        <p style={{ fontSize: '1rem', fontWeight: 500 }}>No members yet</p>
+                                        <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>Add project members to get started.</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        {projectMembers.map((member, index) => {
+                                            const badge = getRoleBadge(member.role);
+                                            const avatarColors = [
+                                                'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                                                'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                                'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                                'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                                'linear-gradient(135deg, #ec4899 0%, #db2777 100%)',
+                                                'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)'
+                                            ];
+                                            const avatarBg = avatarColors[index % avatarColors.length];
+
+                                            return (
+                                                <div key={member.id} style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    padding: '16px 20px',
+                                                    backgroundColor: 'white',
+                                                    borderRadius: '16px',
+                                                    border: '1px solid #e2e8f0',
+                                                    transition: 'all 0.2s ease',
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                                        <div style={{
+                                                            width: '46px',
+                                                            height: '46px',
+                                                            borderRadius: '50%',
+                                                            background: avatarBg,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            color: 'white',
+                                                            fontWeight: 700,
+                                                            fontSize: '1rem',
+                                                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                                                        }}>
+                                                            {member.profiles?.full_name?.charAt(0)?.toUpperCase() || '?'}
+                                                        </div>
+                                                        <div>
+                                                            <div style={{ fontWeight: 600, color: '#0f172a', fontSize: '0.95rem' }}>{member.profiles?.full_name || 'Unknown'}</div>
+                                                            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{member.profiles?.email}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                        <select
+                                                            value={member.role === 'employee' ? 'consultant' : (member.role?.toLowerCase() || 'consultant')}
+                                                            onChange={(e) => updateMemberRole(member, e.target.value)}
+                                                            style={{
+                                                                padding: '8px 14px',
+                                                                borderRadius: '10px',
+                                                                border: '1px solid #e2e8f0',
+                                                                backgroundColor: badge.bg,
+                                                                color: badge.color,
+                                                                fontWeight: 600,
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.8rem'
+                                                            }}
+                                                        >
+                                                            <option value="consultant">Consultant</option>
+                                                            <option value="team_lead">Team Lead</option>
+                                                            <option value="manager">Manager</option>
+                                                        </select>
+                                                        <button onClick={() => removeMember(member.id)} style={{
+                                                            padding: '10px',
+                                                            borderRadius: '10px',
+                                                            border: '1px solid #fee2e2',
+                                                            backgroundColor: '#fef2f2',
+                                                            cursor: 'pointer',
+                                                            color: '#ef4444',
+                                                            transition: 'all 0.2s ease',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center'
+                                                        }}>
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+                            Select a project to manage members
+                        </div>
+                    )}
+                </div>
+
+                {/* Add Project Modal */}
+                {showAddProject && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                        <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: '16px', width: '400px' }}>
+                            <h3 style={{ marginBottom: '16px', fontWeight: 700 }}>Create New Project</h3>
+                            <input type="text" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} placeholder="Project name..."
+                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '16px', fontSize: '1rem' }}
+                                onKeyPress={(e) => e.key === 'Enter' && createProject()} autoFocus />
+                            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                                <button onClick={() => setShowAddProject(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--background)', cursor: 'pointer' }}>Cancel</button>
+                                <button onClick={createProject} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#8b5cf6', color: 'white', fontWeight: 600, cursor: 'pointer' }}>Create</button>
                             </div>
                         </div>
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
-                            {projectMembers.length === 0 ? (
-                                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-                                    <Users size={48} style={{ marginBottom: '12px', opacity: 0.5 }} />
-                                    <p>No members yet. Add project members to get started.</p>
+                    </div>
+                )}
+
+                {/* Add Member Modal */}
+                {showAddMember && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                        <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: '16px', width: '500px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                <h3 style={{ fontWeight: 700 }}>Add Member to {selectedProject?.name}</h3>
+                                <button onClick={() => setShowAddMember(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+                                <div style={{ flex: 1, position: 'relative' }}>
+                                    <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                                    <input type="text" value={searchUser} onChange={(e) => setSearchUser(e.target.value)} placeholder="Search users..."
+                                        style={{ width: '100%', padding: '10px 10px 10px 40px', borderRadius: '8px', border: '1px solid var(--border)' }} />
                                 </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {projectMembers.map(member => {
-                                        const badge = getRoleBadge(member.role);
-                                        return (
-                                            <div key={member.id} style={{
-                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                padding: '14px 16px', backgroundColor: 'var(--background)', borderRadius: '12px', border: '1px solid var(--border)'
-                                            }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 600 }}>
-                                                        {member.profiles?.full_name?.charAt(0) || '?'}
-                                                    </div>
-                                                    <div>
-                                                        <div style={{ fontWeight: 600 }}>{member.profiles?.full_name || 'Unknown'}</div>
-                                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{member.profiles?.email}</div>
-                                                    </div>
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                    <select
-                                                        value={member.role === 'employee' ? 'consultant' : (member.role?.toLowerCase() || 'consultant')}
-                                                        onChange={(e) => updateMemberRole(member, e.target.value)}
-                                                        style={{ padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: badge.bg, color: badge.color, fontWeight: 600, cursor: 'pointer' }}
-                                                    >
-                                                        <option value="consultant">Consultant</option>
-                                                        <option value="team_lead">Team Lead</option>
-                                                        <option value="manager">Manager</option>
-                                                    </select>
-                                                    <button onClick={() => removeMember(member.id)} style={{ padding: '8px', borderRadius: '8px', border: '1px solid #fee2e2', backgroundColor: '#fff', cursor: 'pointer', color: '#ef4444' }}>
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
+                                <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}
+                                    style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                    <option value="consultant">Consultant</option>
+                                    <option value="team_lead">Team Lead</option>
+                                    <option value="manager">Manager</option>
+                                </select>
+                            </div>
+                            <div style={{ flex: 1, overflowY: 'auto', maxHeight: '300px' }}>
+                                {filteredUsers.length === 0 ? (
+                                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>No users found</div>
+                                ) : (
+                                    filteredUsers.map(user => (
+                                        <div key={user.id} onClick={() => addMember(user.id)}
+                                            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '8px', cursor: 'pointer', marginBottom: '4px' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background)'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>
+                                                {user.full_name?.charAt(0) || '?'}
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: 500 }}>{user.full_name}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{user.email}</div>
+                                            </div>
+                                            <Plus size={18} color="#8b5cf6" />
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
-                    </>
-                ) : (
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
-                        Select a project to manage members
                     </div>
                 )}
             </div>
-
-            {/* Add Project Modal */}
-            {showAddProject && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: '16px', width: '400px' }}>
-                        <h3 style={{ marginBottom: '16px', fontWeight: 700 }}>Create New Project</h3>
-                        <input type="text" value={newProjectName} onChange={(e) => setNewProjectName(e.target.value)} placeholder="Project name..."
-                            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: '16px', fontSize: '1rem' }}
-                            onKeyPress={(e) => e.key === 'Enter' && createProject()} autoFocus />
-                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                            <button onClick={() => setShowAddProject(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--background)', cursor: 'pointer' }}>Cancel</button>
-                            <button onClick={createProject} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#8b5cf6', color: 'white', fontWeight: 600, cursor: 'pointer' }}>Create</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Add Member Modal */}
-            {showAddMember && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div style={{ backgroundColor: 'var(--surface)', padding: '24px', borderRadius: '16px', width: '500px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <h3 style={{ fontWeight: 700 }}>Add Member to {selectedProject?.name}</h3>
-                            <button onClick={() => setShowAddMember(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
-                        </div>
-                        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                            <div style={{ flex: 1, position: 'relative' }}>
-                                <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-                                <input type="text" value={searchUser} onChange={(e) => setSearchUser(e.target.value)} placeholder="Search users..."
-                                    style={{ width: '100%', padding: '10px 10px 10px 40px', borderRadius: '8px', border: '1px solid var(--border)' }} />
-                            </div>
-                            <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}
-                                style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                                <option value="consultant">Consultant</option>
-                                <option value="team_lead">Team Lead</option>
-                                <option value="manager">Manager</option>
-                            </select>
-                        </div>
-                        <div style={{ flex: 1, overflowY: 'auto', maxHeight: '300px' }}>
-                            {filteredUsers.length === 0 ? (
-                                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>No users found</div>
-                            ) : (
-                                filteredUsers.map(user => (
-                                    <div key={user.id} onClick={() => addMember(user.id)}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '8px', cursor: 'pointer', marginBottom: '4px' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--background)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>
-                                            {user.full_name?.charAt(0) || '?'}
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 500 }}>{user.full_name}</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{user.email}</div>
-                                        </div>
-                                        <Plus size={18} color="#8b5cf6" />
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

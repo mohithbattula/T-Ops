@@ -66,10 +66,14 @@ const AnnouncementPopup = ({ isOpen, onClose, userId }) => {
         }
     };
 
-    if (!isOpen || loading || items.length === 0) {
+    // Effect to auto-close if nothing to show
+    useEffect(() => {
         if (!loading && items.length === 0 && isOpen) {
-            onClose(); // Auto-close if nothing to show
+            onClose();
         }
+    }, [loading, items.length, isOpen, onClose]);
+
+    if (!isOpen || loading || items.length === 0) {
         return null;
     }
 

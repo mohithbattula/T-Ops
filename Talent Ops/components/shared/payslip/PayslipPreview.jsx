@@ -61,26 +61,97 @@ const PayslipPreview = ({ payslipData, companySettings, onBack, onSave, loading 
     const netSalary = payslipData.netSalary;
 
     return (
-        <div className="payslip-preview-overlay">
-            <div className="payslip-preview-container">
-                <div className="preview-header">
-                    <button className="btn btn-secondary" onClick={onBack} disabled={loading}>
+        <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.8)',
+            backdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1100,
+            padding: '24px',
+            animation: 'fadeIn 0.3s ease-out'
+        }}>
+            <div style={{
+                maxWidth: '1000px',
+                width: '100%',
+                maxHeight: '95vh',
+                backgroundColor: '#f1f5f9',
+                borderRadius: '32px',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+            }}>
+                <div style={{
+                    padding: '24px 40px',
+                    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    color: 'white'
+                }}>
+                    <button
+                        onClick={onBack}
+                        disabled={loading}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '12px 20px',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1.5px solid rgba(255, 255, 255, 0.1)',
+                            borderRadius: '14px',
+                            color: 'white',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+                    >
                         <ArrowLeft size={18} />
-                        Back
+                        Modify Details
                     </button>
-                    <h2>Payslip Preview</h2>
-                    <button className="btn btn-primary" onClick={onSave} disabled={loading}>
-                        <Save size={18} />
-                        {loading ? 'Saving...' : 'Save Payslip'}
+
+                    <div style={{ textAlign: 'center' }}>
+                        <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800 }}>Document Finalization</h2>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>Reviewing {payslipData.payslipNumber}</p>
+                    </div>
+
+                    <button
+                        onClick={onSave}
+                        disabled={loading}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '12px 24px',
+                            background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                            border: 'none',
+                            borderRadius: '14px',
+                            color: 'white',
+                            fontWeight: 800,
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            boxShadow: '0 10px 15px -3px rgba(5, 150, 105, 0.3)',
+                            transition: 'all 0.3s'
+                        }}
+                        onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = 'translateY(-2px)' }}
+                        onMouseLeave={(e) => { if (!loading) e.currentTarget.style.transform = 'translateY(0)' }}
+                    >
+                        <Save size={20} />
+                        {loading ? 'Committing...' : 'Commit & Finalize'}
                     </button>
                 </div>
 
-                <div className="payslip-document-simple" style={{
-                    padding: '40px',
-                    backgroundColor: 'white',
-                    maxWidth: '900px',
-                    margin: '0 auto',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                <div style={{
+                    padding: '60px 40px',
+                    overflowY: 'auto',
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center'
                 }}>
                     {/* Company Header - Logo on left, info on right */}
                     <div style={{

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Coffee, Play, Square, CheckCircle2 } from 'lucide-react';
+import { Clock, Coffee, LogIn, Square, CheckCircle2 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { useUser } from '../../context/UserContext';
 import { supabase } from '../../../../lib/supabaseClient';
@@ -226,65 +226,196 @@ const AttendanceTracker = () => {
 
     return (
         <div style={{
-            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-            borderRadius: '24px',
-            padding: '24px',
-            color: 'white',
+            backgroundColor: '#ffffff',
+            borderRadius: '32px',
+            padding: '40px',
+            color: '#0f172a',
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            boxShadow: '0 10px 25px -5px rgba(99, 102, 241, 0.4)',
+            flexDirection: 'column',
+            gap: '32px',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.02)',
+            border: '1px solid #eef2f6',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            transition: 'all 0.3s ease'
         }}>
-            {/* Background Decoration */}
-            <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.1)' }}></div>
-            <div style={{ position: 'absolute', bottom: '-30px', left: '100px', width: '100px', height: '100px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.05)' }}></div>
+            {/* Subtle Gradient Glow */}
+            <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(14, 165, 233, 0.05) 0%, transparent 70%)', filter: 'blur(50px)', pointerEvents: 'none' }}></div>
 
-            {/* Left Section: Info & Times */}
-            <div style={{ flex: 1, zIndex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: status === 'checked-in' ? '#4ade80' : status === 'break' ? '#facc15' : '#94a3b8' }}></div>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 600, opacity: 0.9 }}>
-                        {status === 'checked-in' ? 'Online' : status === 'break' ? 'On Break' : 'Offline'}
-                    </span>
-                </div>
-
-                <h2 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '4px' }}>Today's Attendance</h2>
-                <p style={{ fontSize: '1.1rem', opacity: 0.8, marginBottom: '32px' }}>{dateString}</p>
-
-                <div style={{ display: 'flex', gap: '24px' }}>
-                    {/* Check In Card */}
-                    <div style={{
-                        backgroundColor: 'rgba(255,255,255,0.15)',
-                        backdropFilter: 'blur(8px)',
-                        padding: '16px 24px',
-                        borderRadius: '16px',
-                        minWidth: '140px'
-                    }}>
-                        <p style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: '4px' }}>Check In</p>
-                        <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{formatTime(checkInTime)}</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
+                <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                        <div style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: status === 'checked-in' ? '#10b981' : status === 'break' ? '#f59e0b' : '#94a3b8',
+                            boxShadow: status === 'checked-in' ? '0 0 15px rgba(16,185,129,0.5)' : 'none',
+                            animation: status === 'checked-in' ? 'pulse 2s infinite' : 'none'
+                        }}></div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                            {status === 'checked-in' ? 'Active Session' : status === 'break' ? 'On Break' : 'System Ready'}
+                        </span>
                     </div>
 
-                    {/* Check Out Card */}
-                    <div style={{
-                        backgroundColor: 'rgba(255,255,255,0.15)',
-                        backdropFilter: 'blur(8px)',
-                        padding: '16px 24px',
-                        borderRadius: '16px',
-                        minWidth: '140px'
-                    }}>
-                        <p style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: '4px' }}>Check Out</p>
-                        <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{formatTime(checkOutTime)}</p>
+                    <h2 style={{ fontSize: '2.4rem', fontWeight: 800, color: '#0f172a', marginBottom: '8px', letterSpacing: '-0.04em', lineHeight: 1 }}>Work Session</h2>
+                    <p style={{ fontSize: '1rem', fontWeight: 600, color: '#94a3b8', marginBottom: '40px' }}>{dateString}</p>
+
+                    <div style={{ display: 'flex', gap: '48px' }}>
+                        {/* Check In Card */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Started at</p>
+                            <p style={{ fontSize: '1.8rem', fontWeight: 800, color: '#1e293b', letterSpacing: '-0.02em' }}>{formatTime(checkInTime)}</p>
+                        </div>
+
+                        <div style={{ width: '1px', background: 'linear-gradient(to bottom, transparent, #eef2f6, transparent)' }}></div>
+
+                        {/* Check Out Card */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ending at</p>
+                            <p style={{ fontSize: '1.8rem', fontWeight: 800, color: checkOutTime ? '#1e293b' : '#cbd5e1', letterSpacing: '-0.02em' }}>{formatTime(checkOutTime)}</p>
+                        </div>
                     </div>
                 </div>
 
-                {/* Current Task Input */}
-                {(status === 'checked-in' || status === 'break') && (
-                    <div style={{ marginTop: '24px', maxWidth: '400px' }}>
+                {/* Right Section: Actions */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
+                    <button
+                        onClick={handleMainAction}
+                        disabled={status === 'checked-out' && checkOutTime}
+                        style={{
+                            width: '200px',
+                            height: '200px',
+                            borderRadius: '50%',
+                            backgroundColor: '#ffffff',
+                            border: '12px solid #f8fafc',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: (status === 'checked-out' && checkOutTime) ? 'not-allowed' : 'pointer',
+                            opacity: (status === 'checked-out' && checkOutTime) ? 0.7 : 1,
+                            boxShadow: '0 20px 50px rgba(0,0,0,0.08), inset 0 2px 4px rgba(0,0,0,0.02)',
+                            transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                            position: 'relative',
+                            padding: '0'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!(status === 'checked-out' && checkOutTime)) {
+                                e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+                                e.currentTarget.style.boxShadow = '0 30px 60px rgba(0,0,0,0.12)';
+                                e.currentTarget.style.borderColor = '#ffffff';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                            e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.08)';
+                            e.currentTarget.style.borderColor = '#f8fafc';
+                        }}
+                    >
+                        {(status === 'checked-out' && !checkOutTime) ? (
+                            <>
+                                <div style={{
+                                    width: '72px',
+                                    height: '72px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #0ea5e9, #6366f1)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: '14px',
+                                    color: '#fff',
+                                    boxShadow: '0 10px 20px rgba(14, 165, 233, 0.3)'
+                                }}>
+                                    <LogIn size={32} />
+                                </div>
+                                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>Check In</span>
+                            </>
+                        ) : (status === 'checked-in' || status === 'break') ? (
+                            <>
+                                <div style={{
+                                    width: '72px',
+                                    height: '72px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #ef4444, #f43f5e)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: '14px',
+                                    color: '#fff',
+                                    boxShadow: '0 10px 20px rgba(239, 68, 68, 0.3)'
+                                }}>
+                                    <Square size={28} fill="currentColor" />
+                                </div>
+                                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>Check Out</span>
+                            </>
+                        ) : (
+                            <>
+                                <div style={{
+                                    width: '72px',
+                                    height: '72px',
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: '14px',
+                                    color: '#fff',
+                                    boxShadow: '0 10px 20px rgba(16, 185, 129, 0.3)'
+                                }}>
+                                    <CheckCircle2 size={36} />
+                                </div>
+                                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#10b981', letterSpacing: '-0.01em' }}>Verified</span>
+                            </>
+                        )}
+
+                        {/* Animated Border */}
+                        <div style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            left: '-8px',
+                            right: '-8px',
+                            bottom: '-8px',
+                            borderRadius: '50%',
+                            border: '3px solid transparent',
+                            borderTopColor: status === 'checked-in' ? '#0ea5e9' : 'transparent',
+                            borderRightColor: status === 'checked-in' ? '#38bdf8' : 'transparent',
+                            animation: status === 'checked-in' ? 'spin 3s cubic-bezier(0.4, 0, 0.2, 1) infinite' : 'none',
+                        }}></div>
+                    </button>
+
+                    {/* Timer Display */}
+                    {(status === 'checked-in' || status === 'break') && (
+                        <div style={{ textAlign: 'center' }}>
+                            <p style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0f172a', letterSpacing: '0.05em', lineHeight: 1, marginBottom: '4px' }}>{formatDuration(elapsedTime)}</p>
+                            <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Active Session</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Current Task Input Area */}
+            {(status === 'checked-in' || status === 'break') && (
+                <div style={{
+                    marginTop: '8px',
+                    padding: '24px',
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '24px',
+                    border: '1px solid #f1f5f9',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '20px',
+                    position: 'relative',
+                    zIndex: 1
+                }}>
+                    <div style={{ backgroundColor: '#ffffff', padding: '12px', borderRadius: '14px', boxShadow: '0 4px 6px rgba(0,0,0,0.04)', color: '#0ea5e9' }}>
+                        <Clock size={20} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Current Focus</p>
                         <input
                             type="text"
-                            placeholder="What are you working on?"
+                            placeholder="What are you tackling right now?"
                             value={currentTask}
                             onChange={(e) => {
                                 setCurrentTask(e.target.value);
@@ -303,85 +434,43 @@ const AttendanceTracker = () => {
                                     if (error) {
                                         console.error('Error saving task:', error);
                                         addToast('Failed to save task', 'error');
-                                    } else {
-                                        // Optional: addToast('Task updated', 'success');
                                     }
                                 }
                             }}
                             style={{
                                 width: '100%',
-                                padding: '12px 16px',
-                                borderRadius: '12px',
                                 border: 'none',
-                                backgroundColor: 'rgba(255,255,255,0.2)',
-                                color: 'white',
-                                fontSize: '1rem',
+                                backgroundColor: 'transparent',
+                                color: '#1e293b',
+                                fontSize: '1.1rem',
+                                fontWeight: 700,
                                 outline: 'none',
-                                placeholderColor: 'rgba(255,255,255,0.6)'
+                                padding: '0'
                             }}
                         />
                     </div>
-                )}
-            </div>
-
-            {/* Right Section: Actions */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', zIndex: 1 }}>
-
-                {/* Main Action Button */}
-                <button
-                    onClick={handleMainAction}
-                    disabled={status === 'checked-out' && checkOutTime} // Disable if already checked out for the day
-                    style={{
-                        width: '160px',
-                        height: '160px',
-                        borderRadius: '50%',
-                        backgroundColor: 'white',
-                        border: 'none',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: (status === 'checked-out' && checkOutTime) ? 'not-allowed' : 'pointer',
-                        opacity: (status === 'checked-out' && checkOutTime) ? 0.7 : 1,
-                        boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
-                        transition: 'transform 0.2s',
-                        color: status === 'checked-in' || status === 'break' ? '#ef4444' : '#6366f1'
-                    }}
-                    onMouseEnter={(e) => {
-                        if (!(status === 'checked-out' && checkOutTime)) {
-                            e.currentTarget.style.transform = 'scale(1.05)';
-                        }
-                    }}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                    {(status === 'checked-out' && !checkOutTime) ? (
-                        <>
-                            <Clock size={40} strokeWidth={1.5} />
-                            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '8px' }}>Check In</span>
-                        </>
-                    ) : (status === 'checked-in' || status === 'break') ? (
-                        <>
-                            <Square size={40} strokeWidth={1.5} fill="currentColor" />
-                            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '8px' }}>Check Out</span>
-                        </>
-                    ) : (
-                        <>
-                            <CheckCircle2 size={40} strokeWidth={1.5} className="text-green-500" />
-                            <span style={{ fontSize: '1.0rem', fontWeight: 'bold', marginTop: '8px' }}>Completed</span>
-                        </>
-                    )}
-                </button>
-
-                {/* Timer Display */}
-                {(status === 'checked-in' || status === 'break') && (
-                    <div style={{ textAlign: 'center' }}>
-                        <p style={{ fontSize: '1.5rem', fontWeight: 'bold', fontFamily: 'monospace' }}>{formatDuration(elapsedTime)}</p>
-                        <p style={{ fontSize: '0.8rem', opacity: 0.8 }}>Working Time</p>
-                    </div>
-                )}
-
-
-            </div>
+                    <button
+                        onClick={toggleBreak}
+                        style={{
+                            padding: '14px 24px',
+                            borderRadius: '16px',
+                            backgroundColor: status === 'break' ? '#0f172a' : '#ffffff',
+                            color: status === 'break' ? '#ffffff' : '#1e293b',
+                            fontSize: '0.95rem',
+                            fontWeight: 800,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.03)',
+                            border: '1px solid #eef2f6',
+                            transition: 'all 0.3s'
+                        }}
+                    >
+                        <Coffee size={20} />
+                        {status === 'break' ? 'Resume Work' : 'Break Time'}
+                    </button>
+                </div>
+            )}
 
             {/* Confirmation Modal */}
             {showConfirmModal && (
@@ -391,71 +480,86 @@ const AttendanceTracker = () => {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.6)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    zIndex: 1000,
-                    backdropFilter: 'blur(4px)'
+                    zIndex: 2000,
+                    backdropFilter: 'blur(8px)'
                 }}>
                     <div style={{
                         backgroundColor: 'white',
-                        padding: '32px',
-                        borderRadius: '24px',
-                        width: '360px',
+                        padding: '40px',
+                        borderRadius: '32px',
+                        width: '400px',
                         textAlign: 'center',
                         color: '#1e293b',
                         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                        animation: 'fadeIn 0.2s ease-out'
+                        animation: 'modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
                     }}>
                         <div style={{
-                            width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#fee2e2',
-                            color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto'
+                            width: '80px', height: '80px', borderRadius: '50%', backgroundColor: '#fef2f2',
+                            color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px auto'
                         }}>
                             <Square size={32} fill="currentColor" />
                         </div>
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>Confirm Check Out</h3>
-                        <p style={{ color: '#64748b', marginBottom: '32px', lineHeight: '1.5' }}>
-                            Are you sure you want to clock out for today? This action will mark your attendance as completed.
+                        <h3 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '12px', letterSpacing: '-0.02em' }}>Finish your shift?</h3>
+                        <p style={{ color: '#64748b', marginBottom: '32px', lineHeight: '1.6', fontSize: '1.05rem' }}>
+                            You're about to clock out. Please ensure all your tasks for this session are logged.
                         </p>
-                        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', gap: '16px' }}>
                             <button
                                 onClick={() => setShowConfirmModal(false)}
                                 style={{
-                                    padding: '12px 24px',
-                                    borderRadius: '12px',
+                                    padding: '16px 24px',
+                                    borderRadius: '16px',
                                     border: '1px solid #e2e8f0',
                                     backgroundColor: 'white',
                                     color: '#64748b',
-                                    fontWeight: 600,
+                                    fontWeight: 700,
                                     cursor: 'pointer',
                                     flex: 1,
-                                    fontSize: '1rem'
+                                    transition: 'all 0.2s'
                                 }}
                             >
-                                Cancel
+                                Back to Work
                             </button>
                             <button
                                 onClick={performCheckOut}
                                 style={{
-                                    padding: '12px 24px',
-                                    borderRadius: '12px',
+                                    padding: '16px 24px',
+                                    borderRadius: '16px',
                                     border: 'none',
                                     backgroundColor: '#ef4444',
                                     color: 'white',
-                                    fontWeight: 600,
+                                    fontWeight: 700,
                                     cursor: 'pointer',
                                     flex: 1,
-                                    fontSize: '1rem',
-                                    boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.3)'
+                                    boxShadow: '0 10px 15px -3px rgba(239, 68, 68, 0.3)',
+                                    transition: 'all 0.2s'
                                 }}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ef4444'}
                             >
-                                Check Out
+                                End Shift
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+
+            <style>{`
+                @keyframes pulse {
+                    0% { transform: scale(1); opacity: 1; }
+                    50% { transform: scale(1.2); opacity: 0.7; }
+                    100% { transform: scale(1); opacity: 1; }
+                }
+                @keyframes spin { to { transform: rotate(360deg); } }
+                @keyframes modalSlideUp {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
         </div>
     );
 };

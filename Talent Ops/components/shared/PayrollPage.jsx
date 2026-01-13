@@ -231,64 +231,91 @@ const PayrollPage = ({ userRole, userId, addToast, orgId }) => {
 
     return (
         <div style={{
-            padding: '24px',
-            backgroundColor: '#f9fafb',
+            padding: '32px',
+            background: '#f8fafc',
             minHeight: '100vh'
         }}>
-            {/* Header */}
+            {/* Premium Header - Reusing the Dashboard Aesthetic */}
             <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '24px'
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                borderRadius: '24px',
+                padding: '32px 40px',
+                color: 'white',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                marginBottom: '32px'
             }}>
-                <div>
-                    <h1 style={{
-                        fontSize: '1.875rem',
-                        fontWeight: 700,
-                        color: '#111827',
-                        marginBottom: '8px'
-                    }}>
-                        Payroll Records
-                    </h1>
-                    <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-                        View and manage employee payroll records
-                    </p>
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }}>
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="mesh-payroll" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#mesh-payroll)" />
+                    </svg>
                 </div>
 
-                {canGenerate && (
-                    <button
-                        onClick={() => setShowGenerateModal(true)}
-                        style={{
-                            padding: '12px 24px',
-                            backgroundColor: '#7c3aed',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '12px',
-                            fontSize: '1rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '0.85rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>
+                            <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', border: '1px solid rgba(255,255,255,0.1)' }}>Financials</span>
+                            <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: '800' }}>•</span>
+                            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', fontWeight: '600' }}>Payroll Control</span>
+                        </div>
+                        <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '12px', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                            Payroll <span style={{ background: 'linear-gradient(to right, #818cf8, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Records</span>
+                        </h1>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', maxWidth: '600px', fontWeight: '500', lineHeight: 1.6 }}>
+                            Comprehensive view of organizational payroll distribution and employee compensation records.
+                        </p>
+                    </div>
+
+                    {canGenerate && (
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            backdropFilter: 'blur(12px)',
+                            padding: '16px 24px',
+                            borderRadius: '20px',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px',
-                            boxShadow: '0 4px 6px -1px rgba(124, 58, 237, 0.3)',
-                            transition: 'all 0.2s'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#6d28d9';
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 6px 8px -1px rgba(124, 58, 237, 0.4)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = '#7c3aed';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(124, 58, 237, 0.3)';
-                        }}
-                    >
-                        <DollarSign size={20} />
-                        Generate Payroll
-                    </button>
-                )}
+                            gap: '16px'
+                        }}>
+                            <button
+                                onClick={() => setShowGenerateModal(true)}
+                                style={{
+                                    background: 'linear-gradient(135deg, #818cf8 0%, #6366f1 100%)',
+                                    color: 'white',
+                                    padding: '12px 24px',
+                                    borderRadius: '14px',
+                                    fontWeight: '800',
+                                    fontSize: '0.9rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                                    transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                    whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(99, 102, 241, 0.4)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)';
+                                }}
+                            >
+                                <DollarSign size={20} />
+                                Generate Payroll
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Content */}

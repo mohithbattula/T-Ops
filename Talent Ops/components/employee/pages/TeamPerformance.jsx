@@ -151,14 +151,83 @@ const TeamPerformance = () => {
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Header */}
-            <div>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px' }}>
-                    Team Performance
-                </h2>
-                <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
-                    {currentProject?.name} - Performance metrics and insights
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Premium Dark Header */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+                borderRadius: '16px',
+                padding: '24px',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}>
+                {/* Subtle Grid Pattern */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: `
+                        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '32px 32px',
+                    pointerEvents: 'none'
+                }} />
+
+                {/* Badge and Subtitle */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', position: 'relative', zIndex: 1 }}>
+                    <span style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        color: 'white',
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        boxShadow: '0 4px 12px rgba(16,185,129,0.4)'
+                    }}>
+                        ANALYTICS
+                    </span>
+                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.5rem' }}>●</span>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: 500 }}>
+                        Performance Insights
+                    </span>
+                </div>
+
+                {/* Main Title with Gradient */}
+                <h1 style={{
+                    fontSize: '1.75rem',
+                    fontWeight: 800,
+                    background: 'linear-gradient(135deg, #ffffff 0%, #94a3b8 50%, #10b981 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    marginBottom: '8px',
+                    position: 'relative',
+                    zIndex: 1,
+                    letterSpacing: '-0.02em'
+                }}>
+                    Team <span style={{
+                        background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                    }}>Performance</span>
+                </h1>
+
+                {/* Description */}
+                <p style={{
+                    color: 'rgba(255,255,255,0.6)',
+                    fontSize: '0.9rem',
+                    maxWidth: '500px',
+                    lineHeight: 1.5,
+                    position: 'relative',
+                    zIndex: 1
+                }}>
+                    {currentProject?.name} - Performance metrics and productivity insights
                 </p>
             </div>
 
@@ -173,7 +242,7 @@ const TeamPerformance = () => {
                 ].map((stat, i) => (
                     <div key={i} style={{
                         backgroundColor: 'white',
-                        padding: '20px',
+                        padding: '16px',
                         borderRadius: '16px',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                         border: '1px solid #e2e8f0',
@@ -202,7 +271,7 @@ const TeamPerformance = () => {
                         </div>
                         <p style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500, marginBottom: '4px' }}>{stat.label}</p>
                         <h3 style={{
-                            fontSize: '2rem',
+                            fontSize: '1.75rem',
                             fontWeight: '700',
                             color: '#0f172a',
                             fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -221,7 +290,7 @@ const TeamPerformance = () => {
                     backgroundColor: 'white',
                     borderRadius: '16px',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    padding: '24px',
+                    padding: '16px',
                     border: '1px solid #e2e8f0'
                 }}>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '24px', color: '#0f172a' }}>
@@ -274,7 +343,7 @@ const TeamPerformance = () => {
                     backgroundColor: 'white',
                     borderRadius: '16px',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    padding: '24px',
+                    padding: '16px',
                     border: '1px solid #e2e8f0'
                 }}>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '24px', color: '#0f172a' }}>
@@ -318,7 +387,7 @@ const TeamPerformance = () => {
                 border: '1px solid #e2e8f0',
                 overflow: 'hidden'
             }}>
-                <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0' }}>
+                <div style={{ padding: '16px', borderBottom: '1px solid #e2e8f0' }}>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#0f172a', marginBottom: '4px' }}>
                         Individual Member Performance
                     </h3>

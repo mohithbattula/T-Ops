@@ -128,7 +128,9 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
                     alignItems: 'center',
                     justifyContent: isCollapsed ? 'center' : 'flex-start',
                     gap: '10px',
-                    padding: '10px 12px',
+                    justifyContent: isCollapsed ? 'center' : 'flex-start',
+                    gap: '10px',
+                    padding: '8px 12px',
                     borderRadius: '8px',
                     backgroundColor: isActive ? '#7C3AED' : 'transparent',
                     color: isActive ? 'white' : 'rgba(255,255,255,0.7)',
@@ -194,21 +196,30 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
                 alignItems: 'center',
                 justifyContent: isCollapsed ? 'center' : 'space-between',
                 width: '100%',
+                alignItems: 'center',
+                justifyContent: isCollapsed ? 'center' : 'space-between',
+                width: '100%',
                 padding: '8px 12px',
-                marginBottom: '4px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                color: 'rgba(255,255,255,0.9)',
+                marginBottom: '8px',
+                background: sectionKey === 'project'
+                    ? 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(124,58,237,0.1) 100%)'
+                    : 'rgba(255,255,255,0.05)',
+                border: sectionKey === 'project'
+                    ? '1px solid rgba(139,92,246,0.3)'
+                    : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '10px',
+                color: sectionKey === 'project' ? '#a78bfa' : 'rgba(255,255,255,0.9)',
                 cursor: 'pointer',
                 fontSize: '0.75rem',
-                fontWeight: 600,
+                fontWeight: 700,
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em'
+                letterSpacing: '0.08em',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: sectionKey === 'project' ? '0 4px 12px rgba(139,92,246,0.1)' : 'none'
             }}
         >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {React.createElement(icon, { size: 14 })}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {React.createElement(icon, { size: 15 })}
                 {!isCollapsed && <span>{label}</span>}
             </div>
             {!isCollapsed && (
@@ -216,7 +227,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
                     size={14}
                     style={{
                         transform: expandedMenus[sectionKey] ? 'rotate(0deg)' : 'rotate(-90deg)',
-                        transition: 'transform 0.2s'
+                        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                     }}
                 />
             )}
@@ -228,7 +239,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             style={{
-                width: isCollapsed ? '80px' : '280px',
+                width: isCollapsed ? '70px' : '240px',
                 backgroundColor: '#1a1a2e',
                 color: 'white',
                 height: '100vh',
@@ -237,9 +248,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
                 top: 0,
                 display: 'flex',
                 flexDirection: 'column',
-                padding: '16px',
+                padding: '12px',
                 zIndex: 1000,
-                transition: 'width 0.3s ease'
+                transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                borderRadius: '0 24px 24px 0',
+                willChange: 'width',
+                transform: 'translateZ(0)'
             }}>
             <style>
                 {`
@@ -310,15 +324,17 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
                         {/* Project Switcher Card */}
                         {!isCollapsed && (
                             <div style={{
-                                marginBottom: '12px',
+                                marginBottom: '16px',
                                 position: 'relative'
                             }}>
                                 <div style={{
-                                    fontSize: '0.7rem',
-                                    color: '#94a3b8',
-                                    marginBottom: '8px',
-                                    fontWeight: 600,
-                                    paddingLeft: '4px'
+                                    fontSize: '0.65rem',
+                                    color: '#8b5cf6',
+                                    marginBottom: '10px',
+                                    fontWeight: 700,
+                                    paddingLeft: '4px',
+                                    letterSpacing: '0.1em',
+                                    textTransform: 'uppercase'
                                 }}>
                                     CURRENT PROJECT
                                 </div>
@@ -329,35 +345,41 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'space-between',
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '8px',
-                                        padding: '10px 12px',
+                                        background: 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(124,58,237,0.1) 100%)',
+                                        border: '1px solid rgba(139,92,246,0.3)',
+                                        borderRadius: '12px',
+                                        padding: '12px 14px',
                                         color: 'white',
                                         cursor: 'pointer',
                                         fontSize: '0.9rem',
-                                        fontWeight: 500,
-                                        transition: 'all 0.2s'
+                                        fontWeight: 600,
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        boxShadow: '0 4px 12px rgba(139,92,246,0.15)'
                                     }}
                                     onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139,92,246,0.25) 0%, rgba(124,58,237,0.2) 100%)';
+                                        e.currentTarget.style.borderColor = 'rgba(139,92,246,0.5)';
+                                        e.currentTarget.style.boxShadow = '0 6px 20px rgba(139,92,246,0.25)';
+                                        e.currentTarget.style.transform = 'translateY(-1px)';
                                     }}
                                     onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
-                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(124,58,237,0.1) 100%)';
+                                        e.currentTarget.style.borderColor = 'rgba(139,92,246,0.3)';
+                                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(139,92,246,0.15)';
+                                        e.currentTarget.style.transform = 'translateY(0)';
                                     }}
                                 >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <span style={{
-                                            width: '8px',
-                                            height: '8px',
+                                            width: '10px',
+                                            height: '10px',
                                             borderRadius: '50%',
-                                            background: getRoleBadge(projectRole).color
+                                            background: getRoleBadge(projectRole).color,
+                                            boxShadow: `0 0 8px ${getRoleBadge(projectRole).color}`
                                         }} />
                                         <span>{currentProject?.name || 'Select...'}</span>
                                     </div>
-                                    <ChevronDown size={16} style={{ transform: showProjectPicker ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                                    <ChevronDown size={16} style={{ transform: showProjectPicker ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }} />
                                 </button>
 
                                 {/* Dropdown */}
@@ -367,12 +389,14 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
                                         top: '100%',
                                         left: 0,
                                         right: 0,
-                                        background: '#2a2a4a',
-                                        borderRadius: '8px',
-                                        marginTop: '4px',
-                                        boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+                                        background: 'linear-gradient(180deg, #2a2a4a 0%, #1e1e38 100%)',
+                                        borderRadius: '12px',
+                                        marginTop: '8px',
+                                        boxShadow: '0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.2)',
                                         zIndex: 100,
-                                        overflow: 'hidden'
+                                        overflow: 'hidden',
+                                        border: '1px solid rgba(139,92,246,0.2)',
+                                        animation: 'slideDown 0.2s ease-out'
                                     }}>
                                         {userProjects.map((project) => (
                                             <button
@@ -386,31 +410,39 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'space-between',
-                                                    padding: '12px 14px',
+                                                    padding: '14px 16px',
                                                     border: 'none',
-                                                    background: currentProject?.id === project.id ? 'rgba(139,92,246,0.3)' : 'transparent',
+                                                    background: currentProject?.id === project.id ? 'linear-gradient(135deg, rgba(139,92,246,0.3) 0%, rgba(124,58,237,0.2) 100%)' : 'transparent',
                                                     color: 'white',
                                                     cursor: 'pointer',
                                                     textAlign: 'left',
-                                                    borderBottom: '1px solid rgba(255,255,255,0.1)'
+                                                    borderBottom: '1px solid rgba(255,255,255,0.08)',
+                                                    transition: 'all 0.2s ease'
                                                 }}
-                                                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-                                                onMouseLeave={(e) => e.currentTarget.style.background = currentProject?.id === project.id ? 'rgba(139,92,246,0.3)' : 'transparent'}
+                                                onMouseEnter={(e) => {
+                                                    e.currentTarget.style.background = 'rgba(139,92,246,0.15)';
+                                                    e.currentTarget.style.paddingLeft = '20px';
+                                                }}
+                                                onMouseLeave={(e) => {
+                                                    e.currentTarget.style.background = currentProject?.id === project.id ? 'linear-gradient(135deg, rgba(139,92,246,0.3) 0%, rgba(124,58,237,0.2) 100%)' : 'transparent';
+                                                    e.currentTarget.style.paddingLeft = '16px';
+                                                }}
                                             >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                     <span style={{
                                                         width: '10px',
                                                         height: '10px',
                                                         borderRadius: '50%',
                                                         background: getRoleBadge(project.role).color,
-                                                        flexShrink: 0
+                                                        flexShrink: 0,
+                                                        boxShadow: `0 0 6px ${getRoleBadge(project.role).color}`
                                                     }} />
                                                     <div>
                                                         <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{project.name}</div>
-                                                        <div style={{ fontSize: '0.7rem', opacity: 0.6 }}>{getRoleBadge(project.role).label}</div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>{getRoleBadge(project.role).label}</div>
                                                     </div>
                                                 </div>
-                                                {currentProject?.id === project.id && <Check size={16} style={{ color: '#8b5cf6' }} />}
+                                                {currentProject?.id === project.id && <Check size={16} style={{ color: '#a78bfa' }} />}
                                             </button>
                                         ))}
                                     </div>

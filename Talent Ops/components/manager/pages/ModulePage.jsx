@@ -785,7 +785,7 @@ const ModulePage = ({ title, type }) => {
     if (type === 'tasks') return <AllTasksView key="team-tasks" userRole={userRole} projectRole={projectRole} userId={userId} addToast={addToast} viewMode="team_tasks" orgId={orgId} />;
     if (type === 'global-tasks') return <AllTasksView key="global-tasks" userRole={userRole} projectRole={projectRole} userId={userId} addToast={addToast} viewMode="global_tasks" orgId={orgId} />;
     if (type === 'personal-tasks') return <AllTasksView key="personal-tasks" userRole={userRole} projectRole={projectRole} userId={userId} addToast={addToast} viewMode="my_tasks" orgId={orgId} />;
-    if (title === 'Team Hierarchy' || title === 'Organizational Hierarchy') return <HierarchyDemo />;
+    if (title === 'Team Hierarchy' || title === 'Organizational Hierarchy' || title === 'Hierarchy') return <HierarchyDemo />;
     if (title === 'Project Hierarchy') return <ProjectHierarchyDemo />;
     if (title === 'Settings') return <SettingsDemo />;
     if (title === 'Announcements') return <AnnouncementsPage userRole={userRole} userId={userId} orgId={orgId} />;
@@ -1180,69 +1180,129 @@ const ModulePage = ({ title, type }) => {
     console.log('Selected config:', config);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
-            {/* Header with Breadcrumb-like feel */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '4px' }}>
-                        <span>Dashboard</span>
-                        <span>/</span>
-                        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{title}</span>
-                    </div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{title}</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Premium Header - Reusing the Dashboard Aesthetic */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                borderRadius: '24px',
+                padding: '32px 40px',
+                color: 'white',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                marginBottom: '16px'
+            }}>
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }}>
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="mesh-module" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#mesh-module)" />
+                    </svg>
                 </div>
-                {type === 'my-leaves' && (
-                    <button
-                        onClick={() => handleAction('Apply for Leave')}
-                        style={{
-                            backgroundColor: 'var(--primary)',
-                            color: 'white',
-                            padding: '10px 16px',
-                            borderRadius: '8px',
-                            fontWeight: 600,
+
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '0.85rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>
+                            <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', border: '1px solid rgba(255,255,255,0.1)' }}>Management</span>
+                            <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: '800' }}>•</span>
+                            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', fontWeight: '600' }}>{title}</span>
+                        </div>
+                        <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '12px', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                            {title}
+                        </h1>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', maxWidth: '600px', fontWeight: '500', lineHeight: 1.6 }}>
+                            {type === 'leaves' ? 'Review and manage team leave requests and attendance balance.' :
+                                type === 'my-leaves' ? 'Track your personal leave history and available balance.' :
+                                    `Management portal for organizational ${title ? title.toLowerCase() : 'modules'}`}
+                        </p>
+                    </div>
+
+                    {(type === 'leaves' || type === 'my-leaves') && (
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            backdropFilter: 'blur(12px)',
+                            padding: '16px 24px',
+                            borderRadius: '20px',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '8px',
-                            boxShadow: 'var(--shadow-md)'
-                        }}
-                    >
-                        <Plus size={20} />
-                        Apply for Leave
-                    </button>
-                )}
+                            gap: '16px'
+                        }}>
+                            <button
+                                onClick={() => handleAction('Apply for Leave')}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    padding: '12px 24px',
+                                    borderRadius: '14px',
+                                    background: 'linear-gradient(135deg, #38bdf8, #0284c7)',
+                                    color: 'white',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontWeight: '800',
+                                    fontSize: '0.9rem',
+                                    boxShadow: '0 4px 12px rgba(56, 189, 248, 0.3)',
+                                    transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                    whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(56, 189, 248, 0.4)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(56, 189, 248, 0.3)';
+                                }}
+                            >
+                                <Plus size={20} strokeWidth={3} /> Apply for Leave
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Pending Requests Card (For Approval View) */}
             {type === 'leaves' && (
                 <div style={{
-                    backgroundColor: 'var(--surface)',
-                    padding: '20px',
-                    borderRadius: '12px',
-                    boxShadow: 'var(--shadow-sm)',
-                    marginBottom: '10px',
+                    background: 'white',
+                    padding: '16px',
+                    borderRadius: '16px',
+                    border: '1px solid #f1f5f9',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                    marginBottom: '16px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '16px',
-                    border: '1px solid var(--border)'
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}>
                     <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '12px',
-                        backgroundColor: '#fef3c7',
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '20px',
+                        background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#b45309'
+                        color: '#b45309',
+                        border: '1px solid #fde68a'
                     }}>
-                        <Briefcase size={24} />
+                        <Briefcase size={32} />
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Pending Requests</p>
-                        <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                            {/* Filter dbLeaves for 'pending' (case-insensitive) status */}
-                            {dbLeaves.filter(leave => leave.status && leave.status.toLowerCase() === 'pending').length}
+                        <p style={{ fontSize: '0.9rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                            Approval Queue
                         </p>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                            <span style={{ fontSize: '1.75rem', fontWeight: '800', color: '#0f172a' }}>
+                                {dbLeaves.filter(leave => leave.status && leave.status.toLowerCase() === 'pending').length}
+                            </span>
+                            <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#94a3b8' }}>Pending Requests</span>
+                        </div>
                     </div>
                 </div>
             )}
@@ -1250,31 +1310,39 @@ const ModulePage = ({ title, type }) => {
             {/* Remaining Leaves Card (For Personal View) */}
             {type === 'my-leaves' && (
                 <div style={{
-                    backgroundColor: 'var(--surface)',
-                    padding: '20px',
-                    borderRadius: '12px',
-                    boxShadow: 'var(--shadow-sm)',
-                    marginBottom: '10px',
+                    background: 'white',
+                    padding: '32px',
+                    borderRadius: '24px',
+                    border: '1px solid #f1f5f9',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+                    marginBottom: '32px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '16px',
-                    border: '1px solid var(--border)'
+                    gap: '24px',
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}>
                     <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '12px',
-                        backgroundColor: '#e0f2fe',
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '20px',
+                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#0284c7'
+                        color: '#0284c7',
+                        border: '1px solid #bae6fd'
                     }}>
-                        <Briefcase size={24} />
+                        <Briefcase size={32} />
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Remaining Leaves</p>
-                        <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{remainingLeaves}</p>
+                        <p style={{ fontSize: '0.9rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                            Your Balance
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                            <span style={{ fontSize: '2rem', fontWeight: '800', color: '#0f172a' }}>{remainingLeaves}</span>
+                            <span style={{ fontSize: '1rem', fontWeight: '600', color: '#94a3b8' }}>Days Remaining</span>
+                        </div>
                     </div>
                 </div>
             )}

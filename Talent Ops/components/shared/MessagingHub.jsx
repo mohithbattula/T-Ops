@@ -661,24 +661,27 @@ const MessagingHub = () => {
             {/* Conversation List */}
             <div className="conversation-sidebar">
                 <div className="conversation-header">
-                    {activeCategory === 'myself' && (
-                        <button
-                            className="new-dm-button"
-                            onClick={() => setShowNewDMModal(true)}
-                            title="New conversation"
-                        >
-                            +
-                        </button>
-                    )}
-                    {activeCategory === 'team' && (
-                        <button
-                            className="new-dm-button"
-                            onClick={() => setShowTeamModal(true)}
-                            title="Create team chat"
-                        >
-                            +
-                        </button>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#0f172a', margin: 0, letterSpacing: '-0.025em' }}>Communications</h2>
+                        {activeCategory === 'myself' && (
+                            <button
+                                className="new-dm-button"
+                                onClick={() => setShowNewDMModal(true)}
+                                title="New conversation"
+                            >
+                                <Plus size={20} />
+                            </button>
+                        )}
+                        {activeCategory === 'team' && (
+                            <button
+                                className="new-dm-button"
+                                onClick={() => setShowTeamModal(true)}
+                                title="Create team chat"
+                            >
+                                <Plus size={20} />
+                            </button>
+                        )}
+                    </div>
                     <div className="search-box">
                         <Search size={18} />
                         <input
@@ -698,8 +701,39 @@ const MessagingHub = () => {
                             <MessageCircle size={48} />
                             <p>No conversations yet</p>
                             {activeCategory === 'myself' && (
-                                <button onClick={() => setShowNewDMModal(true)}>
-                                    Start a conversation
+                                <button
+                                    onClick={() => setShowNewDMModal(true)}
+                                    className="empty-state-action-btn"
+                                    style={{
+                                        background: 'white',
+                                        color: '#64748b',
+                                        border: '1px solid #e2e8f0',
+                                        padding: '8px 16px',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        margin: '0 auto',
+                                        fontSize: '13px',
+                                        fontWeight: '500',
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.borderColor = '#cbd5e1';
+                                        e.currentTarget.style.color = '#0f172a';
+                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                        e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.borderColor = '#e2e8f0';
+                                        e.currentTarget.style.color = '#64748b';
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                                    }}
+                                >
+                                    <Plus size={16} /> Start a conversation
                                 </button>
                             )}
                             {activeCategory === 'team' && (
@@ -709,20 +743,37 @@ const MessagingHub = () => {
                                     </p>
                                     <button
                                         onClick={() => setShowTeamModal(true)}
+                                        className="empty-state-action-btn"
                                         style={{
-                                            background: 'var(--accent, #6366f1)',
-                                            color: 'white',
-                                            border: 'none',
-                                            padding: '0.75rem 1.5rem',
+                                            background: 'white',
+                                            color: '#64748b',
+                                            border: '1px solid #e2e8f0',
+                                            padding: '8px 16px',
                                             borderRadius: '8px',
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '0.5rem',
-                                            margin: '0 auto'
+                                            gap: '8px',
+                                            margin: '0 auto',
+                                            fontSize: '13px',
+                                            fontWeight: '500',
+                                            transition: 'all 0.2s ease',
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.borderColor = '#cbd5e1';
+                                            e.currentTarget.style.color = '#0f172a';
+                                            e.currentTarget.style.transform = 'translateY(-1px)';
+                                            e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.borderColor = '#e2e8f0';
+                                            e.currentTarget.style.color = '#64748b';
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
                                         }}
                                     >
-                                        <Plus size={18} />
+                                        <Plus size={16} />
                                         Create Team Chat
                                     </button>
                                 </div>
@@ -734,21 +785,42 @@ const MessagingHub = () => {
                                     </p>
                                     <button
                                         onClick={joinOrganizationChat}
+                                        className="empty-state-action-btn"
                                         style={{
-                                            background: 'var(--accent, #6366f1)',
-                                            color: 'white',
-                                            border: 'none',
-                                            padding: '0.75rem 1.5rem',
+                                            background: 'white',
+                                            color: '#64748b',
+                                            border: '1px solid #e2e8f0',
+                                            padding: '8px 16px',
                                             borderRadius: '8px',
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '0.5rem',
-                                            margin: '0 auto'
+                                            gap: '8px',
+                                            margin: '0 auto',
+                                            fontSize: '13px',
+                                            fontWeight: '500',
+                                            transition: 'all 0.2s ease',
+                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (!loading) {
+                                                e.currentTarget.style.borderColor = '#cbd5e1';
+                                                e.currentTarget.style.color = '#0f172a';
+                                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                                            }
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (!loading) {
+                                                e.currentTarget.style.borderColor = '#e2e8f0';
+                                                e.currentTarget.style.color = '#64748b';
+                                                e.currentTarget.style.transform = 'translateY(0)';
+                                                e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                                            }
                                         }}
                                         disabled={loading}
                                     >
-                                        <Building2 size={18} />
+                                        <Building2 size={16} />
                                         {loading ? 'Joining...' : 'Join Company Chat'}
                                     </button>
                                 </div>

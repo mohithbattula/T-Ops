@@ -403,402 +403,562 @@ const DashboardHome = () => {
 
     const filteredTimeline = timeline.filter(event => event.date === formatDate(selectedDate));
 
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingBottom: '32px' }}>
-
-            {/* Header */}
-            <div>
-                <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px' }}>
-                    Good morning, <span style={{ color: 'var(--accent)' }}>{userName}</span>
-                </h1>
-                <p style={{ color: '#64748b', fontSize: '1rem' }}>
-                    Talent Ops wishes you a good and productive day. {displayStats.active} team members active today. You have {filteredTimeline.length} events on {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.
-                </p>
+    // StatCard Helper Component
+    const StatCard = ({ title, value, subtext, icon: Icon, color, onClick }) => (
+        <div
+            onClick={onClick}
+            style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '16px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: onClick ? 'pointer' : 'default',
+                transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                border: '1px solid #f1f5f9',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
+            }}
+            onMouseEnter={(e) => {
+                if (onClick) {
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.06)';
+                    e.currentTarget.style.borderColor = color + '40';
+                }
+            }}
+            onMouseLeave={(e) => {
+                if (onClick) {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.02)';
+                    e.currentTarget.style.borderColor = '#f1f5f9';
+                }
+            }}
+        >
+            <div style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '20px',
+                backgroundColor: color + '15',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: color,
+                transition: 'all 0.3s ease'
+            }}>
+                <Icon size={28} />
             </div>
+            <div>
+                <p style={{ fontSize: '0.85rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{title}</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{ fontSize: '1.75rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>{value}</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: '600', color: '#94a3b8' }}>{subtext}</span>
+                </div>
+            </div>
+            <div style={{
+                position: 'absolute',
+                top: '-20px',
+                right: '-20px',
+                width: '100px',
+                height: '100px',
+                background: `radial-gradient(circle, ${color}10 0%, transparent 70%)`,
+                borderRadius: '50%'
+            }}></div>
+        </div>
+    );
 
-            {/* Main Content Grid */}
-            <div className="flex flex-col lg:grid lg:grid-cols-[2.5fr_1fr] gap-8">
+    return (
+        <div style={{
+            minHeight: '100vh',
+            backgroundColor: '#f8fafc',
+            position: 'relative',
+            padding: '24px',
+            overflow: 'hidden'
+        }}>
+            {/* Fixed Background Blobs */}
+            <div style={{ position: 'fixed', top: '-10%', right: '-5%', width: '40%', height: '40%', background: 'radial-gradient(circle, #e0f2fe 0%, transparent 70%)', filter: 'blur(80px)', zIndex: 0 }}></div>
+            <div style={{ position: 'fixed', bottom: '-10%', left: '-5%', width: '40%', height: '40%', background: 'radial-gradient(circle, #f0f9ff 0%, transparent 70%)', filter: 'blur(80px)', zIndex: 0 }}></div>
 
-                {/* Left Column: Cards Grid */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            {/* Premium Multi-layered Header */}
+            <div style={{
+                position: 'relative',
+                zIndex: 1,
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                borderRadius: '24px',
+                padding: '24px',
+                marginBottom: '16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                overflow: 'hidden',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}>
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }}>
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="mesh-tl" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#mesh-tl)" />
+                    </svg>
+                </div>
+                <div style={{ position: 'absolute', top: '-50%', right: '-10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, transparent 70%)', filter: 'blur(40px)' }}></div>
 
-                    {/* Attendance Tracker */}
-                    <AttendanceTracker />
-
-                    {/* Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                        {/* Employees Card (Yellow) */}
-                        <div
-                            onClick={() => navigate('/teamlead-dashboard/employee-status')}
-                            style={{
-                                backgroundColor: '#fef08a',
-                                borderRadius: '24px',
-                                padding: '24px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between',
-                                minHeight: '240px',
-                                position: 'relative',
-                                overflow: 'hidden',
-                                cursor: 'pointer',
-                                transition: 'transform 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                        >
-                            <div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#854d0e' }}>Employees:</h3>
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '32px', marginTop: '16px' }}>
-                                <div>
-                                    <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#000', textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{employeeStats.active}</span>
-                                    <p style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#000' }}>Active</p>
-                                </div>
-                                <div style={{ paddingTop: '12px' }}>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#854d0e' }}>{employeeStats.absent}</span>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#854d0e' }}>Absent</p>
-                                </div>
-                                <div style={{ paddingTop: '12px' }}>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#854d0e' }}>{employeeStats.offline}</span>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#854d0e' }}>Offline</p>
-                                </div>
-                            </div>
-
-                            {/* Decorative Bottom Shapes */}
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginTop: 'auto', height: '40px' }}>
-                                <div style={{ width: '30px', height: '20px', backgroundColor: '#422006', borderRadius: '15px 15px 0 0', opacity: 0.8 }}></div>
-                                <div style={{ width: '30px', height: '35px', backgroundColor: '#a16207', borderRadius: '15px 15px 0 0', opacity: 0.6 }}></div>
-                                <div style={{ width: '30px', height: '15px', backgroundColor: '#422006', borderRadius: '15px 15px 0 0', opacity: 0.8 }}></div>
-                                <div style={{ width: '30px', height: '40px', backgroundColor: '#a16207', borderRadius: '15px 15px 0 0', opacity: 0.6 }}></div>
-                                <div style={{ width: '30px', height: '25px', backgroundColor: '#422006', borderRadius: '15px 15px 0 0', opacity: 0.8 }}></div>
-                                <div style={{ width: '30px', height: '40px', backgroundColor: '#a16207', borderRadius: '15px 15px 0 0', opacity: 0.6 }}></div>
-                                <div style={{ width: '30px', height: '20px', backgroundColor: '#422006', borderRadius: '15px 15px 0 0', opacity: 0.8 }}></div>
-                            </div>
-                        </div>
-
-                        {/* Task Status Card (Blue) */}
-                        <div
-                            onClick={() => navigate('/teamlead-dashboard/tasks')}
-                            style={{
-                                backgroundColor: '#bfdbfe', borderRadius: '24px', padding: '24px',
-                                display: 'flex', flexDirection: 'column', minHeight: '240px',
-                                position: 'relative', overflow: 'hidden', cursor: 'pointer',
-                                transition: 'transform 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                        >
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '24px' }}>Task Status:</h3>
-
-                            <div className="flex flex-wrap gap-4 justify-between">
-                                <div>
-                                    <span style={{ fontSize: '2rem', fontWeight: 'bold', color: '#000' }}>{taskStats.pending}</span>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#1e3a8a', marginTop: '4px' }}>PENDING</p>
-                                </div>
-                                <div>
-                                    <span style={{ fontSize: '2rem', fontWeight: 'bold', color: '#000' }}>{taskStats.inProgress}</span>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#1e3a8a', marginTop: '4px' }}>IN PROGRESS</p>
-                                </div>
-                                <div>
-                                    <span style={{ fontSize: '2rem', fontWeight: 'bold', color: '#000' }}>{taskStats.completed}</span>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#1e3a8a', marginTop: '4px' }}>COMPLETED</p>
-                                </div>
-                            </div>
-
-                            {/* Decorative Triangle */}
-                            <div style={{ position: 'absolute', bottom: 0, right: 0, width: '0', height: '0', borderStyle: 'solid', borderWidth: '0 0 100px 100px', borderColor: 'transparent transparent rgba(255,255,255,0.3) transparent' }}></div>
-                        </div>
+                <div style={{ position: 'relative', zIndex: 2, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                        <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: '16px', fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Team Lead Overview</span>
+                        <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: '800' }}>•</span>
+                        <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: '700' }}>{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                     </div>
-
+                    <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '8px', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                        Welcome back, <span style={{ background: 'linear-gradient(to right, #38bdf8, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{userName}!</span>
+                    </h1>
+                    <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', maxWidth: '600px', fontWeight: '500', lineHeight: 1.6 }}>
+                        Building excellence with your team today. You have {employeeStats.active} members active and {filteredTimeline.length} events scheduled.
+                    </p>
                 </div>
 
-                {/* Right Column: Timeline */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                <div style={{
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    backdropFilter: 'blur(10px)',
+                    padding: '16px 24px',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    textAlign: 'right',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-end',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                    position: 'relative',
+                    zIndex: 2
+                }}>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.65rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '2px' }}>LOCAL TIME</p>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: '800', color: 'white', letterSpacing: '0.05em', lineHeight: 1 }}>
+                        {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                    </h2>
+                    <button
+                        onClick={() => setShowAddEventModal(true)}
+                        style={{
+                            marginTop: '20px',
+                            padding: '12px 24px',
+                            borderRadius: '16px',
+                            background: 'linear-gradient(to right, #0ea5e9, #6366f1)',
+                            color: 'white',
+                            border: 'none',
+                            fontWeight: '800',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'all 0.3s ease',
+                            boxShadow: '0 10px 20px rgba(99, 102, 241, 0.2)'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 15px 25px rgba(99, 102, 241, 0.3)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(99, 102, 241, 0.2)'; }}
+                    >
+                        <Plus size={20} /> Plan New Event
+                    </button>
+                </div>
+            </div>
 
-                    {/* Calendar Widget */}
-                    <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <span style={{ fontWeight: 'bold', color: '#1e293b' }}>{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</span>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button onClick={() => handleMonthChange(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>&lt;</button>
-                                <button onClick={() => handleMonthChange(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>&gt;</button>
+            {/* Main Content Layout */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '16px', position: 'relative', zIndex: 1 }}>
+
+                {/* Left Side: Stats & Tracker */}
+                <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                    {/* Modern Stat Cards Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                        <StatCard
+                            title="Team Availability"
+                            value={employeeStats.active}
+                            subtext={`/ ${employeeStats.total} members`}
+                            icon={Users}
+                            color="#10b981"
+                            onClick={() => navigate('/teamlead-dashboard/employee-status')}
+                        />
+                        <StatCard
+                            title="Active Operations"
+                            value={taskStats.inProgress}
+                            subtext="tasks in progress"
+                            icon={Timer}
+                            color="#f59e0b"
+                            onClick={() => navigate('/teamlead-dashboard/tasks')}
+                        />
+                        <StatCard
+                            title="Review Queue"
+                            value={taskStats.inReview}
+                            subtext="pending reviews"
+                            icon={AlertCircle}
+                            color="#ef4444"
+                            onClick={() => navigate('/teamlead-dashboard/tasks')}
+                        />
+                        <StatCard
+                            title="Milestones Reached"
+                            value={taskStats.completed}
+                            subtext="completed items"
+                            icon={CheckCircle2}
+                            color="#38bdf8"
+                        />
+                    </div>
+
+                    <AttendanceTracker />
+
+                    <NotesTile />
+                </div>
+
+                {/* Right Side: Calendar & Timeline */}
+                <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                    {/* Premium Calendar Widget */}
+                    <div style={{
+                        backgroundColor: '#ffffff',
+                        borderRadius: '32px',
+                        padding: '32px',
+                        border: '1px solid #f1f5f9',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#0f172a' }}>{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h3>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button
+                                    onClick={() => handleMonthChange(-1)}
+                                    style={{ width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', border: '1px solid #f1f5f9', cursor: 'pointer', transition: 'all 0.2s', color: '#64748b' }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#0f172a'; e.currentTarget.style.color = '#fff'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.color = '#64748b'; }}
+                                >
+                                    &lt;
+                                </button>
+                                <button
+                                    onClick={() => handleMonthChange(1)}
+                                    style={{ width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', border: '1px solid #f1f5f9', cursor: 'pointer', transition: 'all 0.2s', color: '#64748b' }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#0f172a'; e.currentTarget.style.color = '#fff'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.color = '#64748b'; }}
+                                >
+                                    &gt;
+                                </button>
                             </div>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontSize: '0.8rem', color: '#64748b' }}>
-                            <span>MO</span><span>TU</span><span>WE</span><span>TH</span><span>FR</span><span>SA</span><span>SU</span>
 
-                            {/* Empty cells for offset */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', marginBottom: '16px' }}>
+                            <span>MO</span><span>TU</span><span>WE</span><span>TH</span><span>FR</span><span style={{ color: '#ef4444' }}>SA</span><span style={{ color: '#ef4444' }}>SU</span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
                             {Array.from({ length: startDayOffset }).map((_, i) => (
-                                <span key={`empty-${i}`}></span>
+                                <div key={`empty-${i}`} style={{ height: '44px' }}></div>
                             ))}
-
-                            {/* Calendar Days */}
                             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
                                 const isSelected = selectedDate.getDate() === d && selectedDate.getMonth() === currentMonth.getMonth() && selectedDate.getFullYear() === currentMonth.getFullYear();
                                 const isToday = today.getDate() === d && today.getMonth() === currentMonth.getMonth() && today.getFullYear() === currentMonth.getFullYear();
 
                                 return (
-                                    <span
+                                    <div
                                         key={d}
                                         onClick={() => handleDateClick(d)}
                                         style={{
-                                            padding: '6px',
-                                            borderRadius: '50%',
-                                            backgroundColor: isSelected ? '#000' : isToday ? '#e2e8f0' : 'transparent',
-                                            color: isSelected ? '#fff' : 'inherit',
+                                            height: '44px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderRadius: '14px',
+                                            backgroundColor: isSelected ? '#0f172a' : isToday ? '#e2e8f0' : 'transparent',
+                                            color: isSelected ? '#fff' : isToday ? '#1e293b' : '#475569',
                                             cursor: 'pointer',
-                                            fontWeight: isSelected || isToday ? 'bold' : 'normal'
+                                            fontWeight: isSelected || isToday ? '800' : '600',
+                                            fontSize: '0.9rem',
+                                            transition: 'all 0.2s',
+                                            position: 'relative'
                                         }}
+                                        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
+                                        onMouseLeave={(e) => { if (!isSelected && !isToday) e.currentTarget.style.backgroundColor = 'transparent'; }}
                                     >
                                         {d}
-                                    </span>
+                                        {timeline.some(e => e.date === formatDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), d))) && (
+                                            <div style={{ position: 'absolute', bottom: '8px', width: '5px', height: '5px', borderRadius: '50%', backgroundColor: isSelected ? '#38bdf8' : '#0ea5e9' }}></div>
+                                        )}
+                                    </div>
                                 );
                             })}
                         </div>
                     </div>
 
-                    {/* Add Event Button */}
-                    <button
-                        onClick={() => setShowAddEventModal(true)}
-                        style={{ backgroundColor: '#000', color: '#fff', padding: '16px', borderRadius: '32px', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                    >
-                        Add event
-                    </button>
-
-                    {/* Timeline */}
-                    <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b' }}>
+                    {/* Timeline Activity Feed */}
+                    <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>Daily Timeline</h3>
+                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#64748b', background: '#f8fafc', padding: '6px 14px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                                 {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </h3>
+                            </span>
                         </div>
 
-                        {/* Column Headers */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '32px', marginBottom: '16px', paddingLeft: '8px' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#94a3b8', letterSpacing: '0.05em' }}>TIME</span>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#94a3b8', letterSpacing: '0.05em' }}>EVENT</span>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', position: 'relative', minHeight: '200px' }}>
-                            {/* Vertical Line */}
-                            <div style={{
-                                position: 'absolute',
-                                left: '91px',
-                                top: '10px',
-                                bottom: '10px',
-                                width: '2px',
-                                backgroundColor: '#f1f5f9',
-                                zIndex: 0
-                            }}></div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative' }}>
+                            <div style={{ position: 'absolute', left: '11px', top: '10px', bottom: '10px', width: '2px', background: 'linear-gradient(to bottom, #f1f5f9, #e2e8f0, #f1f5f9)' }}></div>
 
                             {filteredTimeline.length > 0 ? (
                                 filteredTimeline.map((event) => (
-                                    <div key={event.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '32px', position: 'relative', zIndex: 1, marginBottom: '24px' }}>
-                                        {/* Time */}
-                                        <span style={{
-                                            fontSize: '0.9rem',
-                                            fontWeight: '600',
-                                            color: '#64748b',
-                                            paddingTop: '14px',
-                                            textAlign: 'right'
-                                        }}>
-                                            {event.time}
-                                        </span>
-
-                                        {/* Timeline Dot */}
+                                    <div key={event.id} style={{ display: 'flex', gap: '20px', position: 'relative', zIndex: 1 }}>
                                         <div style={{
-                                            position: 'absolute',
-                                            left: '86px',
-                                            top: '20px',
-                                            width: '12px',
-                                            height: '12px',
+                                            width: '24px',
+                                            height: '24px',
                                             borderRadius: '50%',
-                                            backgroundColor: '#3b82f6',
-                                            border: '2px solid #fff',
-                                            boxShadow: '0 0 0 2px #e0f2fe',
-                                            zIndex: 2
-                                        }}></div>
+                                            backgroundColor: '#ffffff',
+                                            border: '2px solid #0ea5e9',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            boxShadow: '0 0 0 5px #ffffff',
+                                            flexShrink: 0
+                                        }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#0ea5e9' }}></div>
+                                        </div>
 
-                                        {/* Event Card */}
-                                        <div style={{
-                                            backgroundColor: event.color,
-                                            padding: '16px',
-                                            borderRadius: '16px',
-                                            transition: 'all 0.2s ease',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                                        }}
+                                        <div
                                             onClick={() => {
-                                                if (event.scope === 'task') {
-                                                    navigate('/teamlead-dashboard/team-tasks');
-                                                } else if (event.type === 'announcement') {
-                                                    navigate('/teamlead-dashboard/announcements');
-                                                }
+                                                if (event.scope === 'task') navigate('/teamlead-dashboard/team-tasks');
+                                                else if (event.type === 'announcement') navigate('/teamlead-dashboard/announcements');
+                                            }}
+                                            style={{
+                                                backgroundColor: '#ffffff',
+                                                padding: '20px',
+                                                borderRadius: '24px',
+                                                border: '1px solid #f1f5f9',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                                                flex: 1,
+                                                boxShadow: '0 2px 10px rgba(0,0,0,0.01)'
                                             }}
                                             onMouseEnter={(e) => {
-                                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                                e.currentTarget.style.boxShadow = '0 8px 16px -4px rgba(0,0,0,0.1)';
+                                                e.currentTarget.style.transform = 'translateY(-6px)';
+                                                e.currentTarget.style.boxShadow = '0 15px 35px rgba(0,0,0,0.05)';
+                                                e.currentTarget.style.borderColor = '#e0f2fe';
                                             }}
                                             onMouseLeave={(e) => {
                                                 e.currentTarget.style.transform = 'translateY(0)';
-                                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
+                                                e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.01)';
+                                                e.currentTarget.style.borderColor = '#f1f5f9';
                                             }}
                                         >
-                                            <p style={{ fontWeight: 'bold', color: '#1e293b', marginBottom: '4px' }}>{event.title}</p>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '0.85rem' }}>
-                                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#94a3b8' }}></div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                                                <p style={{ fontSize: '1rem', fontWeight: '800', color: '#1e293b', lineHeight: 1.4 }}>{event.title}</p>
+                                                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b' }}>{event.time}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '0.85rem', fontWeight: '600' }}>
+                                                <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#0ea5e9' }}></span>
                                                 {event.location}
                                             </div>
-                                            {event.type === 'announcement' && (
-                                                <span style={{
-                                                    fontSize: '0.65rem',
-                                                    fontWeight: 'bold',
-                                                    textTransform: 'uppercase',
-                                                    padding: '2px 6px',
-                                                    borderRadius: '8px',
-                                                    marginTop: '4px',
-                                                    display: 'inline-block',
-                                                    backgroundColor: (event.status === 'completed' || new Date(event.date) < new Date().setHours(0, 0, 0, 0)) ? '#f1f5f9' : (event.status === 'active' || event.date === formatDate(new Date())) ? '#dcfce7' : '#e0f2fe',
-                                                    color: (event.status === 'completed' || new Date(event.date) < new Date().setHours(0, 0, 0, 0)) ? '#64748b' : (event.status === 'active' || event.date === formatDate(new Date())) ? '#166534' : '#0369a1'
-                                                }}>
-                                                    {(event.status === 'completed' || new Date(event.date) < new Date().setHours(0, 0, 0, 0)) ? 'Completed' : (event.status === 'active' || event.date === formatDate(new Date())) ? 'Active' : 'Future'}
-                                                </span>
-                                            )}
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div style={{ paddingLeft: '112px', paddingTop: '24px', color: '#94a3b8', fontStyle: 'italic' }}>
-                                    No events for this day
+                                <div style={{ padding: '60px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <div style={{ backgroundColor: '#f8fafc', width: '56px', height: '56px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                                        <Calendar size={24} color="#cbd5e1" />
+                                    </div>
+                                    <p style={{ color: '#94a3b8', fontSize: '0.95rem', fontWeight: '700', fontStyle: 'italic' }}>Open availability today</p>
                                 </div>
                             )}
                         </div>
                     </div>
-
-
-
                 </div>
             </div>
 
-            {/* Modals */}
+            {/* Premium Modals */}
             {showAddEmployeeModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '24px', width: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Add Team Member</h3>
-                            <button onClick={() => setShowAddEmployeeModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
-                        </div>
-                        <form onSubmit={handleAddEmployee} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <input type="text" placeholder="Full Name" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
-                            <input type="text" placeholder="Role" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
-                            <select style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }}>
-                                <option>Engineering</option>
-                                <option>Design</option>
-                                <option>Product</option>
-                            </select>
-                            <button type="submit" style={{ backgroundColor: '#000', color: '#fff', padding: '12px', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer', marginTop: '8px' }}>Add Team Member</button>
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                    backdropFilter: 'blur(10px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    padding: '20px'
+                }}>
+                    <div style={{
+                        backgroundColor: '#ffffff',
+                        padding: '48px',
+                        borderRadius: '40px',
+                        width: '100%',
+                        maxWidth: '500px',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                        position: 'relative',
+                        animation: 'modalEntrance 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+                    }}>
+                        <button
+                            onClick={() => setShowAddEmployeeModal(false)}
+                            style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
+                        >
+                            <X size={20} />
+                        </button>
+                        <h3 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#0f172a', marginBottom: '8px' }}>Add Team Member</h3>
+                        <p style={{ color: '#64748b', marginBottom: '32px', fontWeight: '500' }}>Expand your team with new talent.</p>
+
+                        <form onSubmit={handleAddEmployee} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginLeft: '4px' }}>Full Name</label>
+                                <input type="text" placeholder="e.g. John Doe" required style={{ padding: '16px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '1rem', backgroundColor: '#f8fafc', transition: 'all 0.2s' }} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginLeft: '4px' }}>Role</label>
+                                <input type="text" placeholder="e.g. Senior Developer" required style={{ padding: '16px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '1rem', backgroundColor: '#f8fafc', transition: 'all 0.2s' }} />
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginLeft: '4px' }}>Department</label>
+                                <select style={{ padding: '16px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '1rem', backgroundColor: '#f8fafc', appearance: 'none' }}>
+                                    <option>Engineering</option>
+                                    <option>Design</option>
+                                    <option>Product</option>
+                                </select>
+                            </div>
+                            <button type="submit" style={{ backgroundColor: '#0f172a', color: '#fff', padding: '18px', borderRadius: '100px', fontWeight: '800', border: 'none', cursor: 'pointer', marginTop: '12px', boxShadow: '0 10px 20px rgba(15, 23, 42, 0.2)', transition: 'all 0.3s' }}>
+                                Confirm Addition
+                            </button>
                         </form>
                     </div>
                 </div>
             )}
 
             {showAddEventModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '24px', width: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Add Event</h3>
-                            <button onClick={() => setShowAddEventModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
-                        </div>
-                        <form onSubmit={handleAddEvent} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <input name="title" type="text" placeholder="Event Title" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                    backdropFilter: 'blur(10px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    padding: '20px'
+                }}>
+                    <div style={{
+                        backgroundColor: '#ffffff',
+                        padding: '48px',
+                        borderRadius: '40px',
+                        width: '100%',
+                        maxWidth: '500px',
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                        position: 'relative',
+                        animation: 'modalEntrance 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+                    }}>
+                        <button
+                            onClick={() => setShowAddEventModal(false)}
+                            style={{ position: 'absolute', top: '24px', right: '24px', background: '#f1f5f9', border: 'none', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
+                        >
+                            <X size={20} />
+                        </button>
+                        <h3 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#0f172a', marginBottom: '8px' }}>Create Event</h3>
+                        <p style={{ color: '#64748b', marginBottom: '32px', fontWeight: '500' }}>Schedule a new activity for the team.</p>
 
-                            {/* Scope Selection */}
+                        <form onSubmit={handleAddEvent} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#1e293b' }}>Who is this event for?</label>
-                                <div style={{ display: 'flex', gap: '16px' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                        <input
-                                            type="radio"
-                                            name="scope"
-                                            value="team"
-                                            checked={eventScope === 'team'}
-                                            onChange={() => { setEventScope('team'); setSelectedEventMembers([]); }}
-                                        />
-                                        My Team
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                        <input
-                                            type="radio"
-                                            name="scope"
-                                            value="specific"
-                                            checked={eventScope === 'specific'}
-                                            onChange={() => { setEventScope('specific'); setSelectedEventMembers([]); }}
-                                        />
-                                        All Employees
-                                    </label>
+                                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginLeft: '4px' }}>Event Title</label>
+                                <input name="title" type="text" placeholder="e.g. Design Sync" required style={{ padding: '16px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '1rem', backgroundColor: '#f8fafc' }} />
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginLeft: '4px' }}>Visibility Scope</label>
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    {['team', 'specific'].map((scope) => (
+                                        <label key={scope} style={{
+                                            flex: 1,
+                                            padding: '14px',
+                                            borderRadius: '16px',
+                                            border: `2px solid ${eventScope === scope ? '#0ea5e9' : '#f1f5f9'}`,
+                                            backgroundColor: eventScope === scope ? '#f0f9ff' : '#ffffff',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '10px',
+                                            transition: 'all 0.2s'
+                                        }}>
+                                            <input
+                                                type="radio"
+                                                name="scope"
+                                                value={scope}
+                                                checked={eventScope === scope}
+                                                onChange={() => { setEventScope(scope); setSelectedEventMembers([]); }}
+                                                style={{ accentColor: '#0ea5e9' }}
+                                            />
+                                            <span style={{ fontSize: '0.9rem', fontWeight: '700', color: eventScope === scope ? '#0369a1' : '#64748b', textTransform: 'capitalize' }}>
+                                                {scope === 'team' ? 'My Team' : 'Organization'}
+                                            </span>
+                                        </label>
+                                    ))}
                                 </div>
                             </div>
 
                             {/* Member Selection */}
-                            {(eventScope === 'specific' || eventScope === 'team') && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '150px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '8px' }}>
-                                    {/* Determine List Source */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginLeft: '4px' }}>Recipients</label>
+                                <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid #f1f5f9', borderRadius: '20px', padding: '12px', backgroundColor: '#f8fafc' }}>
                                     {(() => {
                                         const currentList = eventScope === 'team' ? teamMembers : allOrgEmployees;
                                         return (
-                                            <>
-                                                {/* Select All Option - Only for My Team */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                 {eventScope === 'team' && (
-                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '4px', fontWeight: 'bold', borderBottom: '1px solid #f1f5f9' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', borderRadius: '12px', cursor: 'pointer', backgroundColor: '#fff', border: '1px solid #f1f5f9', marginBottom: '8px' }}>
                                                         <input
                                                             type="checkbox"
                                                             checked={selectedEventMembers.length === currentList.length && currentList.length > 0}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    setSelectedEventMembers(currentList.map(m => m.id));
-                                                                } else {
-                                                                    setSelectedEventMembers([]);
-                                                                }
-                                                            }}
+                                                            onChange={(e) => setSelectedEventMembers(e.target.checked ? currentList.map(m => m.id) : [])}
+                                                            style={{ width: '18px', height: '18px', accentColor: '#0ea5e9' }}
                                                         />
-                                                        Select All
+                                                        <span style={{ fontWeight: '800', color: '#0f172a', fontSize: '0.9rem' }}>Select All Members</span>
                                                     </label>
                                                 )}
-
                                                 {currentList.map(member => (
-                                                    <label key={member.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '4px' }}>
+                                                    <label key={member.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s' }}>
                                                         <input
                                                             type="checkbox"
                                                             checked={selectedEventMembers.includes(member.id)}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    setSelectedEventMembers([...selectedEventMembers, member.id]);
-                                                                } else {
-                                                                    setSelectedEventMembers(selectedEventMembers.filter(id => id !== member.id));
-                                                                }
-                                                            }}
+                                                            onChange={(e) => setSelectedEventMembers(prev => e.target.checked ? [...prev, member.id] : prev.filter(id => id !== member.id))}
+                                                            style={{ width: '18px', height: '18px', accentColor: '#0ea5e9' }}
                                                         />
-                                                        {member.full_name || member.name}
+                                                        <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#475569' }}>{member.full_name || member.name}</span>
                                                     </label>
                                                 ))}
-                                            </>
+                                            </div>
                                         );
                                     })()}
                                 </div>
-                            )}
+                            </div>
 
-                            <input name="time" type="time" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
-                            <input name="location" type="text" placeholder="Location" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
-                            <button type="submit" style={{ backgroundColor: '#000', color: '#fff', padding: '12px', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer', marginTop: '8px' }}>Save Event</button>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginLeft: '4px' }}>Time</label>
+                                    <input name="time" type="time" required style={{ padding: '16px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '1rem', backgroundColor: '#f8fafc' }} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginLeft: '4px' }}>Location</label>
+                                    <input name="location" type="text" placeholder="Room/Link" required style={{ padding: '16px 20px', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '1rem', backgroundColor: '#f8fafc' }} />
+                                </div>
+                            </div>
+                            <button type="submit" style={{ backgroundColor: '#0ea5e9', color: '#fff', padding: '18px', borderRadius: '100px', fontWeight: '800', border: 'none', cursor: 'pointer', marginTop: '12px', boxShadow: '0 10px 20px rgba(14, 165, 233, 0.2)', transition: 'all 0.3s' }}>
+                                Publish Event
+                            </button>
                         </form>
                     </div>
                 </div>
             )}
 
-
-
+            <style>
+                {`
+                    @keyframes modalEntrance {
+                        from { opacity: 0; transform: scale(0.95) translateY(20px); }
+                        to { opacity: 1; transform: scale(1) translateY(0); }
+                    }
+                    ::-webkit-scrollbar { width: 8px; }
+                    ::-webkit-scrollbar-track { background: #f1f5f9; }
+                    ::-webkit-scrollbar-thumb { background: #cbd5e1; borderRadius: 10px; }
+                    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+                `}
+            </style>
         </div>
     );
 };

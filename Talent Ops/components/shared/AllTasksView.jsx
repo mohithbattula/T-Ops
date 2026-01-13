@@ -159,7 +159,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             if (userRole === 'executive') {
                 // Fetch ALL employees for executives (excluding hidden admins)
                 formattedEmployees = await supabaseRequest(
-                    supabase.from('profiles').select('id, full_name, avatar_url').eq('org_id', orgId).neq('id', userId).neq('is_hidden', true),
+                    supabase.from('profiles').select('id, full_name, avatar_url').eq('org_id', orgId).neq('id', userId),
                     addToast
                 ) || [];
             } else if (currentProject?.id) {
@@ -229,7 +229,6 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             due_date: task.due_date,
             priority: task.priority,
             status: task.status,
-            status: task.status,
             allocated_hours: task.allocated_hours || 0,
             phase_validations: task.phase_validations || {},
             requiredPhases: task.phase_validations?.active_phases || LIFECYCLE_PHASES.map(p => p.key)
@@ -259,7 +258,6 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                     assigned_to: editingTask.assigned_to,
                     due_date: editingTask.due_date,
                     priority: editingTask.priority.toLowerCase(),
-                    status: statusValue,
                     status: statusValue,
                     allocated_hours: parseFloat(editingTask.allocated_hours),
                     phase_validations: {
@@ -1010,69 +1008,145 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {onBack && (
+            {/* Premium Dark Header */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+                borderRadius: '20px',
+                padding: '32px 36px',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.15)'
+            }}>
+                {/* Subtle Grid Pattern */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: `
+                        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '32px 32px',
+                    pointerEvents: 'none'
+                }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
+                    <div>
+                        {/* Back Button + Badge */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                            {onBack && (
+                                <button
+                                    onClick={onBack}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        color: 'rgba(255,255,255,0.7)',
+                                        padding: '8px',
+                                        borderRadius: '8px',
+                                        transition: 'all 0.2s ease'
+                                    }}
+                                >
+                                    <ChevronDown size={20} style={{ transform: 'rotate(90deg)' }} />
+                                </button>
+                            )}
+                            <span style={{
+                                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                color: 'white',
+                                padding: '6px 14px',
+                                borderRadius: '20px',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase',
+                                boxShadow: '0 4px 12px rgba(245,158,11,0.4)'
+                            }}>
+                                TASK MANAGEMENT
+                            </span>
+                            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.5rem' }}>●</span>
+                            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', fontWeight: 500 }}>
+                                {viewMode === 'my_tasks' ? 'Personal Tasks' : 'Team Collaboration'}
+                            </span>
+                        </div>
+
+                        {/* Main Title with Gradient */}
+                        <h1 style={{
+                            fontSize: '2rem',
+                            fontWeight: 800,
+                            background: 'linear-gradient(135deg, #ffffff 0%, #94a3b8 50%, #f59e0b 100%)',
+                            WebkitBackgroundClip: 'text',
+                            WebkitTextFillColor: 'transparent',
+                            backgroundClip: 'text',
+                            marginBottom: '8px',
+                            letterSpacing: '-0.02em'
+                        }}>
+                            {viewMode === 'my_tasks' ? 'My ' : 'Team '}<span style={{
+                                background: 'linear-gradient(135deg, #f59e0b 0%, #06b6d4 100%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text'
+                            }}>Tasks</span>
+                        </h1>
+
+                        {/* Description */}
+                        <p style={{
+                            color: 'rgba(255,255,255,0.6)',
+                            fontSize: '0.95rem',
+                            maxWidth: '500px',
+                            lineHeight: 1.5
+                        }}>
+                            {viewMode === 'my_tasks' ? 'Track your personal tasks through the lifecycle' : 'Manage and track all team tasks in one place'}
+                        </p>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-end' }}>
+                        {(userRole === 'manager' || userRole === 'executive') && (!effectiveProjectRole || effectiveProjectRole === 'manager' || effectiveProjectRole === 'team_lead') && (
                             <button
-                                onClick={onBack}
+                                onClick={() => setShowAddTaskModal(true)}
                                 style={{
-                                    background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#64748b'
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '12px 20px',
+                                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '12px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem',
+                                    boxShadow: '0 4px 14px rgba(16,185,129,0.4)',
+                                    transition: 'all 0.2s ease'
                                 }}
                             >
-                                <ChevronDown size={28} style={{ transform: 'rotate(90deg)' }} />
+                                <Plus size={18} />
+                                New Task
                             </button>
                         )}
-                        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#0f172a', margin: 0 }}>
-                            {viewMode === 'my_tasks' ? 'My Tasks' : (viewMode === 'team_tasks' ? 'All Project Tasks' : (userRole === 'executive' ? 'All Tasks' : ((userRole === 'manager' || userRole === 'team_lead') && (!effectiveProjectRole || effectiveProjectRole === 'manager' || effectiveProjectRole === 'team_lead') ? 'Team Tasks' : 'Your Tasks')))}
-                        </h1>
-                    </div>
-                    <p style={{ color: '#64748b', marginTop: '4px', fontSize: '0.95rem' }}>
-                        {viewMode === 'my_tasks' ? 'Track your personal tasks through the lifecycle' : 'Manage and track all team tasks in one place'}
-                    </p>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-end' }}>
-                    {(userRole === 'manager' || userRole === 'executive') && (!effectiveProjectRole || effectiveProjectRole === 'manager' || effectiveProjectRole === 'team_lead') && (
                         <button
-                            onClick={() => setShowAddTaskModal(true)}
+                            onClick={downloadCSV}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '6px',
-                                padding: '8px 16px',
-                                backgroundColor: '#0f172a',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '8px',
-                                fontWeight: 600,
+                                gap: '8px',
+                                padding: '10px 16px',
+                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                border: '1px solid rgba(255,255,255,0.2)',
+                                borderRadius: '10px',
+                                color: 'rgba(255,255,255,0.8)',
+                                fontWeight: 500,
                                 cursor: 'pointer',
-                                fontSize: '0.875rem',
-                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                                fontSize: '0.85rem',
+                                transition: 'all 0.2s ease'
                             }}
                         >
-                            <Plus size={16} />
-                            New Task
+                            <ExternalLink size={16} /> Export CSV
                         </button>
-                    )}
-                    <button
-                        onClick={downloadCSV}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            padding: '8px 16px',
-                            backgroundColor: 'white',
-                            border: '1px solid #cbd5e1',
-                            borderRadius: '8px',
-                            color: '#475569',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            fontSize: '0.875rem'
-                        }}
-                    >
-                        <ExternalLink size={16} /> Export CSV
-                    </button>
+                    </div>
                 </div>
             </div>
 

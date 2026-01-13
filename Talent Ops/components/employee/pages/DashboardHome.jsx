@@ -281,234 +281,304 @@ const DashboardHome = () => {
     const filteredTimeline = timeline.filter(event => event.date === formatDate(selectedDate));
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingBottom: '32px' }}>
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '24px' }}>
 
-            {/* Header */}
-            <div>
-                <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px' }}>
-                    Good morning, <span style={{ color: 'var(--accent)' }}>{userName}</span>
-                </h1>
-                <p style={{ color: '#64748b', fontSize: '1rem' }}>
-                    Talent Ops wishes you a good and productive day. You have {filteredTimeline.length} events on {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.
-                </p>
-            </div>
+            {/* Background Decorative Elements */}
+            <div style={{ position: 'fixed', top: '-100px', right: '-100px', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, transparent 70%)', filter: 'blur(60px)', zIndex: -1 }}></div>
+            <div style={{ position: 'fixed', bottom: '100px', left: '-50px', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%)', filter: 'blur(40px)', zIndex: -1 }}></div>
 
-
-            {/* Main Content Grid */}
-            <div className="flex flex-col lg:grid lg:grid-cols-[2.5fr_1fr] gap-8">
-
-                {/* Left Column: Cards Grid */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-
-                    {/* Attendance Tracker - Moved Here */}
-                    <AttendanceTracker />
-
-                    {/* Top Row Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-
-                        {/* Attendance Report Card (Yellow) */}
-                        <div style={{ backgroundColor: '#fef08a', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '240px', position: 'relative', overflow: 'hidden' }}>
-                            <div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#854d0e' }}>Attendance Report:</h3>
-                            </div>
-
-                            <div className="flex flex-wrap gap-6 mt-4">
-                                <div>
-                                    <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#000', textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{attendanceStats.present}</span>
-                                    <p style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#000' }}>Present</p>
-                                    <p style={{ fontSize: '0.8rem', color: '#854d0e' }}>Days</p>
-                                </div>
-                                <div style={{ paddingTop: '12px' }}>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#854d0e' }}>{attendanceStats.absent}</span>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#854d0e' }}>Absent</p>
-                                    <p style={{ fontSize: '0.75rem', color: '#a16207' }}>Days</p>
-                                </div>
-                                <div style={{ paddingTop: '12px' }}>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#854d0e' }}>{attendanceStats.leaveBalance}</span>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#854d0e' }}>Leave Balance</p>
-                                    <p style={{ fontSize: '0.75rem', color: '#a16207' }}>Days</p>
-                                </div>
-                            </div>
-
-                            {/* Decorative Bottom Shapes */}
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginTop: 'auto', height: '40px' }}>
-                                <div style={{ width: '30px', height: '20px', backgroundColor: '#422006', borderRadius: '15px 15px 0 0', opacity: 0.8 }}></div>
-                                <div style={{ width: '30px', height: '35px', backgroundColor: '#a16207', borderRadius: '15px 15px 0 0', opacity: 0.6 }}></div>
-                                <div style={{ width: '30px', height: '15px', backgroundColor: '#422006', borderRadius: '15px 15px 0 0', opacity: 0.8 }}></div>
-                                <div style={{ width: '30px', height: '40px', backgroundColor: '#a16207', borderRadius: '15px 15px 0 0', opacity: 0.6 }}></div>
-                                <div style={{ width: '30px', height: '25px', backgroundColor: '#422006', borderRadius: '15px 15px 0 0', opacity: 0.8 }}></div>
-                                <div style={{ width: '30px', height: '40px', backgroundColor: '#a16207', borderRadius: '15px 15px 0 0', opacity: 0.6 }}></div>
-                                <div style={{ width: '30px', height: '20px', backgroundColor: '#422006', borderRadius: '15px 15px 0 0', opacity: 0.8 }}></div>
-                            </div>
-                        </div>
-                        {/* Notes Tile */}
-                        <NotesTile />
-                    </div>
-
+            {/* Premium Header / Hero Section */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                borderRadius: '24px',
+                padding: '32px 40px',
+                color: '#ffffff',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+            }}>
+                {/* Defensive Mesh Grid */}
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }}>
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="mesh-emp" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#mesh-emp)" />
+                    </svg>
                 </div>
 
-                {/* Right Column: Timeline */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                <div style={{ position: 'relative', zIndex: 1, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                        <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', border: '1px solid rgba(255,255,255,0.1)' }}>Employee Overview</span>
+                        <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: '800' }}>•</span>
+                        <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: '700' }}>{selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
+                    <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '12px', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                        Welcome back, <span style={{ background: 'linear-gradient(to right, #38bdf8, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{userName}!</span>
+                    </h1>
+                    <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', maxWidth: '600px', fontWeight: '500', lineHeight: 1.6 }}>
+                        You're having a productive month! You've clocked in <span style={{ color: '#fff', fontWeight: '800' }}>{attendanceStats.present || 0} days</span> so far.
+                    </p>
+                </div>
 
-                    {/* Calendar Widget */}
-                    <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <span style={{ fontWeight: 'bold', color: '#1e293b' }}>{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</span>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button onClick={() => handleMonthChange(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>&lt;</button>
-                                <button onClick={() => handleMonthChange(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>&gt;</button>
+                <div style={{
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    backdropFilter: 'blur(10px)',
+                    padding: '16px 24px',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    textAlign: 'right',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-end',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                    position: 'relative',
+                    zIndex: 1
+                }}>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.65rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '2px' }}>LOCAL TIME</p>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: '800', color: 'white', letterSpacing: '0.05em', lineHeight: 1 }}>
+                        {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                    </h2>
+                    <button
+                        onClick={() => setShowAddEventModal(true)}
+                        style={{
+                            marginTop: '16px',
+                            padding: '12px 24px',
+                            borderRadius: '16px',
+                            background: 'linear-gradient(to right, #0ea5e9, #6366f1)',
+                            color: 'white',
+                            border: 'none',
+                            fontWeight: '800',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'all 0.3s ease',
+                            boxShadow: '0 10px 20px rgba(99, 102, 241, 0.2)'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 15px 25px rgba(99, 102, 241, 0.3)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(99, 102, 241, 0.2)'; }}
+                    >
+                        <Plus size={20} /> Plan New Event
+                    </button>
+                </div>
+            </div>
+
+            {/* Stats Grid with dynamic accents */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                gap: '16px'
+            }}>
+                <StatCard
+                    label="Days Present"
+                    value={attendanceStats.present}
+                    trend="+2.4%"
+                    icon={<CheckCircle2 size={24} />}
+                    color="#10b981"
+                    bg="rgba(16, 185, 129, 0.03)"
+                />
+                <StatCard
+                    label="Active Absences"
+                    value={attendanceStats.absent}
+                    trend="-12%"
+                    icon={<AlertCircle size={24} />}
+                    color="#ef4444"
+                    bg="rgba(239, 68, 68, 0.03)"
+                />
+                <StatCard
+                    label="Leave Balance"
+                    value={attendanceStats.leaveBalance}
+                    subLabel="days"
+                    icon={<Calendar size={24} />}
+                    color="#f59e0b"
+                    bg="rgba(245, 158, 11, 0.03)"
+                />
+                <StatCard
+                    label="Today's Load"
+                    value={filteredTimeline.length}
+                    subLabel="Tasks"
+                    icon={<Timer size={24} />}
+                    color="#6366f1"
+                    bg="rgba(99, 102, 241, 0.03)"
+                />
+            </div>
+
+            {/* Main Content Sections */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.9fr 1fr', gap: '16px' }}>
+
+                {/* Left Section */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                    {/* Integrated Attendance Tracker */}
+                    <AttendanceTracker />
+
+                    {/* Secondary Workspace Area */}
+                    <div style={{
+                        backgroundColor: '#ffffff',
+                        borderRadius: '32px',
+                        border: '1px solid #eef2f6',
+                        padding: '32px',
+                        boxShadow: '0 4px 24px rgba(0,0,0,0.02)',
+                        position: 'relative'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>Quick Workspace</h3>
+                                <p style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 500 }}>Notes & immediate tasks for today</p>
+                            </div>
+                            <div style={{ padding: '10px', backgroundColor: '#f0f9ff', borderRadius: '14px', color: '#0ea5e9' }}>
+                                <Star size={20} fill="currentColor" />
                             </div>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontSize: '0.8rem', color: '#64748b' }}>
-                            <span>MO</span><span>TU</span><span>WE</span><span>TH</span><span>FR</span><span>SA</span><span>SU</span>
+                        <NotesTile />
+                    </div>
+                </div>
 
-                            {/* Empty cells for offset */}
-                            {Array.from({ length: startDayOffset }).map((_, i) => (
-                                <span key={`empty-${i}`}></span>
+                {/* Right Section */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                    {/* Modern Calendar */}
+                    <div style={{
+                        backgroundColor: '#ffffff',
+                        borderRadius: '32px',
+                        padding: '32px',
+                        border: '1px solid #eef2f6',
+                        boxShadow: '0 4px 24px rgba(0,0,0,0.02)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+                            <span style={{ fontWeight: 800, fontSize: '1.2rem', color: '#0f172a', letterSpacing: '-0.02em' }}>
+                                {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                            </span>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button onClick={() => handleMonthChange(-1)} style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '12px', color: '#64748b', border: '1px solid #f1f5f9' }}>
+                                    <ChevronRight size={18} style={{ transform: 'rotate(180deg)' }} />
+                                </button>
+                                <button onClick={() => handleMonthChange(1)} style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '12px', color: '#64748b', border: '1px solid #f1f5f9' }}>
+                                    <ChevronRight size={18} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', textAlign: 'center' }}>
+                            {['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'].map(day => (
+                                <span key={day} style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', padding: '10px 0', letterSpacing: '0.1em' }}>{day}</span>
                             ))}
 
-                            {/* Calendar Days */}
+                            {Array.from({ length: startDayOffset }).map((_, i) => (
+                                <span key={`empty-${i}`} style={{ padding: '12px' }}></span>
+                            ))}
+
                             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
                                 const isSelected = selectedDate.getDate() === d && selectedDate.getMonth() === currentMonth.getMonth() && selectedDate.getFullYear() === currentMonth.getFullYear();
                                 const isToday = today.getDate() === d && today.getMonth() === currentMonth.getMonth() && today.getFullYear() === currentMonth.getFullYear();
 
                                 return (
-                                    <span
+                                    <div
                                         key={d}
                                         onClick={() => handleDateClick(d)}
                                         style={{
-                                            padding: '6px',
-                                            borderRadius: '50%',
-                                            backgroundColor: isSelected ? '#000' : isToday ? '#e2e8f0' : 'transparent',
-                                            color: isSelected ? '#fff' : 'inherit',
+                                            aspectRatio: '1',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderRadius: '14px',
+                                            backgroundColor: isSelected ? '#38bdf8' : isToday ? '#f0f9ff' : 'transparent',
+                                            color: isSelected ? '#fff' : isToday ? '#38bdf8' : '#334155',
                                             cursor: 'pointer',
-                                            fontWeight: isSelected || isToday ? 'bold' : 'normal'
+                                            fontWeight: isSelected || isToday ? 800 : 600,
+                                            fontSize: '0.95rem',
+                                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            border: isToday && !isSelected ? '1px solid #bae6fd' : '1px solid transparent'
                                         }}
+                                        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = '#f8fafc'; }}
+                                        onMouseLeave={(e) => { if (!isSelected && !isToday) e.currentTarget.style.backgroundColor = 'transparent'; else if (isToday && !isSelected) e.currentTarget.style.backgroundColor = '#f0f9ff'; }}
                                     >
                                         {d}
-                                    </span>
+                                    </div>
                                 );
                             })}
                         </div>
                     </div>
 
-
-
-                    {/* Add Event Button */}
-                    <button
-                        onClick={() => setShowAddEventModal(true)}
-                        style={{ backgroundColor: '#000', color: '#fff', padding: '16px', borderRadius: '32px', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                    >
-                        Add event
-                    </button>
-
-                    {/* Timeline */}
-                    <div>
-                        <div style={{ marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b' }}>
-                                {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </h3>
+                    {/* Rich Timeline Section */}
+                    <div style={{
+                        backgroundColor: '#ffffff',
+                        borderRadius: '32px',
+                        padding: '32px',
+                        border: '1px solid #eef2f6',
+                        boxShadow: '0 4px 24px rgba(0,0,0,0.02)',
+                        flex: 1
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                            <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>Schedule</h3>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#6366f1', backgroundColor: '#eef2ff', padding: '6px 14px', borderRadius: '100px', letterSpacing: '0.05em' }}>
+                                {filteredTimeline.length} ACTIVE
+                            </div>
                         </div>
 
-                        {/* Column Headers */}
-                        <div style={{ display: 'flex', gap: '32px', marginBottom: '16px', paddingLeft: '4px' }}>
-                            <span style={{ width: '70px', textAlign: 'right', fontWeight: 'bold', color: '#94a3b8', fontSize: '0.75rem', letterSpacing: '0.05em' }}>TIME</span>
-                            <span style={{ fontWeight: 'bold', color: '#94a3b8', fontSize: '0.75rem', letterSpacing: '0.05em' }}>EVENT</span>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative', minHeight: '200px' }}>
-                            {/* Vertical Line */}
-                            <div style={{ position: 'absolute', left: '91px', top: '8px', bottom: '8px', width: '2px', backgroundColor: '#f1f5f9' }}></div>
-
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {filteredTimeline.length > 0 ? (
                                 filteredTimeline.map((event) => (
                                     <div
                                         key={event.id}
                                         onClick={() => {
-                                            if (event.title?.startsWith('Task:')) {
-                                                navigate('/employee-dashboard/tasks');
-                                            } else if (event.type === 'announcement') {
-                                                navigate('/employee-dashboard/announcements');
-                                            } else {
-                                                navigate('/employee-dashboard/tasks');
-                                            }
+                                            if (event.title?.startsWith('Task:')) navigate('/employee-dashboard/my-tasks');
+                                            else navigate('/employee-dashboard/announcements');
                                         }}
                                         style={{
                                             display: 'flex',
-                                            gap: '32px',
+                                            gap: '16px',
                                             cursor: 'pointer',
-                                            position: 'relative',
-                                            alignItems: 'flex-start'
+                                            alignItems: 'center',
+                                            padding: '16px',
+                                            borderRadius: '20px',
+                                            backgroundColor: '#f8fafc',
+                                            border: '1px solid #f1f5f9',
+                                            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateX(6px)';
+                                            e.currentTarget.style.borderColor = '#cbd5e1';
+                                            e.currentTarget.style.backgroundColor = '#ffffff';
+                                            e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.03)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateX(0)';
+                                            e.currentTarget.style.borderColor = '#f1f5f9';
+                                            e.currentTarget.style.backgroundColor = '#f8fafc';
+                                            e.currentTarget.style.boxShadow = 'none';
                                         }}
                                     >
-                                        {/* Time */}
-                                        <span style={{ width: '70px', fontSize: '0.9rem', fontWeight: '600', color: '#64748b', textAlign: 'right', paddingTop: '14px' }}>{event.time}</span>
-
-                                        {/* Timeline Dot */}
                                         <div style={{
-                                            position: 'absolute',
-                                            left: '86px',
-                                            top: '20px',
-                                            width: '12px',
-                                            height: '12px',
-                                            borderRadius: '50%',
-                                            backgroundColor: '#3b82f6',
-                                            border: '2px solid #fff',
-                                            boxShadow: '0 0 0 1px #e2e8f0',
-                                            zIndex: 10
-                                        }}></div>
-
-                                        {/* Event Card */}
-                                        <div
-                                            style={{
-                                                flex: 1,
-                                                backgroundColor: '#fff',
-                                                padding: '16px 20px',
-                                                borderRadius: '16px',
-                                                border: '1px solid #e2e8f0',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                                e.currentTarget.style.boxShadow = '0 8px 12px -2px rgba(0,0,0,0.05)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.transform = 'translateY(0)';
-                                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
-                                            }}
-                                        >
-                                            <div>
-                                                <p style={{ fontWeight: 'bold', color: '#1e293b', fontSize: '1rem', marginBottom: '4px' }}>{event.title}</p>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: event.color === '#dbeafe' ? '#3b82f6' : '#10b981' }}></div>
-                                                    <p style={{ fontSize: '0.85rem', color: '#64748b' }}>{event.location}</p>
-                                                </div>
-                                                {event.type === 'announcement' && (
-                                                    <span style={{
-                                                        fontSize: '0.65rem',
-                                                        fontWeight: 'bold',
-                                                        textTransform: 'uppercase',
-                                                        padding: '2px 6px',
-                                                        borderRadius: '8px',
-                                                        marginLeft: '8px',
-                                                        backgroundColor: (event.status === 'completed' || new Date(event.date) < new Date().setHours(0, 0, 0, 0)) ? '#f1f5f9' : (event.status === 'active' || event.date === formatDate(new Date())) ? '#dcfce7' : '#e0f2fe',
-                                                        color: (event.status === 'completed' || new Date(event.date) < new Date().setHours(0, 0, 0, 0)) ? '#64748b' : (event.status === 'active' || event.date === formatDate(new Date())) ? '#166534' : '#0369a1'
-                                                    }}>
-                                                        {(event.status === 'completed' || new Date(event.date) < new Date().setHours(0, 0, 0, 0)) ? 'Completed' : (event.status === 'active' || event.date === formatDate(new Date())) ? 'Active' : 'Future'}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <ChevronRight size={18} color="#cbd5e1" />
+                                            padding: '12px',
+                                            borderRadius: '16px',
+                                            backgroundColor: '#ffffff',
+                                            boxShadow: '0 4px 10px rgba(0,0,0,0.04)',
+                                            textAlign: 'center',
+                                            minWidth: '64px'
+                                        }}>
+                                            <p style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a' }}>{event.time}</p>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95rem', marginBottom: '2px' }}>{event.title}</p>
+                                            <p style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <MoreHorizontal size={14} /> {event.location}
+                                            </p>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100px', color: '#94a3b8', fontStyle: 'italic', paddingLeft: '80px' }}>
-                                    No events for this day
+                                <div style={{ textAlign: 'center', padding: '48px 0', opacity: 0.5 }}>
+                                    <div style={{ display: 'inline-flex', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '50%', marginBottom: '16px' }}>
+                                        <Calendar size={32} color="#cbd5e1" />
+                                    </div>
+                                    <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#94a3b8' }}>Clear path for today!</p>
                                 </div>
                             )}
                         </div>
@@ -516,132 +586,122 @@ const DashboardHome = () => {
                 </div>
             </div>
 
-            {/* Modals */}
-            {showAddEmployeeModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '24px', width: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Add Project Member</h3>
-                            <button onClick={() => setShowAddEmployeeModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
-                        </div>
-                        <form onSubmit={handleAddEmployee} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <input type="text" placeholder="Full Name" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
-                            <input type="text" placeholder="Role" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
-                            <select style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }}>
-                                <option>Engineering</option>
-                                <option>Design</option>
-                                <option>Product</option>
-                            </select>
-                            <button type="submit" style={{ backgroundColor: '#000', color: '#fff', padding: '12px', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer', marginTop: '8px' }}>Add Project Member</button>
-                        </form>
-                    </div>
-                </div>
-            )}
-
+            {/* Premium Modal Styling */}
             {showAddEventModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '24px', width: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Add Event</h3>
-                            <button onClick={() => setShowAddEventModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15,23,42,0.4)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, animation: 'fadeIn 0.3s ease' }}>
+                    <div style={{ backgroundColor: '#fff', padding: '40px', borderRadius: '40px', width: '480px', boxShadow: '0 50px 100px -20px rgba(15, 23, 42, 0.25)', animation: 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.8rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.03em' }}>Create Event</h3>
+                                <p style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 500 }}>Schedule something spectacular</p>
+                            </div>
+                            <button onClick={() => setShowAddEventModal(false)} style={{ padding: '10px', backgroundColor: '#f8fafc', borderRadius: '14px', color: '#64748b', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}><X size={24} /></button>
                         </div>
-                        <form onSubmit={handleAddEvent} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <input name="title" type="text" placeholder="Event Title" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
+                        <form onSubmit={handleAddEvent} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Event Details</label>
+                                <input name="title" type="text" placeholder="What's happening?" required style={{ padding: '16px 20px', borderRadius: '20px', border: '1px solid #eef2f6', fontSize: '1rem', outline: 'none', backgroundColor: '#f8fafc', fontWeight: 500 }} />
+                            </div>
 
-                            {/* Scope Selection */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#1e293b' }}>Who is this event for?</label>
-                                <div style={{ display: 'flex', gap: '16px' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                        <input
-                                            type="radio"
-                                            name="scope"
-                                            value="team"
-                                            checked={eventScope === 'team'}
-                                            onChange={() => { setEventScope('team'); setSelectedEventMembers([]); }}
-                                        />
-                                        My Project
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                        <input
-                                            type="radio"
-                                            name="scope"
-                                            value="specific"
-                                            checked={eventScope === 'specific'}
-                                            onChange={() => { setEventScope('specific'); setSelectedEventMembers([]); }}
-                                        />
-                                        All Employees
-                                    </label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Start Time</label>
+                                    <input name="time" type="time" required style={{ padding: '16px 20px', borderRadius: '20px', border: '1px solid #eef2f6', fontSize: '1rem', outline: 'none', backgroundColor: '#f8fafc', fontWeight: 600 }} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tag</label>
+                                    <select style={{ padding: '16px 20px', borderRadius: '20px', border: '1px solid #eef2f6', fontSize: '1rem', outline: 'none', backgroundColor: '#f8fafc', fontWeight: 600 }}>
+                                        <option>🚀 Sprint</option>
+                                        <option>🤝 Meeting</option>
+                                        <option>🎨 Design</option>
+                                        <option>☕ Catch-up</option>
+                                    </select>
                                 </div>
                             </div>
 
-                            {/* Member Selection */}
-                            {(eventScope === 'specific' || eventScope === 'team') && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '150px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '8px' }}>
-                                    {/* Determine List Source */}
-                                    {(() => {
-                                        const currentList = eventScope === 'team' ? teamMembers : allOrgEmployees;
-                                        return (
-                                            <>
-                                                {/* Select All Option - Only for My Project */}
-                                                {eventScope === 'team' && (
-                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '4px', fontWeight: 'bold', borderBottom: '1px solid #f1f5f9' }}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedEventMembers.length === currentList.length && currentList.length > 0}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    setSelectedEventMembers(currentList.map(m => m.id));
-                                                                } else {
-                                                                    setSelectedEventMembers([]);
-                                                                }
-                                                            }}
-                                                        />
-                                                        Select All
-                                                    </label>
-                                                )}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Location / Link</label>
+                                <input name="location" type="text" placeholder="Where is it?" required style={{ padding: '16px 20px', borderRadius: '20px', border: '1px solid #eef2f6', fontSize: '1rem', outline: 'none', backgroundColor: '#f8fafc', fontWeight: 500 }} />
+                            </div>
 
-                                                {currentList.length === 0 && (
-                                                    <p style={{ padding: '4px', color: '#94a3b8', fontStyle: 'italic', fontSize: '0.9rem' }}>
-                                                        No employees found
-                                                    </p>
-                                                )}
-
-                                                {currentList.map(member => (
-                                                    <label key={member.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '4px' }}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedEventMembers.includes(member.id)}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    setSelectedEventMembers([...selectedEventMembers, member.id]);
-                                                                } else {
-                                                                    setSelectedEventMembers(selectedEventMembers.filter(id => id !== member.id));
-                                                                }
-                                                            }}
-                                                        />
-                                                        {member.full_name || member.name}
-                                                    </label>
-                                                ))}
-                                            </>
-                                        );
-                                    })()}
-                                </div>
-                            )}
-
-                            <input name="time" type="time" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
-                            <input name="location" type="text" placeholder="Location" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
-                            <button type="submit" style={{ backgroundColor: '#000', color: '#fff', padding: '12px', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer', marginTop: '8px' }}>Save Event</button>
+                            <button type="submit" style={{ background: 'linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%)', color: '#fff', padding: '18px', borderRadius: '20px', fontWeight: 800, fontSize: '1.05rem', border: 'none', cursor: 'pointer', marginTop: '12px', boxShadow: '0 20px 40px -10px rgba(14, 165, 233, 0.4)' }}>
+                                Save Event
+                            </button>
                         </form>
                     </div>
                 </div>
             )}
 
-
-
+            <style>{`
+                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes slideUp { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+            `}</style>
         </div>
+    );
+};
 
+// Enhanced StatCard Component
+const StatCard = ({ label, value, trend, icon, color, subLabel, bg }) => {
+    const [isHovered, setIsHovered] = React.useState(false);
 
+    return (
+        <div
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            style={{
+                backgroundColor: '#ffffff',
+                padding: '16px',
+                borderRadius: '16px',
+                border: '1px solid #eef2f6',
+                boxShadow: isHovered ? '0 20px 40px -10px rgba(0,0,0,0.06)' : '0 4px 20px rgba(0,0,0,0.01)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                transform: isHovered ? 'translateY(-5px)' : 'translateY(0)'
+            }}
+        >
+            {/* Soft background glow */}
+            <div style={{ position: 'absolute', bottom: '-20px', right: '-20px', width: '100px', height: '100px', background: color, opacity: isHovered ? 0.08 : 0, filter: 'blur(30px)', transition: 'opacity 0.4s ease', borderRadius: '50%' }}></div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{
+                    padding: '12px',
+                    borderRadius: '16px',
+                    backgroundColor: `${color}15`,
+                    color: color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease',
+                    transform: isHovered ? 'scale(1.1) rotate(5deg)' : 'scale(1)'
+                }}>
+                    {icon}
+                </div>
+                {trend && (
+                    <div style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 800,
+                        color: trend.startsWith('+') ? '#10b981' : '#ef4444',
+                        backgroundColor: trend.startsWith('+') ? '#f0fdf4' : '#fef2f2',
+                        padding: '6px 12px',
+                        borderRadius: '100px',
+                        border: `1px solid ${trend.startsWith('+') ? '#dcfce7' : '#fee2e2'}`
+                    }}>
+                        {trend}
+                    </div >
+                )}
+            </div>
+            <div>
+                <p style={{ fontSize: '0.8rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>{label}</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                    <h3 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.04em' }}>{value || 0}</h3>
+                    {subLabel && <span style={{ fontSize: '0.9rem', fontWeight: 600, color: '#94a3b8' }}>{subLabel}</span>}
+                </div>
+            </div>
+        </div>
     );
 };
 

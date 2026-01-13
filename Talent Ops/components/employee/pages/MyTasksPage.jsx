@@ -500,14 +500,83 @@ const MyTasksPage = () => {
     );
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* Header */}
-            <div>
-                <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ClipboardList size={28} color="#10b981" /> My Tasks
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Premium Dark Header */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
+                borderRadius: '16px',
+                padding: '24px',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}>
+                {/* Subtle Grid Pattern */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: `
+                        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '32px 32px',
+                    pointerEvents: 'none'
+                }} />
+
+                {/* Badge and Subtitle */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', position: 'relative', zIndex: 1 }}>
+                    <span style={{
+                        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                        color: 'white',
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                        boxShadow: '0 4px 12px rgba(139,92,246,0.4)'
+                    }}>
+                        MY TASKS
+                    </span>
+                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.5rem' }}>●</span>
+                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: 500 }}>
+                        Track Progress
+                    </span>
+                </div>
+
+                {/* Main Title with Gradient */}
+                <h1 style={{
+                    fontSize: '1.75rem',
+                    fontWeight: 800,
+                    background: 'linear-gradient(135deg, #ffffff 0%, #94a3b8 50%, #3b82f6 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    marginBottom: '8px',
+                    position: 'relative',
+                    zIndex: 1,
+                    letterSpacing: '-0.02em'
+                }}>
+                    Task <span style={{
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text'
+                    }}>Lifecycle</span>
                 </h1>
-                <p style={{ color: '#64748b', marginTop: '4px' }}>
-                    Track your tasks through the lifecycle
+
+                {/* Description */}
+                <p style={{
+                    color: 'rgba(255,255,255,0.6)',
+                    fontSize: '0.9rem',
+                    maxWidth: '500px',
+                    lineHeight: 1.5,
+                    position: 'relative',
+                    zIndex: 1
+                }}>
+                    Track your assigned tasks through each phase of the development lifecycle.
                 </p>
             </div>
 

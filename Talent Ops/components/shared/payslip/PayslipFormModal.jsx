@@ -7,7 +7,7 @@ import {
 } from '../../../utils/payslipHelpers';
 import { formatMonthYear } from '../../../utils/payrollCalculations';
 import { generatePayslipPDF, uploadPayslipPDF } from '../../../utils/pdfGenerator';
-import { X, FileText, Plus } from 'lucide-react';
+import { X, FileText, Plus, DollarSign } from 'lucide-react';
 import PayslipPreview from './PayslipPreview';
 import PayrollFormModal from '../PayrollFormModal';
 import './PayslipFormModal.css';
@@ -394,309 +394,480 @@ const PayslipFormModal = ({ isOpen, onClose, onSuccess, orgId }) => {
     }
 
     return (
-        <div className="payslip-modal-overlay" onClick={handleClose}>
-            <div className="payslip-modal-content" onClick={e => e.stopPropagation()}>
+        <div style={{
+            position: 'fixed',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.7)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            animation: 'fadeIn 0.3s ease-out'
+        }} onClick={handleClose}>
+            <div
+                style={{
+                    maxWidth: '1200px',
+                    width: '95%',
+                    backgroundColor: 'white',
+                    borderRadius: '28px',
+                    overflow: 'hidden',
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    maxHeight: '90vh'
+                }}
+                onClick={e => e.stopPropagation()}
+            >
                 {/* Header */}
-                <div className="payslip-modal-header">
-                    <h2><FileText size={24} /> Generate Payslip</h2>
-                    <button onClick={handleClose} className="close-btn">
+                <div style={{
+                    padding: '24px 32px',
+                    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    color: 'white'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ padding: '10px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}>
+                            <FileText size={24} />
+                        </div>
+                        <div>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Generate Digital Payslip</h2>
+                            <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>Secure Document Issuance Terminal</p>
+                        </div>
+                    </div>
+                    <button onClick={handleClose} style={{
+                        background: 'rgba(255,255,255,0.05)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '40px',
+                        height: '40px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}>
                         <X size={24} />
                     </button>
                 </div>
 
-                {/* Error Alert with Action */}
-                {error && (
-                    <div className="alert alert-error" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-                        <span>{error}</span>
-                        {payrollMissing && (
-                            <button
-                                onClick={() => setShowCreatePayroll(true)}
-                                style={{
-                                    padding: '8px 16px',
-                                    borderRadius: '8px',
-                                    background: '#059669',
-                                    color: 'white',
-                                    border: 'none',
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    fontSize: '0.875rem',
-                                    whiteSpace: 'nowrap'
-                                }}
-                            >
-                                <Plus size={16} /> Create Payroll
-                            </button>
-                        )}
-                    </div>
-                )}
-
-                {/* Form */}
-                <form onSubmit={handleGeneratePayslip} className="payslip-form">
-                    <div className="form-grid">
-                        {/* Left Column */}
-                        <div className="form-column">
-                            <div className="form-group">
-                                <label>Payslip Number</label>
-                                <input
-                                    type="text"
-                                    value={payslipNumber}
-                                    readOnly
-                                    className="form-input"
-                                />
+                <div style={{ padding: '32px', overflowY: 'auto' }}>
+                    {/* Error Alert with Action */}
+                    {error && (
+                        <div style={{
+                            backgroundColor: '#fff1f2',
+                            border: '1px solid #fecaca',
+                            color: '#e11d48',
+                            padding: '16px',
+                            borderRadius: '16px',
+                            marginBottom: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '12px',
+                            fontSize: '0.9rem',
+                            fontWeight: 500
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <X size={18} />
+                                <span>{error}</span>
                             </div>
-
-                            {/* Company Logo Upload */}
-                            <div className="form-group">
-                                <label>Company Logo (Optional)</label>
-                                <div
-                                    className="logo-upload-area"
-                                    onClick={() => document.getElementById('logo-upload').click()}
+                            {payrollMissing && (
+                                <button
+                                    onClick={() => setShowCreatePayroll(true)}
                                     style={{
-                                        border: '2px dashed #7c3aed',
+                                        padding: '10px 20px',
                                         borderRadius: '12px',
-                                        padding: '30px',
-                                        textAlign: 'center',
+                                        background: '#059669',
+                                        color: 'white',
+                                        border: 'none',
+                                        fontWeight: 700,
                                         cursor: 'pointer',
-                                        backgroundColor: logoPreview ? '#f9fafb' : '#faf5ff',
-                                        transition: 'all 0.3s'
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        fontSize: '0.85rem',
+                                        boxShadow: '0 4px 6px rgba(5, 150, 105, 0.2)'
                                     }}
                                 >
-                                    {logoPreview ? (
-                                        <div>
-                                            <img
-                                                src={logoPreview}
-                                                alt="Logo preview"
-                                                style={{
-                                                    maxWidth: '150px',
-                                                    maxHeight: '100px',
-                                                    objectFit: 'contain'
-                                                }}
+                                    <Plus size={16} /> Initialize Payroll
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Form */}
+                    <form onSubmit={handleGeneratePayslip}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '32px' }}>
+                            {/* Left Column - Core Data */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569' }}>Payslip Serial</label>
+                                        <input
+                                            type="text"
+                                            value={payslipNumber}
+                                            readOnly
+                                            style={{
+                                                padding: '14px 16px',
+                                                borderRadius: '14px',
+                                                border: '2px solid #f1f5f9',
+                                                backgroundColor: '#f8fafc',
+                                                fontSize: '0.95rem',
+                                                fontWeight: 700,
+                                                color: '#64748b'
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569' }}>Target Recipient *</label>
+                                        <select
+                                            value={selectedEmployee}
+                                            onChange={(e) => setSelectedEmployee(e.target.value)}
+                                            required
+                                            style={{
+                                                padding: '14px 16px',
+                                                borderRadius: '14px',
+                                                border: '2px solid #e2e8f0',
+                                                fontSize: '0.95rem',
+                                                fontWeight: 600,
+                                                color: '#1e293b',
+                                                backgroundColor: 'white',
+                                                cursor: 'pointer',
+                                                outline: 'none',
+                                                transition: 'border-color 0.2s'
+                                            }}
+                                            onFocus={(e) => e.target.style.borderColor = '#7c3aed'}
+                                            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                                        >
+                                            <option value="">Select individual...</option>
+                                            {employees.map(emp => (
+                                                <option key={emp.id} value={emp.id}>
+                                                    {emp.full_name} ({emp.email})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569' }}>Billing Month *</label>
+                                        <select
+                                            value={selectedMonth}
+                                            onChange={(e) => setSelectedMonth(e.target.value)}
+                                            required
+                                            style={{
+                                                padding: '14px 16px',
+                                                borderRadius: '14px',
+                                                border: '2px solid #e2e8f0',
+                                                fontSize: '0.95rem',
+                                                fontWeight: 600,
+                                                color: '#1e293b',
+                                                backgroundColor: 'white',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <option value="">Select month...</option>
+                                            {months.map(month => (
+                                                <option key={month.value} value={month.value}>
+                                                    {month.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <label style={{ fontSize: '0.85rem', fontWeight: 800, color: '#475569' }}>Fiscal Year *</label>
+                                        <select
+                                            value={selectedYear}
+                                            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                            required
+                                            style={{
+                                                padding: '14px 16px',
+                                                borderRadius: '14px',
+                                                border: '2px solid #e2e8f0',
+                                                fontSize: '0.95rem',
+                                                fontWeight: 600,
+                                                color: '#1e293b',
+                                                backgroundColor: 'white',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            {years.map(year => (
+                                                <option key={year} value={year}>
+                                                    {year}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Branding Panel */}
+                                <div style={{
+                                    padding: '28px',
+                                    backgroundColor: '#f8fafc',
+                                    borderRadius: '24px',
+                                    border: '1px solid #e2e8f0',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '20px'
+                                }}>
+                                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{ width: '8px', height: '24px', backgroundColor: '#7c3aed', borderRadius: '4px' }}></div>
+                                        Corporate Identity
+                                    </h3>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) 2fr', gap: '24px' }}>
+                                        <div
+                                            onClick={() => document.getElementById('logo-upload').click()}
+                                            style={{
+                                                border: '2px dashed #cbd5e1',
+                                                borderRadius: '20px',
+                                                padding: '24px',
+                                                textAlign: 'center',
+                                                cursor: 'pointer',
+                                                backgroundColor: logoPreview ? 'white' : '#f1f5f9',
+                                                transition: 'all 0.3s',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                minHeight: '160px',
+                                                position: 'relative',
+                                                overflow: 'hidden'
+                                            }}
+                                        >
+                                            {logoPreview ? (
+                                                <img
+                                                    src={logoPreview}
+                                                    alt="Identity preview"
+                                                    style={{ maxWidth: '100%', maxHeight: '120px', objectFit: 'contain' }}
+                                                />
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                                                    <Plus size={32} color="#94a3b8" />
+                                                    <p style={{ margin: 0, fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Upload Logo</p>
+                                                </div>
+                                            )}
+                                            <input
+                                                id="logo-upload"
+                                                type="file"
+                                                accept="image/png,image/jpeg,image/jpg,image/gif"
+                                                onChange={handleLogoUpload}
+                                                style={{ display: 'none' }}
                                             />
-                                            <p style={{ marginTop: '10px', fontSize: '0.875rem', color: '#6b7280' }}>
-                                                Click to change logo
-                                            </p>
                                         </div>
-                                    ) : (
-                                        <div>
-                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>📁</div>
-                                            <p style={{ color: '#7c3aed', fontWeight: 600, marginBottom: '5px' }}>
-                                                Click to Upload Logo
-                                            </p>
-                                            <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                                                PNG, JPG, GIF (Max 5MB)
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                                <input
-                                    id="logo-upload"
-                                    type="file"
-                                    accept="image/png,image/jpeg,image/jpg,image/gif"
-                                    onChange={handleLogoUpload}
-                                    style={{ display: 'none' }}
-                                />
-                            </div>
 
-                            {/* Company Name */}
-                            <div className="form-group">
-                                <label>Company Name</label>
-                                <input
-                                    type="text"
-                                    value={companyName}
-                                    onChange={(e) => setCompanyName(e.target.value)}
-                                    placeholder="Company Name"
-                                    className="form-input"
-                                />
-                            </div>
-
-                            {/* Company Address */}
-                            <div className="form-group">
-                                <label>Company Address</label>
-                                <textarea
-                                    value={companyAddress}
-                                    onChange={(e) => setCompanyAddress(e.target.value)}
-                                    placeholder="Company Address"
-                                    className="form-input"
-                                    rows="3"
-                                    style={{ resize: 'vertical' }}
-                                />
-                            </div>
-
-                            {/* Company Email */}
-                            <div className="form-group">
-                                <label>Company Email</label>
-                                <input
-                                    type="email"
-                                    value={companyEmail}
-                                    onChange={(e) => setCompanyEmail(e.target.value)}
-                                    placeholder="Company Email"
-                                    className="form-input"
-                                />
-                            </div>
-
-                            {/* Company Phone */}
-                            <div className="form-group">
-                                <label>Company Phone</label>
-                                <input
-                                    type="tel"
-                                    value={companyPhone}
-                                    onChange={(e) => setCompanyPhone(e.target.value)}
-                                    placeholder="Company Phone"
-                                    className="form-input"
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label>Select Employee *</label>
-                                <select
-                                    value={selectedEmployee}
-                                    onChange={(e) => setSelectedEmployee(e.target.value)}
-                                    required
-                                    className="form-input"
-                                >
-                                    <option value="">-- Select Employee --</option>
-                                    {employees.map(emp => (
-                                        <option key={emp.id} value={emp.id}>
-                                            {emp.full_name} ({emp.email})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {employeeData && (
-                                <div className="employee-info-box">
-                                    <p><strong>Role:</strong> {employeeData.role}</p>
-                                    <p><strong>Location:</strong> {employeeData.location || 'N/A'}</p>
-                                </div>
-                            )}
-
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Month *</label>
-                                    <select
-                                        value={selectedMonth}
-                                        onChange={(e) => setSelectedMonth(e.target.value)}
-                                        required
-                                        className="form-input"
-                                    >
-                                        <option value="">Select month...</option>
-                                        {months.map(month => (
-                                            <option key={month.value} value={month.value}>
-                                                {month.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="form-group">
-                                    <label>Year *</label>
-                                    <select
-                                        value={selectedYear}
-                                        onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                                        required
-                                        className="form-input"
-                                    >
-                                        {years.map(year => (
-                                            <option key={year} value={year}>
-                                                {year}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right Column */}
-                        <div className="form-column">
-                            {payrollData && (
-                                <>
-                                    {/* Attendance Summary */}
-                                    <div className="attendance-summary">
-                                        <h3>Attendance Summary</h3>
-                                        <div className="attendance-grid">
-                                            <div className="attendance-item">
-                                                <span className="label">Present Days</span>
-                                                <span className="value">{presentDays}</span>
-                                            </div>
-                                            <div className="attendance-item">
-                                                <span className="label">Leave Days</span>
-                                                <span className="value">{leaveDays}</span>
-                                            </div>
-                                            <div className="attendance-item">
-                                                <span className="label">LOP Days</span>
-                                                <span className="value">{payrollData.lop_days || 0}</span>
-                                            </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                            <input
+                                                type="text"
+                                                value={companyName}
+                                                onChange={(e) => setCompanyName(e.target.value)}
+                                                placeholder="Legal Entity Name"
+                                                style={{ padding: '12px 16px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '0.95rem', fontWeight: 600 }}
+                                            />
+                                            <textarea
+                                                value={companyAddress}
+                                                onChange={(e) => setCompanyAddress(e.target.value)}
+                                                placeholder="Registered Office Address"
+                                                rows="3"
+                                                style={{ padding: '12px 16px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '0.95rem', fontWeight: 500, resize: 'none' }}
+                                            />
                                         </div>
                                     </div>
 
-                                    {/* Salary Breakdown */}
-                                    <div className="salary-breakdown">
-                                        <h3>Salary Breakdown</h3>
-
-                                        <div className="salary-section">
-                                            <h4>Earnings</h4>
-                                            <div className="salary-row">
-                                                <span>Basic Salary</span>
-                                                <span>₹{(payrollData.basic_salary || 0).toLocaleString('en-IN')}</span>
-                                            </div>
-                                            <div className="salary-row">
-                                                <span>HRA</span>
-                                                <span>₹{(payrollData.hra || 0).toLocaleString('en-IN')}</span>
-                                            </div>
-                                            <div className="salary-row">
-                                                <span>Allowances</span>
-                                                <span>₹{(payrollData.allowances || 0).toLocaleString('en-IN')}</span>
-                                            </div>
-                                            <div className="salary-row total">
-                                                <span>Total Earnings</span>
-                                                <span>₹{totalEarnings.toLocaleString('en-IN')}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="salary-section">
-                                            <h4>Deductions</h4>
-                                            <div className="salary-row">
-                                                <span>Deductions</span>
-                                                <span>₹{(payrollData.deductions || 0).toLocaleString('en-IN')}</span>
-                                            </div>
-                                            <div className="salary-row total">
-                                                <span>Total Deductions</span>
-                                                <span>₹{totalDeductions.toLocaleString('en-IN')}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="net-salary">
-                                            <span>Net Salary</span>
-                                            <span>₹{(payrollData.net_salary || 0).toLocaleString('en-IN')}</span>
-                                        </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                        <input
+                                            type="email"
+                                            value={companyEmail}
+                                            onChange={(e) => setCompanyEmail(e.target.value)}
+                                            placeholder="Contact Email"
+                                            style={{ padding: '12px 16px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '0.9rem', fontWeight: 600 }}
+                                        />
+                                        <input
+                                            type="tel"
+                                            value={companyPhone}
+                                            onChange={(e) => setCompanyPhone(e.target.value)}
+                                            placeholder="Finance Desk Extension"
+                                            style={{ padding: '12px 16px', borderRadius: '12px', border: '1.5px solid #e2e8f0', fontSize: '0.9rem', fontWeight: 600 }}
+                                        />
                                     </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
+                                </div>
+                            </div>
 
-                    {/* Footer Actions */}
-                    <div className="modal-footer">
-                        <button
-                            type="button"
-                            onClick={handleClose}
-                            className="btn btn-secondary"
-                            disabled={loading}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={loading || !selectedEmployee || !selectedMonth || !payrollData}
-                        >
-                            <FileText size={18} />
-                            {loading ? 'Generating...' : 'Generate Payslip'}
-                        </button>
-                    </div>
-                </form>
+                            {/* Right Column - Financial Synthesis */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                {payrollData ? (
+                                    <>
+                                        {/* Attendance Ribbon */}
+                                        <div style={{
+                                            background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                                            borderRadius: '24px',
+                                            padding: '24px',
+                                            border: '1.5px solid #bae6fd'
+                                        }}>
+                                            <h4 style={{ margin: '0 0 16px 0', fontSize: '1rem', fontWeight: 800, color: '#0369a1', textTransform: 'uppercase' }}>Operational Pulse</h4>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                                                {[
+                                                    { label: 'Present', val: presentDays, color: '#059669' },
+                                                    { label: 'Leave', val: leaveDays, color: '#2563eb' },
+                                                    { label: 'LOP', val: payrollData.lop_days || 0, color: '#dc2626' }
+                                                ].map((item, idx) => (
+                                                    <div key={idx} style={{ textAlign: 'center', backgroundColor: 'white', padding: '12px', borderRadius: '16px', border: '1px solid #bae6fd' }}>
+                                                        <p style={{ margin: '0 0 4px 0', fontSize: '0.7rem', fontWeight: 700, color: '#64748b' }}>{item.label}</p>
+                                                        <p style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: item.color }}>{item.val}d</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Financial Breakdown */}
+                                        <div style={{
+                                            backgroundColor: '#f8fafc',
+                                            borderRadius: '24px',
+                                            padding: '28px',
+                                            border: '1px solid #e2e8f0',
+                                            flex: 1,
+                                            display: 'flex',
+                                            flexDirection: 'column'
+                                        }}>
+                                            <h4 style={{ margin: '0 0 20px 0', fontSize: '1rem', fontWeight: 800, color: '#1e293b' }}>Compensation Structure</h4>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#64748b', fontWeight: 600 }}>
+                                                    <span>Base / Basic</span>
+                                                    <span>₹{(payrollData.basic_salary || 0).toLocaleString('en-IN')}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#64748b', fontWeight: 600 }}>
+                                                    <span>Housing Allowance</span>
+                                                    <span>₹{(payrollData.hra || 0).toLocaleString('en-IN')}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#64748b', fontWeight: 600 }}>
+                                                    <span>Standard Allowances</span>
+                                                    <span>₹{(payrollData.allowances || 0).toLocaleString('en-IN')}</span>
+                                                </div>
+                                                <div style={{ height: '1px', backgroundColor: '#e2e8f0', margin: '8px 0' }} />
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1rem', color: '#1e293b', fontWeight: 800 }}>
+                                                    <span>Gross Earnings</span>
+                                                    <span>₹{totalEarnings.toLocaleString('en-IN')}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#e11d48', fontWeight: 700, marginTop: '12px' }}>
+                                                    <span>Total Deductions</span>
+                                                    <span>- ₹{totalDeductions.toLocaleString('en-IN')}</span>
+                                                </div>
+                                            </div>
+
+                                            <div style={{
+                                                marginTop: 'auto',
+                                                padding: '20px',
+                                                background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+                                                borderRadius: '20px',
+                                                border: '2px solid #ddd6fe',
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center'
+                                            }}>
+                                                <span style={{ fontSize: '1rem', fontWeight: 800, color: '#5b21b6' }}>Payable Amount</span>
+                                                <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#7c3aed' }}>₹{(payrollData.net_salary || 0).toLocaleString('en-IN')}</span>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div style={{
+                                        flex: 1,
+                                        border: '2px dashed #e2e8f0',
+                                        borderRadius: '24px',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '40px',
+                                        textAlign: 'center',
+                                        color: '#64748b'
+                                    }}>
+                                        <DollarSign size={48} color="#cbd5e1" style={{ marginBottom: '16px' }} />
+                                        <p style={{ fontWeight: 600, margin: '0 0 16px 0' }}>
+                                            {payrollMissing
+                                                ? `No payroll record found for ${selectedMonth} ${selectedYear}.`
+                                                : 'Select employee and month to load financial snapshot'}
+                                        </p>
+                                        {payrollMissing && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCreatePayroll(true)}
+                                                style={{
+                                                    padding: '12px 24px',
+                                                    borderRadius: '12px',
+                                                    backgroundColor: '#7c3aed',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    boxShadow: '0 4px 12px rgba(124, 58, 237, 0.2)'
+                                                }}
+                                            >
+                                                <Plus size={18} />
+                                                Generate Payroll Data
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div style={{ display: 'flex', gap: '16px', marginTop: 'auto' }}>
+                                    <button
+                                        type="button"
+                                        onClick={handleClose}
+                                        style={{
+                                            flex: 0.8,
+                                            padding: '16px',
+                                            borderRadius: '16px',
+                                            fontWeight: 700,
+                                            border: '2px solid #e2e8f0',
+                                            backgroundColor: 'white',
+                                            color: '#64748b',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        Dismiss
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={loading || !selectedEmployee || !selectedMonth || !payrollData}
+                                        style={{
+                                            flex: 1.2,
+                                            padding: '16px',
+                                            borderRadius: '16px',
+                                            fontWeight: 800,
+                                            border: 'none',
+                                            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                                            color: 'white',
+                                            cursor: (loading || !selectedEmployee || !selectedMonth || !payrollData) ? 'not-allowed' : 'pointer',
+                                            boxShadow: '0 8px 20px rgba(79, 70, 229, 0.3)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '10px',
+                                            opacity: (loading || !selectedEmployee || !selectedMonth || !payrollData) ? 0.6 : 1,
+                                            transition: 'all 0.3s'
+                                        }}
+                                        onMouseEnter={(e) => { if (!loading && selectedEmployee && payrollData) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 25px rgba(79, 70, 229, 0.4)'; } }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(79, 70, 229, 0.3)'; }}
+                                    >
+                                        <FileText size={20} />
+                                        {loading ? 'Processing Document...' : 'Verify & Generate Payslip'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             {/* Payroll Creation Modal */}

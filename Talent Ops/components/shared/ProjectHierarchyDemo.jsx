@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Mail, Phone, MapPin, Folder, ChevronRight, User, Plus, Trash2, Edit2, Search, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Mail, Phone, MapPin, Folder, ChevronRight, User, Plus, Trash2, Edit2, Search, Check, RotateCcw } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 import { useProject } from '../employee/context/ProjectContext';
@@ -15,7 +15,9 @@ const ProjectHierarchyDemo = ({ isEditingEnabled = false }) => {
     });
     const [allProfiles, setAllProfiles] = useState([]); // Store all profiles for "Add Member"
     const [loading, setLoading] = useState(true);
-    const [scale, setScale] = useState(0.8);
+    const [scale, setScale] = useState(1);
+    const [scrollTop, setScrollTop] = useState(0);
+    const containerRef = useRef(null);
 
     // Modal States
     const [selectedEmployee, setSelectedEmployee] = useState(null); // For viewing details
@@ -34,8 +36,16 @@ const ProjectHierarchyDemo = ({ isEditingEnabled = false }) => {
     }, [currentProject, hierarchyData.projects]);
 
     const handleZoomIn = () => setScale(prev => Math.min(prev + 0.1, 2));
-    const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.25));
-    const handleReset = () => setScale(0.8);
+    const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.4));
+    const handleReset = () => {
+        setScale(0.75);
+        if (containerRef.current) {
+            containerRef.current.scrollLeft = 0;
+            containerRef.current.scrollTop = 0;
+        }
+    };
+
+
 
     useEffect(() => {
         fetchHierarchy();
@@ -180,70 +190,115 @@ const ProjectHierarchyDemo = ({ isEditingEnabled = false }) => {
     };
 
     // Node Card Component with Action Buttons
-    const NodeCard = ({ title, subtitle, color, icon: Icon, onClick, active, member, showActions }) => (
+    const NodeCard = ({ title, subtitle, color, icon: Icon, onClick, active, member, showActions, roleLabel }) => (
         <div
             onClick={onClick}
+            className="node-card"
             style={{
-                backgroundColor: 'white',
-                border: `2px solid ${active ? color : '#e2e8f0'}`,
-                borderRadius: '12px',
-                padding: '16px',
-                width: '200px',
-                boxShadow: active ? `0 4px 12px ${color}40` : '0 2px 4px rgba(0,0,0,0.05)',
-                cursor: onClick ? 'pointer' : 'default',
-                transition: 'all 0.2s',
-                position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                textAlign: 'center',
+                cursor: onClick ? 'pointer' : 'default',
+                transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                position: 'relative',
                 zIndex: 10
             }}
-            onMouseEnter={e => {
+            onMouseEnter={(e) => {
                 if (onClick) {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.borderColor = color;
+                    e.currentTarget.style.transform = 'translateY(-6px) scale(1.03)';
+                    const card = e.currentTarget.children[1];
+                    card.style.borderColor = color;
+                    card.style.boxShadow = `0 20px 40px -10px ${color}30`;
                 }
             }}
-            onMouseLeave={e => {
+            onMouseLeave={(e) => {
                 if (onClick) {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.borderColor = active ? color : '#e2e8f0';
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    const card = e.currentTarget.children[1];
+                    card.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                    card.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.05)';
                 }
             }}
         >
-            {showActions && member && (
-                <div style={{ position: 'absolute', top: '8px', right: '8px', zIndex: 20 }}>
-                    <button
-                        onClick={(e) => handleRemoveMember(e, member)}
-                        style={{ border: 'none', background: '#fee2e2', color: '#ef4444', borderRadius: '4px', padding: '4px', cursor: 'pointer' }}
-                        title="Remove from Project"
-                    >
-                        <Trash2 size={14} />
-                    </button>
-                </div>
-            )}
-
+            {/* Role Chip */}
             <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
                 backgroundColor: color,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '10px',
                 color: 'white',
-                overflow: 'hidden'
+                padding: '4px 10px',
+                borderRadius: '8px',
+                fontSize: '0.55rem',
+                fontWeight: '900',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '-10px',
+                zIndex: 12,
+                boxShadow: `0 4px 10px ${color}30`
             }}>
-                {member?.avatar_url ? (
-                    <img src={member.avatar_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                    Icon ? <Icon size={20} /> : <User size={20} />
-                )}
+                {roleLabel || subtitle}
             </div>
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>{title}</h4>
-            <span style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>{subtitle}</span>
+
+            {/* Node Card Body */}
+            <div style={{
+                padding: '20px 16px',
+                backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                backdropFilter: 'blur(10px)',
+                border: active ? `2px solid ${color}` : '1.5px solid rgba(255, 255, 255, 0.5)',
+                borderRadius: '20px',
+                boxShadow: active ? `0 15px 30px ${color}20` : '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
+                width: '180px',
+                textAlign: 'center',
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '10px'
+            }}>
+                {showActions && member && (
+                    <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 20 }}>
+                        <button
+                            onClick={(e) => handleRemoveMember(e, member)}
+                            style={{ border: 'none', background: '#fee2e2', color: '#ef4444', borderRadius: '6px', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#fecaca'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#fee2e2'}
+                            title="Remove from Project"
+                        >
+                            <Trash2 size={12} />
+                        </button>
+                    </div>
+                )}
+
+                <div style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '16px',
+                    backgroundColor: 'white',
+                    padding: '3px',
+                    boxShadow: `0 4px 12px -2px ${color}20`,
+                    border: `1.2px solid ${color}15`
+                }}>
+                    <div style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: '#f8fafc'
+                    }}>
+                        {member?.avatar_url ? (
+                            <img src={member.avatar_url} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                            <div style={{ color }}>{Icon ? <Icon size={18} /> : <span style={{ fontWeight: '800', fontSize: '1.2rem' }}>{title?.charAt(0)}</span>}</div>
+                        )}
+                    </div>
+                </div>
+
+                <div>
+                    <h4 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#0f172a', margin: 0, letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '140px' }}>{title}</h4>
+                    <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: '700', marginTop: '2px', textTransform: 'uppercase', display: 'block' }}>{subtitle}</span>
+                </div>
+            </div>
         </div>
     );
 
@@ -425,7 +480,7 @@ const ProjectHierarchyDemo = ({ isEditingEnabled = false }) => {
                         }} />
                     )}
 
-                    <div style={{ display: 'flex', gap: `${gap}px`, justifyContent: 'center', flexWrap: 'nowrap' }}>
+                    <div style={{ display: 'flex', gap: `${gap}px`, flexWrap: 'nowrap' }}>
                         {allProjects.map((project) => (
                             <div key={project.id} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                 {/* Up Line to Horizontal Bar */}
@@ -693,7 +748,7 @@ const ProjectHierarchyDemo = ({ isEditingEnabled = false }) => {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: `${gapSize}px` }}>
                 {/* Level 1: Executives */}
                 {hierarchyData.executives.length > 0 && (
-                    <div style={{ display: 'flex', gap: '40px', justifyContent: 'center', position: 'relative' }}>
+                    <div style={{ display: 'flex', gap: `${gap}px`, flexWrap: 'nowrap' }}>
                         {hierarchyData.executives.map(exec => (
                             <div key={exec.id} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                 <NodeCard
@@ -719,7 +774,7 @@ const ProjectHierarchyDemo = ({ isEditingEnabled = false }) => {
 
                 {/* Level 2: Projects Container */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-                    <div style={{ display: 'flex', gap: '100px', alignItems: 'flex-start', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', gap: '100px', alignItems: 'flex-start' }}>
                         {allProjects.map((project, index) => (
                             <div key={project.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
                                 {/* Connector Lines */}
@@ -872,85 +927,153 @@ const ProjectHierarchyDemo = ({ isEditingEnabled = false }) => {
     };
 
     return (
-        <div style={{ height: '100%', width: '100%', overflow: 'hidden', position: 'relative', backgroundColor: '#f8fafc' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'auto', padding: '40px' }}>
-                <div style={{ minWidth: 'max-content', paddingBottom: '40px', zoom: scale, transition: 'zoom 0.2s' }}>
+        <div style={{
+            height: '100%',
+            width: '100%',
+            position: 'relative',
+            backgroundColor: '#f8fafc',
+            backgroundImage: `radial-gradient(circle at 2px 2px, #cbd5e1 1px, transparent 0)`,
+            backgroundSize: '40px 40px'
+        }}>
+            <div
+                className="hierarchy-viewport premium-scrollbar"
+                style={{
+                    height: '100%',
+                    width: '100%',
+                    overflow: 'auto',
+                    position: 'relative',
+                    cursor: 'default',
+                    userSelect: 'auto',
+                    scrollBehavior: 'smooth',
+                    textAlign: 'center'
+                }}
+                ref={containerRef}
+            >
+                {/* Header Title Layer */}
+                <div style={{ position: 'absolute', top: '24px', left: '24px', zIndex: 10, pointerEvents: 'none' }}>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.04em', marginBottom: '4px' }}>
+                        Project <span style={{ color: '#f59e0b' }}>Ecosystem</span>
+                    </h2>
+                    <p style={{ color: '#64748b', fontWeight: '600', fontSize: '0.9rem' }}>Detailed breakdown of project roles and accountability.</p>
+                </div>
 
-                    {/* Breadcrumb / Header */}
-                    <div style={{ marginBottom: '32px', position: 'sticky', left: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', minWidth: '100%' }}>
-                        <div>
-                            {/* Back Button Logic */}
-                            {viewMode !== 'overview' && (
-                                <button
-                                    onClick={() => {
+                {/* View Mode Toggle Overlay (Premium) */}
+                <div style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 20 }}>
+                    <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(10px)', padding: '6px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.5)', display: 'flex', gap: '4px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+                        {[
+                            { id: 'overview', label: 'Overview' },
+                            { id: 'full', label: 'Full Structure' }
+                        ].map(mode => (
+                            <button
+                                key={mode.id}
+                                onClick={() => {
+                                    if (mode.id === 'full') setViewMode('full-overview');
+                                    else {
                                         setViewMode('overview');
                                         setSelectedProject(null);
-                                    }}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: '4px',
-                                        border: 'none', background: 'none', cursor: 'pointer',
-                                        fontWeight: 'bold', color: '#64748b', fontSize: '1rem', marginBottom: '8px'
-                                    }}
-                                >
-                                    <ChevronRight style={{ transform: 'rotate(180deg)' }} /> Back to Overview
-                                </button>
-                            )}
-                            <h2 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>
-                                {viewMode === 'overview' ? 'Project Hierarchy' : viewMode === 'full-overview' ? 'Full Organization Overview' : 'Project Detail'}
-                            </h2>
-                        </div>
-
-                        {/* Full Overview Toggle */}
-                        {viewMode === 'overview' && (
-                            <button
-                                onClick={() => setViewMode('full-overview')}
+                                    }
+                                }}
                                 style={{
-                                    padding: '10px 20px',
-                                    backgroundColor: '#7c3aed',
-                                    color: 'white',
+                                    padding: '8px 16px',
+                                    borderRadius: '10px',
                                     border: 'none',
-                                    borderRadius: '8px',
-                                    fontWeight: 'bold',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '800',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.02em',
                                     cursor: 'pointer',
-                                    boxShadow: '0 4px 6px rgba(124, 58, 237, 0.3)',
-                                    display: 'flex', alignItems: 'center', gap: '8px'
+                                    backgroundColor: (viewMode === mode.id || (mode.id === 'full' && viewMode === 'full-overview') || (viewMode === 'project-detail' && mode.id === 'overview')) ? '#0f172a' : 'transparent',
+                                    color: (viewMode === mode.id || (mode.id === 'full' && viewMode === 'full-overview') || (viewMode === 'project-detail' && mode.id === 'overview')) ? 'white' : '#64748b',
+                                    transition: 'all 0.2s'
                                 }}
                             >
-                                <Folder size={18} /> Full Overview
+                                {mode.label}
                             </button>
-                        )}
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'center', minWidth: '100%' }}>
-                        {viewMode === 'overview' && <OverviewTree />}
-                        {viewMode === 'project-detail' && <ProjectDetailTree />}
-                        {viewMode === 'full-overview' && <FullOverviewTree />}
+                        ))}
                     </div>
                 </div>
+
+                <div
+                    className="hierarchy-canvas"
+                    key={viewMode}
+                    style={{
+                        padding: '100px',
+                        zoom: scale,
+                        display: 'inline-block',
+                        minWidth: '100%',
+                        width: 'max-content',
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center',
+                        margin: '0 auto',
+                        transition: 'zoom 0.3s ease',
+                        animation: 'slideIn 0.5s ease-out'
+                    }}
+                >
+                    {viewMode === 'overview' && <OverviewTree />}
+                    {viewMode === 'project-detail' && <ProjectDetailTree />}
+                    {viewMode === 'full-overview' && <FullOverviewTree />}
+                </div>
+
+                {/* Employee/Node Details Modal */}
+                <EmployeeModal employee={selectedEmployee} onClose={() => setSelectedEmployee(null)} />
+
+                {/* Add Member Modal */}
+                {showAddMemberModal && selectedProject && (
+                    <AddMemberModal
+                        onClose={() => setShowAddMemberModal(false)}
+                        onAdd={handleAddMember}
+                        existingMembers={[
+                            ...(selectedProject.managers || []),
+                            ...(selectedProject.leads || []),
+                            ...(selectedProject.staff || [])
+                        ]}
+                    />
+                )}
+
+                {/* Controls */}
+                <div style={{
+                    position: 'absolute',
+                    bottom: '24px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    backdropFilter: 'blur(10px)',
+                    padding: '8px 20px',
+                    borderRadius: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '20px',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+                    zIndex: 100,
+                    color: 'white'
+                }}>
+                    <button onClick={handleZoomOut} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', opacity: 0.8, transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = 0.8}><Search size={18} style={{ transform: 'scale(-1, 1)' }} /></button>
+                    <span style={{ fontSize: '0.9rem', fontWeight: '800', minWidth: '40px', textAlign: 'center' }}>{Math.round(scale * 100)}%</span>
+                    <button onClick={handleZoomIn} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', opacity: 0.8, transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = 0.8}><Search size={18} /></button>
+                    <div style={{ width: '1px', height: '24px', backgroundColor: 'rgba(255,255,255,0.1)' }}></div>
+                    <button onClick={handleReset} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', opacity: 0.8, transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.opacity = 1} onMouseLeave={e => e.currentTarget.style.opacity = 0.8}><RotateCcw size={16} /></button>
+                </div>
+
+                <style>{`
+                    @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+                    .premium-scrollbar::-webkit-scrollbar {
+                        width: 14px;
+                        height: 14px;
+                    }
+                    .premium-scrollbar::-webkit-scrollbar-track {
+                        background: #e2e8f0;
+                    }
+                    .premium-scrollbar::-webkit-scrollbar-thumb {
+                        background: #64748b;
+                        border-radius: 0px;
+                    }
+                    .premium-scrollbar::-webkit-scrollbar-thumb:hover {
+                        background: #475569;
+                    }
+                `}</style>
             </div>
-
-            {/* Employee/Node Details Modal */}
-            <EmployeeModal employee={selectedEmployee} onClose={() => setSelectedEmployee(null)} />
-
-            {/* Add Member Modal */}
-            {showAddMemberModal && selectedProject && (
-                <AddMemberModal
-                    onClose={() => setShowAddMemberModal(false)}
-                    onAdd={handleAddMember}
-                    existingMembers={[
-                        ...(selectedProject.manager ? [selectedProject.manager] : []),
-                    ]}
-                />
-            )}
-
-            {/* Controls */}
-            <div style={{ position: 'absolute', bottom: '32px', right: '32px', display: 'flex', gap: '8px', backgroundColor: 'white', padding: '8px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                <button onClick={handleZoomOut} style={{ padding: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }}>-</button>
-                <div style={{ padding: '8px', fontWeight: 'bold' }}>{Math.round(scale * 100)}%</div>
-                <button onClick={handleZoomIn} style={{ padding: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }}>+</button>
-                <button onClick={handleReset} style={{ padding: '8px', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }}>Reset</button>
-            </div>
-        </div>
+        </div >
     );
 };
 

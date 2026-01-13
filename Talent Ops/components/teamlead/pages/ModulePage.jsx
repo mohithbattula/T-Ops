@@ -807,7 +807,7 @@ const ModulePage = ({ title, type }) => {
     if (type === 'team_tasks') return <TeamTasks orgId={orgId} />;
     if (type === 'analytics') return <AnalyticsDemo />;
     if (type === 'tasks') return <TaskLifecyclePage userRole={userRole} userId={userId} addToast={addToast} teamId={teamId} orgId={orgId} />;
-    if (title === 'Team Hierarchy' || title === 'Organizational Hierarchy') return <HierarchyDemo />;
+    if (title === 'Team Hierarchy' || title === 'Organizational Hierarchy' || title === 'Hierarchy') return <HierarchyDemo />;
     if (title === 'Project Hierarchy') return <ProjectHierarchyDemo />;
     if (title === 'Settings') return <SettingsDemo />;
     if (title === 'Announcements') return <AnnouncementsPage userRole={userRole} userId={userId} orgId={orgId} />;
@@ -1232,66 +1232,115 @@ const ModulePage = ({ title, type }) => {
     const config = configs[type] || configs.default;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
-            {/* Header with Breadcrumb-like feel */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '4px' }}>
-                        <span>Dashboard</span>
-                        <span>/</span>
-                        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{title}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Premium Header with Mesh Background */}
+            <div style={{
+                position: 'relative',
+                padding: '20px 24px',
+                borderRadius: '16px',
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                marginBottom: '16px',
+                overflow: 'hidden',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
+            }}>
+                {/* Decorative Mesh Grid */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)',
+                    backgroundSize: '24px 24px',
+                    opacity: 0.5
+                }}></div>
+
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '0.85rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+                            <Calendar size={14} />
+                            <span>Team Lead</span>
+                            <span>/</span>
+                            <span style={{ color: '#38bdf8' }}>{title}</span>
+                        </div>
+                        <h1 style={{ fontSize: '1.75rem', fontWeight: '800', color: 'white', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+                            {title}
+                        </h1>
+                        <p style={{ color: '#94a3b8', fontSize: '0.9rem', maxWidth: '600px' }}>
+                            {type === 'leaves' ? 'Manage your personal leave requests and track available balance.' :
+                                `Management portal for organizational ${title.toLowerCase()}`}
+                        </p>
                     </div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{title}</h2>
+
+                    {type === 'leaves' && (
+                        <button
+                            onClick={() => handleAction('Apply for Leave')}
+                            style={{
+                                background: 'linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)',
+                                color: 'white',
+                                padding: '14px 28px',
+                                borderRadius: '16px',
+                                fontWeight: '700',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                boxShadow: '0 10px 15px -3px rgba(56, 189, 248, 0.4)',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                                e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(56, 189, 248, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(56, 189, 248, 0.4)';
+                            }}
+                        >
+                            <Plus size={22} />
+                            Apply for Leave
+                        </button>
+                    )}
                 </div>
-                {type === 'leaves' && (
-                    <button
-                        onClick={() => handleAction('Apply for Leave')}
-                        style={{
-                            backgroundColor: 'var(--primary)',
-                            color: 'white',
-                            padding: '10px 16px',
-                            borderRadius: '8px',
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            boxShadow: 'var(--shadow-md)'
-                        }}
-                    >
-                        <Plus size={20} />
-                        Apply for Leave
-                    </button>
-                )}
             </div>
 
             {/* Remaining Leaves Card */}
             {type === 'leaves' && (
                 <div style={{
-                    backgroundColor: 'var(--surface)',
-                    padding: '20px',
-                    borderRadius: '12px',
-                    boxShadow: 'var(--shadow-sm)',
-                    marginBottom: '10px',
+                    background: 'white',
+                    padding: '16px',
+                    borderRadius: '16px',
+                    border: '1px solid #f1f5f9',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                    marginBottom: '16px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '16px',
-                    border: '1px solid var(--border)'
+                    position: 'relative',
+                    overflow: 'hidden'
                 }}>
                     <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '12px',
-                        backgroundColor: '#e0f2fe',
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '20px',
+                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: '#0284c7'
+                        color: '#0284c7',
+                        border: '1px solid #bae6fd'
                     }}>
-                        <Briefcase size={24} />
+                        <Briefcase size={32} />
                     </div>
                     <div>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Remaining Leaves</p>
-                        <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{remainingLeaves}</p>
+                        <p style={{ fontSize: '0.9rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                            Your Balance
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                            <span style={{ fontSize: '1.75rem', fontWeight: '800', color: '#0f172a' }}>{remainingLeaves}</span>
+                            <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#94a3b8' }}>Days Remaining</span>
+                        </div>
                     </div>
                 </div>
             )}

@@ -512,10 +512,9 @@ export const getUserDetails = async (userId) => {
 export const getOrgUsers = async (orgId) => {
     try {
         const { data, error } = await supabase
-            .from('users')
-            .select('id, email, full_name, avatar_url, role, is_hidden')
+            .from('profiles')
+            .select('id, email, full_name, avatar_url, role')
             .eq('org_id', orgId)
-            .neq('is_hidden', true)
             .order('full_name');
 
         if (error) throw error;

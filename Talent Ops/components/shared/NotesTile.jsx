@@ -114,63 +114,53 @@ const NotesTile = () => {
 
     return (
         <div style={{
-            backgroundColor: '#f3e8ff', // Light purple
+            backgroundColor: '#ffffff',
             borderRadius: '24px',
-            padding: '24px',
             display: 'flex',
             flexDirection: 'column',
-            height: '300px',
-            position: 'relative',
-            overflow: 'hidden'
+            height: '320px',
+            position: 'relative'
         }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#6b21a8', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <StickyNote size={20} /> My Notes
-                </h3>
-                <span style={{ fontSize: '0.8rem', color: '#9333ea', fontWeight: 600 }}>{notes.length}</span>
-            </div>
-
             {/* Notes List */}
-            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px', paddingRight: '4px' }} className="custom-scrollbar">
+            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '4px' }} className="custom-scrollbar">
                 {loading ? (
-                    <p style={{ color: '#a855f7', fontSize: '0.9rem', textAlign: 'center', marginTop: '20px' }}>Loading...</p>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                        <div style={{ width: '20px', height: '20px', border: '2px solid #f1f5f9', borderTopColor: '#0ea5e9', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                    </div>
                 ) : notes.length === 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.5 }}>
-                        <StickyNote size={32} color="#ba68c8" />
-                        <p style={{ color: '#ba68c8', fontSize: '0.9rem', marginTop: '8px' }}>No notes yet</p>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.4 }}>
+                        <StickyNote size={40} color="#94a3b8" strokeWidth={1.5} />
+                        <p style={{ color: '#94a3b8', fontSize: '0.95rem', fontWeight: 600, marginTop: '12px' }}>No notes for today</p>
                     </div>
                 ) : (
                     notes.map(note => (
                         <div key={note.id} style={{
-                            backgroundColor: note.is_completed ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.7)',
-                            padding: '10px 12px',
-                            borderRadius: '12px',
-                            fontSize: '0.9rem',
-                            color: note.is_completed ? '#9ca3af' : '#4c1d95',
+                            backgroundColor: note.is_completed ? '#f8fafc' : '#ffffff',
+                            padding: '16px',
+                            borderRadius: '16px',
+                            border: note.is_completed ? '1px solid #f1f5f9' : '1px solid #e2e8f0',
                             display: 'flex',
                             alignItems: 'start',
-                            gap: '8px',
+                            gap: '12px',
                             transition: 'all 0.2s',
-                            border: note.is_completed ? '1px solid transparent' : '1px solid rgba(139, 92, 246, 0.1)'
+                            boxShadow: note.is_completed ? 'none' : '0 2px 4px rgba(0,0,0,0.02)'
                         }}>
-                            {/* Checkbox */}
                             <button
                                 onClick={() => toggleComplete(note)}
                                 style={{
                                     background: 'none',
                                     border: 'none',
                                     cursor: 'pointer',
-                                    padding: '2px',
+                                    padding: '0',
                                     marginTop: '2px',
-                                    color: note.is_completed ? '#a855f7' : '#d8b4fe',
+                                    color: note.is_completed ? '#0ea5e9' : '#cbd5e1',
                                     display: 'flex',
                                     alignItems: 'center'
                                 }}
                             >
-                                {note.is_completed ? <CheckCircle size={16} /> : <Circle size={16} />}
+                                {note.is_completed ? <CheckCircle size={20} fill="#0ea5e9" color="#fff" /> : <Circle size={20} />}
                             </button>
 
-                            {/* Content or Edit Input */}
                             <div style={{ flex: 1 }}>
                                 {editingNoteId === note.id ? (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -181,10 +171,10 @@ const NotesTile = () => {
                                             autoFocus
                                             style={{
                                                 width: '100%',
-                                                padding: '6px 8px',
-                                                borderRadius: '8px',
-                                                border: '1px solid #c084fc',
-                                                fontSize: '0.9rem',
+                                                padding: '8px 12px',
+                                                borderRadius: '10px',
+                                                border: '1px solid #0ea5e9',
+                                                fontSize: '0.95rem',
                                                 outline: 'none',
                                                 backgroundColor: '#fff'
                                             }}
@@ -193,115 +183,87 @@ const NotesTile = () => {
                                                 if (e.key === 'Escape') cancelEditing();
                                             }}
                                         />
-                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                            <button onClick={saveEdit} style={{ background: '#9333ea', color: '#fff', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <Check size={12} /> Save
-                                            </button>
-                                            <button onClick={cancelEditing} style={{ background: 'transparent', color: '#6b7280', border: '1px solid #d1d5db', borderRadius: '6px', padding: '4px 8px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <X size={12} /> Cancel
-                                            </button>
-                                        </div>
                                     </div>
                                 ) : (
                                     <span style={{
                                         wordBreak: 'break-word',
-                                        lineHeight: '1.4',
+                                        lineHeight: '1.5',
                                         textDecoration: note.is_completed ? 'line-through' : 'none',
-                                        display: 'block',
-                                        paddingTop: '1px'
+                                        color: note.is_completed ? '#94a3b8' : '#1e293b',
+                                        fontSize: '0.95rem',
+                                        fontWeight: 500
                                     }}>
                                         {note.content}
                                     </span>
                                 )}
                             </div>
 
-                            {/* Actions (Edit/Delete) */}
-                            {editingNoteId !== note.id && (
-                                <div style={{ display: 'flex', gap: '4px' }}>
-                                    {!note.is_completed && (
-                                        <button
-                                            onClick={() => startEditing(note)}
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c084fc', padding: '2px' }}
-                                            className="action-btn"
-                                        >
-                                            <Pencil size={14} />
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={() => deleteNote(note.id)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c084fc', padding: '2px' }}
-                                        className="action-btn delete-btn"
-                                    >
-                                        <Trash2 size={14} />
-                                    </button>
-                                </div>
-                            )}
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                                <button
+                                    onClick={() => deleteNote(note.id)}
+                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#cbd5e1', padding: '4px', transition: 'color 0.2s' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                                    onMouseLeave={(e) => e.currentTarget.style.color = '#cbd5e1'}
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
                         </div>
                     ))
                 )}
             </div>
 
             {/* Add Note Input */}
-            <form onSubmit={addNote} style={{ display: 'flex', gap: '8px' }}>
+            <form onSubmit={addNote} style={{
+                display: 'flex',
+                gap: '12px',
+                padding: '16px',
+                backgroundColor: '#f8fafc',
+                borderRadius: '16px',
+                border: '1px solid #f1f5f9'
+            }}>
                 <input
                     type="text"
                     value={newNote}
                     onChange={(e) => setNewNote(e.target.value)}
-                    placeholder="Add a note..."
+                    placeholder="Capture a thought..."
                     style={{
                         flex: 1,
-                        padding: '10px 14px',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(147, 51, 234, 0.2)',
-                        backgroundColor: 'rgba(255,255,255,0.8)',
-                        fontSize: '0.9rem',
+                        background: 'transparent',
+                        border: 'none',
+                        fontSize: '0.95rem',
                         outline: 'none',
-                        color: '#581c87'
+                        color: '#1e293b',
+                        fontWeight: 500
                     }}
                 />
                 <button
                     type="submit"
                     disabled={!newNote.trim()}
                     style={{
-                        backgroundColor: '#9333ea',
+                        backgroundColor: '#0ea5e9',
                         color: 'white',
                         border: 'none',
-                        borderRadius: '12px',
-                        width: '40px',
-                        height: '40px',
+                        borderRadius: '10px',
+                        width: '32px',
+                        height: '32px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: newNote.trim() ? 'pointer' : 'default',
                         opacity: newNote.trim() ? 1 : 0.6,
-                        transition: 'opacity 0.2s'
+                        boxShadow: '0 4px 6px rgba(14, 165, 233, 0.2)'
                     }}
                 >
-                    <Plus size={20} />
+                    <Plus size={18} />
                 </button>
             </form>
             <style>
                 {`
-                    .custom-scrollbar::-webkit-scrollbar {
-                        width: 6px;
-                    }
-                    .custom-scrollbar::-webkit-scrollbar-track {
-                        background: rgba(147, 51, 234, 0.05);
-                        border-radius: 3px;
-                    }
-                    .custom-scrollbar::-webkit-scrollbar-thumb {
-                        background: rgba(147, 51, 234, 0.2);
-                        border-radius: 3px;
-                    }
-                    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                        background: rgba(147, 51, 234, 0.4);
-                    }
-                    .action-btn:hover {
-                        color: #9333ea !important;
-                    }
-                    .delete-btn:hover {
-                        color: #ef4444 !important;
-                    }
+                    @keyframes spin { to { transform: rotate(360deg); } }
+                    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
                 `}
             </style>
         </div>

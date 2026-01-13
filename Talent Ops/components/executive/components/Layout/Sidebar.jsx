@@ -86,7 +86,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
                     alignItems: 'center',
                     justifyContent: isCollapsed ? 'center' : 'flex-start',
                     gap: '10px',
-                    padding: '10px 12px',
+                    padding: '8px 12px',
                     borderRadius: '8px',
                     backgroundColor: isActive ? '#7C3AED' : 'transparent',
                     color: isActive ? 'white' : 'rgba(255,255,255,0.7)',
@@ -151,20 +151,26 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
                 justifyContent: isCollapsed ? 'center' : 'space-between',
                 width: '100%',
                 padding: '8px 12px',
-                marginBottom: '4px',
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                color: 'rgba(255,255,255,0.9)',
+                marginBottom: '8px',
+                background: sectionKey === 'project'
+                    ? 'linear-gradient(135deg, rgba(139,92,246,0.15) 0%, rgba(124,58,237,0.1) 100%)'
+                    : 'rgba(255,255,255,0.05)',
+                border: sectionKey === 'project'
+                    ? '1px solid rgba(139,92,246,0.3)'
+                    : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '10px',
+                color: sectionKey === 'project' ? '#a78bfa' : 'rgba(255,255,255,0.9)',
                 cursor: 'pointer',
                 fontSize: '0.75rem',
-                fontWeight: 600,
+                fontWeight: 700,
                 textTransform: 'uppercase',
-                letterSpacing: '0.05em'
+                letterSpacing: '0.08em',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: sectionKey === 'project' ? '0 4px 12px rgba(139,92,246,0.1)' : 'none'
             }}
         >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {React.createElement(icon, { size: 14 })}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {React.createElement(icon, { size: 15 })}
                 {!isCollapsed && <span>{label}</span>}
             </div>
             {!isCollapsed && (
@@ -172,7 +178,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
                     size={14}
                     style={{
                         transform: expandedMenus[sectionKey] ? 'rotate(0deg)' : 'rotate(-90deg)',
-                        transition: 'transform 0.2s'
+                        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                     }}
                 />
             )}
@@ -184,7 +190,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             style={{
-                width: isCollapsed ? '80px' : '280px',
+                width: isCollapsed ? '70px' : '240px',
                 backgroundColor: '#1a1a2e',
                 color: 'white',
                 height: '100vh',
@@ -193,9 +199,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
                 top: 0,
                 display: 'flex',
                 flexDirection: 'column',
-                padding: '16px',
+                padding: '12px',
                 zIndex: 1000,
-                transition: 'width 0.3s ease'
+                transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                borderRadius: '0 24px 24px 0',
+                willChange: 'width',
+                transform: 'translateZ(0)'
             }}>
             <style>
                 {`
@@ -210,7 +219,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
             </style>
             {/* Logo */}
             <div style={{
-                marginBottom: '20px',
+                marginBottom: '16px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: isCollapsed ? 'center' : 'space-between',
@@ -218,7 +227,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
             }}>
                 {!isCollapsed && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <h1 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Talent Ops</h1>
+                        <h1 style={{ fontSize: '1rem', fontWeight: 'bold' }}>Talent Ops</h1>
                     </div>
                 )}
                 <button

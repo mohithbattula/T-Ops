@@ -9,7 +9,6 @@ import { useUser } from '../context/UserContext';
 import { supabase } from '../../../lib/supabaseClient';
 import NotesTile from '../../shared/NotesTile';
 
-import AttendanceTracker from '../components/Dashboard/AttendanceTracker';
 import { useProject } from '../../employee/context/ProjectContext';
 
 
@@ -443,127 +442,238 @@ const DashboardHome = () => {
 
     const filteredTimeline = timeline.filter(event => event.date === formatDate(selectedDate));
 
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingBottom: '32px' }}>
+    // Helper Component for Stat Cards
+    const StatCard = ({ title, value, subtext, icon: Icon, color, trend, onClick }) => (
+        <div
+            onClick={onClick}
+            style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '24px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: onClick ? 'pointer' : 'default',
+                transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                border: '1px solid #f1f5f9',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
+            }}
+            onMouseEnter={(e) => {
+                if (onClick) {
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.06)';
+                    e.currentTarget.style.borderColor = color;
+                }
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.02)';
+                e.currentTarget.style.borderColor = '#f1f5f9';
+            }}
+        >
+            <div style={{
+                position: 'absolute',
+                top: '-20px',
+                right: '-20px',
+                width: '100px',
+                height: '100px',
+                background: `radial-gradient(circle, ${color}15 0%, transparent 70%)`,
+                borderRadius: '50%',
+                pointerEvents: 'none'
+            }}></div>
 
-            {/* Header */}
-            <div>
-                <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px' }}>
-                    {getGreeting()}, <span style={{ color: 'var(--accent)' }}>{userName}</span>
-                </h1>
-                <p style={{ color: '#64748b', fontSize: '1rem' }}>
-                    Talent Ops wishes you a good and productive day. {employeeStats.active} employees active today. You have {filteredTimeline.length} events on {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}.
-                </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{
+                    backgroundColor: `${color}10`,
+                    padding: '12px',
+                    borderRadius: '16px',
+                    color: color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease'
+                }}>
+                    <Icon size={24} />
+                </div>
+                {trend && (
+                    <div style={{
+                        padding: '6px 12px',
+                        borderRadius: '20px',
+                        backgroundColor: trend > 0 ? '#f0fdf4' : '#fef2f2',
+                        color: trend > 0 ? '#166534' : '#991b1b',
+                        fontSize: '0.75rem',
+                        fontWeight: '800'
+                    }}>
+                        {trend > 0 ? `+${trend}%` : `${trend}%`}
+                    </div>
+                )}
             </div>
 
-            {/* Main Content Grid */}
-            <div className="flex flex-col lg:grid lg:grid-cols-[2.5fr_1fr] gap-8">
+            <div>
+                <p style={{ fontSize: '0.85rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>{title}</p>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <h3 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>{value}</h3>
+                    <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#94a3b8' }}>{subtext}</span>
+                </div>
+            </div>
+        </div>
+    );
 
-                {/* Left Column: Cards Grid */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    return (
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            paddingBottom: '24px',
+            position: 'relative',
+            minHeight: '100vh',
+            padding: '16px'
+        }}>
+            {/* Background Decorative Elements */}
+            <div style={{ position: 'fixed', top: '15%', right: '-5%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, transparent 70%)', filter: 'blur(100px)', pointerEvents: 'none', zIndex: 0 }}></div>
+            <div style={{ position: 'fixed', bottom: '15%', left: '-5%', width: '350px', height: '350px', background: 'radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%)', filter: 'blur(100px)', pointerEvents: 'none', zIndex: 0 }}></div>
 
-                    {/* Attendance Tracker - Added Here */}
-                    <AttendanceTracker />
+            {/* Header / Hero Section */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                borderRadius: '24px',
+                padding: '32px 40px',
+                color: 'white',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}>
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }}>
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="mesh-mgr" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#mesh-mgr)" />
+                    </svg>
+                </div>
 
-                    {/* Top Row Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                        {/* Employees Card (Yellow) */}
-                        <div
-                            onClick={() => navigate('/manager-dashboard/employee-status')}
-                            style={{
-                                backgroundColor: '#fef08a',
-                                borderRadius: '24px',
-                                padding: '24px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between',
-                                minHeight: '240px',
-                                position: 'relative',
-                                overflow: 'hidden',
-                                cursor: 'pointer',
-                                transition: 'transform 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                        >
-                            <div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#854d0e' }}>Employees:</h3>
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '32px', marginTop: '16px' }}>
-                                <div
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowActiveListModal(true);
-                                    }}
-                                    style={{ cursor: 'pointer' }}
-                                    title="View Active Employees"
-                                >
-                                    <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#000', textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{employeeStats.active}</span>
-                                    <p style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#000' }}>Active</p>
-                                </div>
-                                <div style={{ paddingTop: '12px' }}>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#854d0e' }}>{employeeStats.absent}</span>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#854d0e' }}>Absent</p>
-                                </div>
-                                <div style={{ paddingTop: '12px' }}>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#854d0e' }}>{employeeStats.offline}</span>
-                                    <p style={{ fontSize: '0.9rem', fontWeight: '600', color: '#854d0e' }}>Offline</p>
-                                </div>
-                            </div>
-
-                            {/* Decorative Bottom Shapes */}
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', marginTop: 'auto', height: '40px' }}>
-                                <div style={{ width: '30px', height: '20px', backgroundColor: '#422006', borderRadius: '15px 15px 0 0', opacity: 0.8 }}></div>
-                                <div style={{ width: '30px', height: '35px', backgroundColor: '#a16207', borderRadius: '15px 15px 0 0', opacity: 0.6 }}></div>
-                                <div style={{ width: '30px', height: '15px', backgroundColor: '#422006', borderRadius: '15px 15px 0 0', opacity: 0.8 }}></div>
-                                <div style={{ width: '30px', height: '40px', backgroundColor: '#a16207', borderRadius: '15px 15px 0 0', opacity: 0.6 }}></div>
-                                <div style={{ width: '30px', height: '25px', backgroundColor: '#422006', borderRadius: '15px 15px 0 0', opacity: 0.8 }}></div>
-                                <div style={{ width: '30px', height: '40px', backgroundColor: '#a16207', borderRadius: '15px 15px 0 0', opacity: 0.6 }}></div>
-                                <div style={{ width: '30px', height: '20px', backgroundColor: '#422006', borderRadius: '15px 15px 0 0', opacity: 0.8 }}></div>
-                            </div>
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '24px' }}>
+                    <div style={{ flex: 1, minWidth: '300px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                            <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', border: '1px solid rgba(255,255,255,0.1)' }}>Manager Overview</span>
+                            <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: '800' }}>•</span>
+                            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: '700' }}>{currentTime.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                         </div>
-
-                        {/* Task Status Card (Blue) - Moved Here */}
-                        <div
-                            onClick={() => navigate('/manager-dashboard/tasks')}
-                            style={{
-                                backgroundColor: '#bfdbfe', borderRadius: '24px', padding: '24px',
-                                display: 'flex', flexDirection: 'column', minHeight: '240px',
-                                position: 'relative', overflow: 'hidden', cursor: 'pointer',
-                                transition: 'transform 0.2s'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                        >
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e3a8a', marginBottom: '24px' }}>Task Status:</h3>
-
-                            <div className="flex flex-wrap gap-4 justify-between">
-                                <div>
-                                    <span style={{ fontSize: '2rem', fontWeight: 'bold', color: '#000' }}>{taskStats.pending}</span>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#1e3a8a', marginTop: '4px' }}>PENDING</p>
-                                </div>
-                                <div>
-                                    <span style={{ fontSize: '2rem', fontWeight: 'bold', color: '#000' }}>{taskStats.inProgress}</span>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#1e3a8a', marginTop: '4px' }}>IN PROGRESS</p>
-                                </div>
-                                <div>
-                                    <span style={{ fontSize: '2rem', fontWeight: 'bold', color: '#000' }}>{taskStats.completed}</span>
-                                    <p style={{ fontSize: '0.7rem', fontWeight: 'bold', color: '#1e3a8a', marginTop: '4px' }}>COMPLETED</p>
-                                </div>
-                            </div>
-
-                            {/* Decorative Triangle */}
-                            <div style={{ position: 'absolute', bottom: 0, right: 0, width: '0', height: '0', borderStyle: 'solid', borderWidth: '0 0 100px 100px', borderColor: 'transparent transparent rgba(255,255,255,0.3) transparent' }}></div>
-                        </div>
+                        <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '12px', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                            Welcome back, <span style={{ background: 'linear-gradient(to right, #38bdf8, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{userName}!</span>
+                        </h1>
+                        <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', maxWidth: '600px', fontWeight: '500', lineHeight: 1.6 }}>
+                            {employeeStats.active} team members are currently online. You have {filteredTimeline.length} events on your schedule for today.
+                        </p>
                     </div>
 
-                    {/* Team Analytics Card (Green) - Moved to Bottom, Full Width */}
-                    <div style={{ backgroundColor: '#bbf7d0', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', minHeight: '200px' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#14532d', marginBottom: '16px' }}>Project Wise Status:</h3>
+                    <div style={{
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        backdropFilter: 'blur(10px)',
+                        padding: '16px 24px',
+                        borderRadius: '16px',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        textAlign: 'right',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-end',
+                        boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                    }}>
+                        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.65rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '2px' }}>LOCAL TIME</p>
+                        <h2 style={{ fontSize: '1.75rem', fontWeight: '800', color: 'white', letterSpacing: '0.05em', lineHeight: 1 }}>
+                            {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                        </h2>
+                        <button
+                            onClick={() => setShowAddEventModal(true)}
+                            style={{
+                                marginTop: '16px',
+                                padding: '12px 24px',
+                                borderRadius: '16px',
+                                background: 'linear-gradient(to right, #0ea5e9, #6366f1)',
+                                color: 'white',
+                                border: 'none',
+                                fontWeight: '800',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                transition: 'all 0.3s ease',
+                                boxShadow: '0 10px 20px rgba(99, 102, 241, 0.2)'
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 15px 25px rgba(99, 102, 241, 0.3)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 20px rgba(99, 102, 241, 0.2)'; }}
+                        >
+                            <Plus size={20} /> Plan New Event
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Main Content Layout */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '16px', position: 'relative', zIndex: 1 }}>
+
+                {/* Left Side: Stats & Tracker */}
+                <div style={{ gridColumn: 'span 8', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                    {/* Modern Stat Cards Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+                        <StatCard
+                            title="Workforce Presence"
+                            value={employeeStats.active}
+                            subtext={`/ ${employeeStats.total} total`}
+                            icon={Users}
+                            color="#10b981"
+                            onClick={() => navigate('/manager-dashboard/employee-status')}
+                        />
+                        <StatCard
+                            title="Absence Management"
+                            value={employeeStats.absent}
+                            subtext="on leave today"
+                            icon={AlertCircle}
+                            color="#ef4444"
+                        />
+                        <StatCard
+                            title="Pipeline Load"
+                            value={taskStats.pending + taskStats.inProgress}
+                            subtext="active work items"
+                            icon={Timer}
+                            color="#f59e0b"
+                        />
+                        <StatCard
+                            title="Task Velocity"
+                            value={taskStats.completed}
+                            subtext="completed tasks"
+                            icon={CheckCircle2}
+                            color="#38bdf8"
+                        />
+                    </div>
+
+                    {/* Detailed Project Analytics List */}
+                    <div style={{
+                        backgroundColor: '#ffffff',
+                        borderRadius: '32px',
+                        padding: '32px',
+                        border: '1px solid #f1f5f9',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>Project Wise Status</h3>
+                                <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>Overview of productivity across all active projects</p>
+                            </div>
+                            <button
+                                onClick={() => navigate('/manager-dashboard/analytics')}
+                                style={{ color: '#0ea5e9', fontWeight: '800', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                                View full analytics <ChevronRight size={18} />
+                            </button>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {teamAnalytics.map((team) => (
                                 <div
                                     key={team.id}
@@ -572,388 +682,375 @@ const DashboardHome = () => {
                                         cursor: 'pointer',
                                         display: 'flex',
                                         flexDirection: 'column',
-                                        gap: '8px',
-                                        padding: '12px 16px',
-                                        backgroundColor: 'rgba(255,255,255,0.4)',
-                                        borderRadius: '12px',
-                                        transition: 'transform 0.2s'
+                                        gap: '16px',
+                                        padding: '24px',
+                                        backgroundColor: '#f8fafc',
+                                        borderRadius: '24px',
+                                        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                                        border: '1px solid transparent'
                                     }}
-                                    onMouseEnter={(e) => e.currentTarget.style.transform = 'translateX(4px)'}
-                                    onMouseLeave={(e) => e.currentTarget.style.transform = 'translateX(0)'}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#ffffff';
+                                        e.currentTarget.style.borderColor = '#eef2f6';
+                                        e.currentTarget.style.transform = 'translateY(-4px)';
+                                        e.currentTarget.style.boxShadow = '0 15px 30px rgba(0,0,0,0.04)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#f8fafc';
+                                        e.currentTarget.style.borderColor = 'transparent';
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = 'none';
+                                    }}
                                 >
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                        <span style={{ fontWeight: 'bold', color: '#14532d' }}>{team.name}</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: team.color, boxShadow: `0 0 12px ${team.color}40` }}></div>
+                                            <span style={{ fontWeight: '800', color: '#1e293b', fontSize: '1.1rem' }}>{team.name}</span>
+                                        </div>
                                         <span style={{
                                             fontSize: '0.75rem',
-                                            fontWeight: 'bold',
+                                            fontWeight: '800',
                                             color: team.color,
-                                            backgroundColor: '#fff',
-                                            padding: '4px 8px',
-                                            borderRadius: '12px',
-                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                                            backgroundColor: '#ffffff',
+                                            padding: '8px 16px',
+                                            borderRadius: '16px',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em'
                                         }}>
                                             {team.status}
                                         </span>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: '#475569', fontWeight: '500' }}>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e' }}></div>
-                                            Completed: {team.completedCount || 0}
-                                        </span>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#3b82f6' }}></div>
-                                            In Progress: {team.inProgressCount || 0}
-                                        </span>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f59e0b' }}></div>
-                                            Pending: {team.pendingCount || 0}
-                                        </span>
+
+                                    {/* Progress Metrics Row */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                                        <div style={{ padding: '12px', borderRadius: '16px', backgroundColor: '#ffffff', border: '1px solid #f1f5f9' }}>
+                                            <p style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px' }}>COMPLETED</p>
+                                            <p style={{ fontSize: '1.25rem', fontWeight: '800', color: '#22c55e' }}>{team.completedCount || 0}</p>
+                                        </div>
+                                        <div style={{ padding: '12px', borderRadius: '16px', backgroundColor: '#ffffff', border: '1px solid #f1f5f9' }}>
+                                            <p style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px' }}>IN PROGRESS</p>
+                                            <p style={{ fontSize: '1.25rem', fontWeight: '800', color: '#3b82f6' }}>{team.inProgressCount || 0}</p>
+                                        </div>
+                                        <div style={{ padding: '12px', borderRadius: '16px', backgroundColor: '#ffffff', border: '1px solid #f1f5f9' }}>
+                                            <p style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px' }}>PENDING</p>
+                                            <p style={{ fontSize: '1.25rem', fontWeight: '800', color: '#f59e0b' }}>{team.pendingCount || 0}</p>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Notes Tile */}
-                    <div style={{ marginTop: '32px' }}>
-                        <NotesTile />
-                    </div>
-
+                    <NotesTile />
                 </div>
 
-                {/* Right Column: Timeline */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                {/* Right Side: Calendar & Timeline */}
+                <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-
-
-                    {/* Calendar Widget */}
-                    <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                            <span style={{ fontWeight: 'bold', color: '#1e293b' }}>{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</span>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button onClick={() => handleMonthChange(-1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>&lt;</button>
-                                <button onClick={() => handleMonthChange(1)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: '#64748b' }}>&gt;</button>
+                    {/* Premium Calendar Widget */}
+                    <div style={{
+                        backgroundColor: '#ffffff',
+                        borderRadius: '32px',
+                        padding: '32px',
+                        border: '1px solid #f1f5f9',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.02)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#0f172a' }}>{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h3>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button
+                                    onClick={() => handleMonthChange(-1)}
+                                    style={{ width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', border: '1px solid #f1f5f9', cursor: 'pointer', transition: 'all 0.2s', color: '#64748b' }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#0f172a'; e.currentTarget.style.color = '#fff'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.color = '#64748b'; }}
+                                >
+                                    &lt;
+                                </button>
+                                <button
+                                    onClick={() => handleMonthChange(1)}
+                                    style={{ width: '36px', height: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc', border: '1px solid #f1f5f9', cursor: 'pointer', transition: 'all 0.2s', color: '#64748b' }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#0f172a'; e.currentTarget.style.color = '#fff'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.color = '#64748b'; }}
+                                >
+                                    &gt;
+                                </button>
                             </div>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', textAlign: 'center', fontSize: '0.8rem', color: '#64748b' }}>
-                            <span>MO</span><span>TU</span><span>WE</span><span>TH</span><span>FR</span><span>SA</span><span>SU</span>
 
-                            {/* Empty cells for offset */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px', textAlign: 'center', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', marginBottom: '16px' }}>
+                            <span>MO</span><span>TU</span><span>WE</span><span>TH</span><span>FR</span><span style={{ color: '#ef4444' }}>SA</span><span style={{ color: '#ef4444' }}>SU</span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px' }}>
                             {Array.from({ length: startDayOffset }).map((_, i) => (
-                                <span key={`empty-${i}`}></span>
+                                <div key={`empty-${i}`} style={{ height: '44px' }}></div>
                             ))}
-
-                            {/* Calendar Days */}
                             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(d => {
                                 const isSelected = selectedDate.getDate() === d && selectedDate.getMonth() === currentMonth.getMonth() && selectedDate.getFullYear() === currentMonth.getFullYear();
                                 const isToday = today.getDate() === d && today.getMonth() === currentMonth.getMonth() && today.getFullYear() === currentMonth.getFullYear();
 
                                 return (
-                                    <span
+                                    <div
                                         key={d}
                                         onClick={() => handleDateClick(d)}
                                         style={{
-                                            padding: '6px',
-                                            borderRadius: '50%',
-                                            backgroundColor: isSelected ? '#000' : isToday ? '#e2e8f0' : 'transparent',
-                                            color: isSelected ? '#fff' : 'inherit',
+                                            height: '44px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            borderRadius: '14px',
+                                            backgroundColor: isSelected ? '#0f172a' : isToday ? '#e2e8f0' : 'transparent',
+                                            color: isSelected ? '#fff' : isToday ? '#1e293b' : '#475569',
                                             cursor: 'pointer',
-                                            fontWeight: isSelected || isToday ? 'bold' : 'normal'
+                                            fontWeight: isSelected || isToday ? '800' : '600',
+                                            fontSize: '0.9rem',
+                                            transition: 'all 0.2s',
+                                            position: 'relative'
                                         }}
+                                        onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
+                                        onMouseLeave={(e) => { if (!isSelected && !isToday) e.currentTarget.style.backgroundColor = 'transparent'; }}
                                     >
                                         {d}
-                                    </span>
+                                        {timeline.some(e => e.date === formatDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), d))) && (
+                                            <div style={{ position: 'absolute', bottom: '8px', width: '5px', height: '5px', borderRadius: '50%', backgroundColor: isSelected ? '#38bdf8' : '#0ea5e9' }}></div>
+                                        )}
+                                    </div>
                                 );
                             })}
                         </div>
                     </div>
 
-                    {/* Add Event Button */}
-                    <button
-                        onClick={() => setShowAddEventModal(true)}
-                        style={{ backgroundColor: '#000', color: '#fff', padding: '16px', borderRadius: '32px', fontWeight: 'bold', fontSize: '1rem', border: 'none', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                    >
-                        Add event
-                    </button>
-
-                    {/* Timeline */}
-                    <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b' }}>
+                    {/* Timeline Activity Feed */}
+                    <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>Schedule</h3>
+                            <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#64748b', background: '#f8fafc', padding: '6px 14px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                                 {selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </h3>
+                            </span>
                         </div>
 
-                        {/* Column Headers */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '32px', marginBottom: '16px', paddingLeft: '8px' }}>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#94a3b8', letterSpacing: '0.05em' }}>TIME</span>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#94a3b8', letterSpacing: '0.05em' }}>EVENT</span>
-                        </div>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', position: 'relative', minHeight: '200px' }}>
-                            {/* Vertical Line */}
-                            <div style={{
-                                position: 'absolute',
-                                left: '91px',
-                                top: '10px',
-                                bottom: '10px',
-                                width: '2px',
-                                backgroundColor: '#f1f5f9',
-                                zIndex: 0
-                            }}></div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative' }}>
+                            <div style={{ position: 'absolute', left: '11px', top: '10px', bottom: '10px', width: '2px', background: 'linear-gradient(to bottom, #f1f5f9, #e2e8f0, #f1f5f9)' }}></div>
 
                             {filteredTimeline.length > 0 ? (
                                 filteredTimeline.map((event) => (
-                                    <div key={event.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '32px', position: 'relative', zIndex: 1, marginBottom: '24px' }}>
-                                        {/* Time */}
-                                        <span style={{
-                                            fontSize: '0.9rem',
-                                            fontWeight: '600',
-                                            color: '#64748b',
-                                            paddingTop: '14px',
-                                            textAlign: 'right'
-                                        }}>
-                                            {event.time}
-                                        </span>
-
-                                        {/* Timeline Dot */}
+                                    <div key={event.id} style={{ display: 'flex', gap: '20px', position: 'relative', zIndex: 1 }}>
                                         <div style={{
-                                            position: 'absolute',
-                                            left: '86px',
-                                            top: '20px',
-                                            width: '12px',
-                                            height: '12px',
+                                            width: '24px',
+                                            height: '24px',
                                             borderRadius: '50%',
-                                            backgroundColor: '#3b82f6',
-                                            border: '2px solid #fff',
-                                            boxShadow: '0 0 0 2px #e0f2fe',
-                                            zIndex: 2
-                                        }}></div>
+                                            backgroundColor: '#ffffff',
+                                            border: '2px solid #0ea5e9',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            boxShadow: '0 0 0 5px #ffffff',
+                                            flexShrink: 0
+                                        }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#0ea5e9' }}></div>
+                                        </div>
 
-                                        {/* Event Card */}
-                                        <div style={{
-                                            backgroundColor: event.color,
-                                            padding: '16px',
-                                            borderRadius: '16px',
-                                            transition: 'all 0.2s ease',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                                        }}
+                                        <div
                                             onClick={() => {
-                                                if (event.type === 'task') {
-                                                    navigate('/manager-dashboard/tasks');
-                                                } else if (event.type === 'announcement') {
-                                                    navigate('/manager-dashboard/announcements');
-                                                }
+                                                if (event.type === 'task') navigate('/manager-dashboard/tasks');
+                                                else if (event.type === 'announcement') navigate('/manager-dashboard/announcements');
+                                            }}
+                                            style={{
+                                                backgroundColor: '#ffffff',
+                                                padding: '20px',
+                                                borderRadius: '24px',
+                                                border: '1px solid #f1f5f9',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                                                flex: 1,
+                                                boxShadow: '0 2px 10px rgba(0,0,0,0.01)'
                                             }}
                                             onMouseEnter={(e) => {
-                                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                                e.currentTarget.style.boxShadow = '0 8px 16px -4px rgba(0,0,0,0.1)';
+                                                e.currentTarget.style.transform = 'translateY(-6px)';
+                                                e.currentTarget.style.boxShadow = '0 15px 35px rgba(0,0,0,0.05)';
+                                                e.currentTarget.style.borderColor = '#e0f2fe';
                                             }}
                                             onMouseLeave={(e) => {
                                                 e.currentTarget.style.transform = 'translateY(0)';
-                                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
+                                                e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.01)';
+                                                e.currentTarget.style.borderColor = '#f1f5f9';
                                             }}
                                         >
-                                            <p style={{ fontWeight: 'bold', color: '#1e293b', marginBottom: '4px' }}>{event.title}</p>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '0.85rem' }}>
-                                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#94a3b8' }}></div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                                                <p style={{ fontSize: '1rem', fontWeight: '800', color: '#1e293b', lineHeight: 1.4 }}>{event.title}</p>
+                                                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b' }}>{event.time}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '0.85rem', fontWeight: '600' }}>
+                                                <span style={{ width: '4px', height: '4px', borderRadius: '50%', backgroundColor: '#0ea5e9' }}></span>
                                                 {event.location}
                                             </div>
-                                            {event.type === 'announcement' && (
-                                                <span style={{
-                                                    fontSize: '0.65rem',
-                                                    fontWeight: 'bold',
-                                                    textTransform: 'uppercase',
-                                                    padding: '2px 6px',
-                                                    borderRadius: '8px',
-                                                    marginTop: '4px',
-                                                    display: 'inline-block',
-                                                    backgroundColor: (event.status === 'completed' || new Date(event.date) < new Date().setHours(0, 0, 0, 0)) ? '#f1f5f9' : (event.status === 'active' || event.date === formatDate(new Date())) ? '#dcfce7' : '#e0f2fe',
-                                                    color: (event.status === 'completed' || new Date(event.date) < new Date().setHours(0, 0, 0, 0)) ? '#64748b' : (event.status === 'active' || event.date === formatDate(new Date())) ? '#166534' : '#0369a1'
-                                                }}>
-                                                    {(event.status === 'completed' || new Date(event.date) < new Date().setHours(0, 0, 0, 0)) ? 'Completed' : (event.status === 'active' || event.date === formatDate(new Date())) ? 'Active' : 'Future'}
-                                                </span>
-                                            )}
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div style={{ paddingLeft: '112px', paddingTop: '24px', color: '#94a3b8', fontStyle: 'italic' }}>
-                                    No events for this day
+                                <div style={{ padding: '60px 0', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <div style={{ backgroundColor: '#f8fafc', width: '56px', height: '56px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                                        <Calendar size={24} color="#cbd5e1" />
+                                    </div>
+                                    <p style={{ color: '#94a3b8', fontSize: '0.95rem', fontWeight: '700', fontStyle: 'italic' }}>Open availability today</p>
                                 </div>
                             )}
                         </div>
                     </div>
-
-
-
                 </div>
             </div>
 
-            {/* Modals */}
-            {showAddEmployeeModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '24px', width: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Add Employee</h3>
-                            <button onClick={() => setShowAddEmployeeModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
-                        </div>
-                        <form onSubmit={handleAddEmployee} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <input type="text" placeholder="Full Name" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
-                            <input type="text" placeholder="Role" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
-                            <select style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }}>
-                                <option>Engineering</option>
-                                <option>Design</option>
-                                <option>Product</option>
-                            </select>
-                            <button type="submit" style={{ backgroundColor: '#000', color: '#fff', padding: '12px', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer', marginTop: '8px' }}>Add Employee</button>
-                        </form>
-                    </div>
-                </div>
-            )}
-
+            {/* Premium Styled Modals */}
             {showAddEventModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '24px', width: '400px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Add Event</h3>
-                            <button onClick={() => setShowAddEventModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+                    <div style={{
+                        backgroundColor: '#ffffff',
+                        padding: '48px',
+                        borderRadius: '40px',
+                        width: '500px',
+                        maxHeight: '90vh',
+                        overflowY: 'auto',
+                        boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.4)',
+                        animation: 'modalEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>Schedule Event</h3>
+                                <p style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>Broadcast to your team or specific members</p>
+                            </div>
+                            <button
+                                onClick={() => setShowAddEventModal(false)}
+                                style={{ background: '#f8fafc', border: 'none', cursor: 'pointer', padding: '12px', borderRadius: '16px', color: '#64748b', transition: 'all 0.2s' }}
+                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ef4444'; e.currentTarget.style.color = '#fff'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.color = '#64748b'; }}
+                            >
+                                <X size={24} />
+                            </button>
                         </div>
-                        <form onSubmit={handleAddEvent} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <input name="title" type="text" placeholder="Event Title" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
 
-                            {/* Scope Selection */}
+                        <form onSubmit={handleAddEvent} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                <label style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#1e293b' }}>Who is this event for?</label>
-                                <div style={{ display: 'flex', gap: '16px' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                        <input
-                                            type="radio"
-                                            name="scope"
-                                            value="team"
-                                            checked={eventScope === 'team'}
-                                            onChange={() => setEventScope('team')}
-                                        />
-                                        Entire Project(s)
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                        <input
-                                            type="radio"
-                                            name="scope"
-                                            value="employee"
-                                            checked={eventScope === 'employee'}
-                                            onChange={() => setEventScope('employee')}
-                                        />
-                                        Specific Employee(s)
-                                    </label>
+                                <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>EVENT TITLE</label>
+                                <input name="title" type="text" placeholder="e.g., Progress Update" required style={{ padding: '16px 20px', borderRadius: '18px', border: '1px solid #eef2f6', backgroundColor: '#f8fafc', fontSize: '1rem', outline: 'none', fontWeight: '600', transition: 'all 0.3s' }} onFocus={(e) => { e.target.style.borderColor = '#0ea5e9'; e.target.style.backgroundColor = '#fff'; }} />
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>RECIPIENTS</label>
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    {['team', 'employee'].map(scope => (
+                                        <label key={scope} style={{
+                                            flex: 1,
+                                            padding: '16px',
+                                            borderRadius: '20px',
+                                            border: `2px solid ${eventScope === scope ? '#0ea5e9' : '#eef2f6'}`,
+                                            backgroundColor: eventScope === scope ? '#f0f9ff' : '#f8fafc',
+                                            cursor: 'pointer',
+                                            textAlign: 'center',
+                                            fontSize: '0.9rem',
+                                            fontWeight: '800',
+                                            color: eventScope === scope ? '#0ea5e9' : '#64748b',
+                                            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                                        }}>
+                                            <input type="radio" value={scope} checked={eventScope === scope} onChange={() => setEventScope(scope)} style={{ display: 'none' }} />
+                                            {scope === 'team' ? 'Entire Project' : 'Specific Members'}
+                                        </label>
+                                    ))}
                                 </div>
                             </div>
 
-                            {/* Multi-select Lists */}
-                            {eventScope === 'team' ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '150px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '8px' }}>
-                                    {allTeams.length > 0 ? allTeams.map(team => (
-                                        <label key={team.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '4px' }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedTeams.includes(team.id)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setSelectedTeams([...selectedTeams, team.id]);
-                                                    } else {
-                                                        setSelectedTeams(selectedTeams.filter(id => id !== team.id));
-                                                    }
-                                                }}
-                                            />
-                                            {team.name}
-                                        </label>
-                                    )) : <p style={{ color: '#94a3b8', fontSize: '0.9rem', padding: '4px' }}>No teams available</p>}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>DATE</label>
+                                    <input name="date" type="date" required defaultValue={formatDate(selectedDate)} style={{ padding: '16px', borderRadius: '18px', border: '1px solid #eef2f6', backgroundColor: '#f8fafc', outline: 'none', fontWeight: '600' }} />
                                 </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '150px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '8px' }}>
-                                    {allEmployees.length > 0 ? allEmployees.map(emp => (
-                                        <label key={emp.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '4px' }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedEmployees.includes(emp.id)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setSelectedEmployees([...selectedEmployees, emp.id]);
-                                                    } else {
-                                                        setSelectedEmployees(selectedEmployees.filter(id => id !== emp.id));
-                                                    }
-                                                }}
-                                            />
-                                            {emp.full_name}
-                                        </label>
-                                    )) : <p style={{ color: '#94a3b8', fontSize: '0.9rem', padding: '4px' }}>No employees available</p>}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>TIME</label>
+                                    <input name="time" type="time" required style={{ padding: '16px', borderRadius: '18px', border: '1px solid #eef2f6', backgroundColor: '#f8fafc', outline: 'none', fontWeight: '600' }} />
                                 </div>
-                            )}
+                            </div>
 
-                            <input
-                                name="date"
-                                type="date"
-                                required
-                                defaultValue={formatDate(selectedDate)}
-                                style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }}
-                            />
-                            <input name="time" type="time" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
-                            <input name="location" type="text" placeholder="Location" required style={{ padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '1rem' }} />
-                            <button type="submit" style={{ backgroundColor: '#000', color: '#fff', padding: '12px', borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: 'pointer', marginTop: '8px' }}>Save Event</button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>LOCATION</label>
+                                <input name="location" type="text" placeholder="Digital HQ or Room Name" required style={{ padding: '16px 20px', borderRadius: '18px', border: '1px solid #eef2f6', backgroundColor: '#f8fafc', fontSize: '1rem', outline: 'none', fontWeight: '600' }} />
+                            </div>
+
+                            <button type="submit" style={{ backgroundColor: '#0f172a', color: '#fff', padding: '20px', borderRadius: '20px', fontWeight: '800', border: 'none', cursor: 'pointer', marginTop: '16px', fontSize: '1.1rem', transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)', boxShadow: '0 15px 30px rgba(15, 23, 42, 0.2)' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(15, 23, 42, 0.3)'; }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 15px 30px rgba(15, 23, 42, 0.2)'; }}>Publish Event</button>
                         </form>
                     </div>
                 </div>
             )}
+
             {showActiveListModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '24px', width: '450px', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+                    <div style={{
+                        backgroundColor: '#ffffff',
+                        padding: '40px',
+                        borderRadius: '40px',
+                        width: '500px',
+                        maxHeight: '85vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        boxShadow: '0 30px 60px -12px rgba(0, 0, 0, 0.4)',
+                        animation: 'modalEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#22c55e' }}></div>
-                                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Active Employees</h3>
+                                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 15px #10b98180' }}></div>
+                                <h3 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#0f172a', letterSpacing: '-0.02em' }}>Workforce Online</h3>
                             </div>
-                            <button onClick={() => setShowActiveListModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={24} /></button>
+                            <button
+                                onClick={() => setShowActiveListModal(false)}
+                                style={{ background: '#f8fafc', border: 'none', cursor: 'pointer', padding: '12px', borderRadius: '16px', color: '#64748b' }}
+                            >
+                                <X size={24} />
+                            </button>
                         </div>
 
-                        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '8px' }}>
+                        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '8px' }}>
                             {activeEmployeesList.length > 0 ? (
                                 activeEmployeesList.map(emp => (
                                     <div key={emp.id} style={{
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '16px',
-                                        padding: '12px',
+                                        gap: '20px',
+                                        padding: '20px',
                                         backgroundColor: '#f8fafc',
-                                        borderRadius: '16px',
-                                        border: '1px solid #e2e8f0'
-                                    }}>
+                                        borderRadius: '24px',
+                                        border: '1px solid #e2e8f0',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ffffff'; e.currentTarget.style.borderColor = '#0ea5e9'; e.currentTarget.style.transform = 'scale(1.02)'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.transform = 'scale(1)'; }}
+                                    >
                                         <div style={{
-                                            width: '40px',
-                                            height: '40px',
-                                            borderRadius: '50%',
-                                            backgroundColor: '#e0f2fe',
-                                            color: '#0369a1',
+                                            width: '48px',
+                                            height: '48px',
+                                            borderRadius: '16px',
+                                            backgroundColor: 'linear-gradient(135deg, #0ea5e9, #6366f1)',
+                                            color: 'white',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            fontWeight: 'bold',
-                                            fontSize: '1rem'
+                                            fontWeight: '800',
+                                            fontSize: '1.2rem',
+                                            boxShadow: '0 10px 15px -3px rgba(14, 165, 233, 0.3)'
                                         }}>
                                             {emp.full_name?.charAt(0) || 'U'}
                                         </div>
                                         <div>
-                                            <p style={{ fontWeight: 'bold', color: '#1e293b', margin: 0 }}>{emp.full_name}</p>
-                                            <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>{emp.role ? emp.role.replace('_', ' ') : 'Employee'}</p>
+                                            <p style={{ fontWeight: '800', color: '#1e293b', margin: 0, fontSize: '1.1rem' }}>{emp.full_name}</p>
+                                            <p style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600', margin: 0 }}>{emp.role ? emp.role.replace('_', ' ') : 'Specialist'}</p>
                                         </div>
-                                        <div style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: 'bold', color: '#15803d', backgroundColor: '#dcfce7', padding: '4px 8px', borderRadius: '12px' }}>
-                                            Online
+                                        <div style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: '800', color: '#15803d', backgroundColor: '#dcfce7', padding: '6px 14px', borderRadius: '16px', border: '1px solid #bbf7d0' }}>
+                                            Active Now
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div style={{ textAlign: 'center', padding: '24px', color: '#64748b' }}>
-                                    No active employees found.
+                                <div style={{ textAlign: 'center', padding: '48px 0', color: '#94a3b8' }}>
+                                    <Users size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
+                                    <p style={{ fontWeight: '700' }}>Quiet at the moment.</p>
                                 </div>
                             )}
                         </div>
@@ -961,9 +1058,16 @@ const DashboardHome = () => {
                 </div>
             )}
 
-
-
-
+            <style>{`
+                @keyframes modalEntrance {
+                    from { opacity: 0; transform: scale(0.9) translateY(40px); }
+                    to { opacity: 1; transform: scale(1) translateY(0); }
+                }
+                ::-webkit-scrollbar { width: 8px; }
+                ::-webkit-scrollbar-track { background: transparent; }
+                ::-webkit-scrollbar-thumb { background: #e2e8f0; borderRadius: 20px; border: 2px solid transparent; background-clip: content-box; }
+                ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; background-clip: content-box; }
+            `}</style>
         </div>
     );
 };

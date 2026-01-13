@@ -252,164 +252,237 @@ const ProjectDocuments = ({ userRole, addToast: parentAddToast = null }) => {
     }
 
     return (
-        <div style={{ padding: '24px', backgroundColor: '#f8fafc', borderRadius: '16px', marginTop: '24px' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#1e293b' }}>
-                        📄 Project Documents
-                    </h2>
-                    <p style={{ color: '#64748b', marginTop: '4px' }}>
-                        Shared resources and documentation for {currentProject?.name}
-                    </p>
-                </div>
-                {isManager && (
-                    <button
-                        onClick={() => setShowAddModal(true)}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: '8px',
-                            padding: '10px 16px', borderRadius: '10px',
-                            background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-                            color: 'white', border: 'none', cursor: 'pointer',
-                            fontWeight: 600, fontSize: '0.9rem'
-                        }}
-                    >
-                        <Plus size={18} /> Add Document
-                    </button>
-                )}
-            </div>
-
-            {/* Document Type Filters */}
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-                {docTypes.map(type => {
-                    const count = documents.filter(d => d.doc_type === type.value).length;
-                    return (
-                        <div key={type.value} style={{
-                            display: 'flex', alignItems: 'center', gap: '8px',
-                            padding: '6px 12px', borderRadius: '16px',
-                            backgroundColor: `${type.color}15`, color: type.color,
-                            fontSize: '0.8rem', fontWeight: 600
-                        }}>
-                            <type.icon size={14} />
-                            {type.label} <span style={{ opacity: 0.7 }}>({count})</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Compact Header - Matching Leave Requests Style */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                borderRadius: '16px',
+                padding: '20px 28px',
+                color: 'white',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+            }}>
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                            <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dashboard</span>
+                            <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: '600' }}>/</span>
+                            <span style={{ color: '#22d3ee', fontSize: '0.75rem', fontWeight: '600', textTransform: 'uppercase' }}>Project Documents</span>
                         </div>
-                    );
-                })}
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '6px', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+                            Project Documents
+                        </h1>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', fontWeight: '400' }}>
+                            Shared resources and documentation for {currentProject?.name}
+                        </p>
+                    </div>
+
+                    {isManager && (
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 20px',
+                                borderRadius: '10px',
+                                background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                                color: 'white',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontWeight: '600',
+                                fontSize: '0.85rem',
+                                boxShadow: '0 4px 12px rgba(6, 182, 212, 0.3)',
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(6, 182, 212, 0.4)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(6, 182, 212, 0.3)';
+                            }}
+                        >
+                            <Plus size={16} strokeWidth={2.5} /> Add Document
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {/* Documents Grid */}
-            {documents.length === 0 ? (
-                <div style={{
-                    textAlign: 'center', padding: '40px 20px',
-                    borderColor: '#e2e8f0', borderStyle: 'dashed', borderWidth: '2px',
-                    borderRadius: '12px', color: '#64748b'
-                }}>
-                    <FileText size={32} style={{ opacity: 0.5, marginBottom: '12px' }} />
-                    <p style={{ fontSize: '0.9rem', fontWeight: 500 }}>No documents shared yet</p>
-                </div>
-            ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                    {documents.map(doc => {
-                        const typeInfo = getDocTypeInfo(doc.doc_type);
-                        const isEditing = editingDoc?.id === doc.id;
-
+            {/* Content Container */}
+            <div style={{
+                padding: '20px',
+                backgroundColor: '#f8fafc',
+                borderRadius: '12px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
+            }}>
+                {/* Document Type Filters */}
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                    {docTypes.map(type => {
+                        const count = documents.filter(d => d.doc_type === type.value).length;
                         return (
-                            <div key={doc.id} style={{
-                                backgroundColor: 'white', borderRadius: '12px',
-                                padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                border: '1px solid #e2e8f0'
+                            <div key={type.value} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 14px',
+                                borderRadius: '20px',
+                                backgroundColor: `${type.color}10`,
+                                border: `1px solid ${type.color}30`,
+                                color: type.color,
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                transition: 'all 0.2s ease'
                             }}>
-                                {/* Doc Header */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <div style={{
-                                            width: '32px', height: '32px', borderRadius: '8px',
-                                            backgroundColor: `${typeInfo.color}20`,
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                        }}>
-                                            <typeInfo.icon size={16} color={typeInfo.color} />
-                                        </div>
-                                        {isEditing ? (
-                                            <input
-                                                value={editingDoc.title}
-                                                onChange={(e) => setEditingDoc({ ...editingDoc, title: e.target.value })}
-                                                style={{
-                                                    fontSize: '0.9rem', fontWeight: 600, border: '1px solid #e2e8f0',
-                                                    borderRadius: '6px', padding: '4px 8px', width: '180px'
-                                                }}
-                                            />
-                                        ) : (
-                                            <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1e293b' }}>{doc.title}</h3>
-                                        )}
-                                    </div>
-                                    {userRole === 'executive' && (
-                                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: 'auto', marginRight: '10px' }}>
-                                            {doc.project_name}
-                                        </div>
-                                    )}
-                                    {isManager && (
-                                        <div style={{ display: 'flex', gap: '4px' }}>
-                                            {isEditing ? (
-                                                <>
-                                                    <button onClick={() => handleUpdateDocument(doc.id)} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '4px', cursor: 'pointer' }}>
-                                                        <Save size={14} />
-                                                    </button>
-                                                    <button onClick={() => setEditingDoc(null)} style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', padding: '4px', cursor: 'pointer' }}>
-                                                        <X size={14} />
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <button onClick={() => handleDeleteDocument(doc.id)} style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer' }}>
-                                                    <Trash2 size={14} color="#94a3b8" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Content */}
-                                {isEditing ? (
-                                    <textarea
-                                        value={editingDoc.content}
-                                        onChange={(e) => setEditingDoc({ ...editingDoc, content: e.target.value })}
-                                        style={{
-                                            width: '100%', minHeight: '80px', border: '1px solid #e2e8f0',
-                                            borderRadius: '6px', padding: '8px', fontSize: '0.85rem',
-                                            resize: 'vertical', marginBottom: '12px'
-                                        }}
-                                    />
-                                ) : (
-                                    <p style={{ color: '#64748b', fontSize: '0.85rem', lineHeight: 1.5, whiteSpace: 'pre-wrap', marginBottom: '12px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                        {doc.content || 'No description.'}
-                                    </p>
-                                )}
-
-                                {/* Actions */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
-                                    <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                        <span>{new Date(doc.created_at).toLocaleDateString()}</span>
-                                        <span style={{ fontSize: '0.7rem' }}>by {doc.uploader_name} ({doc.uploader_role})</span>
-                                    </span>
-
-                                    {doc.file_url && (
-                                        <button
-                                            onClick={() => setViewingDoc(doc)}
-                                            style={{
-                                                display: 'flex', alignItems: 'center', gap: '4px',
-                                                fontSize: '0.8rem', fontWeight: 600, color: '#3b82f6',
-                                                textDecoration: 'none', background: 'none', border: 'none',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            <Eye size={14} /> View
-                                        </button>
-                                    )}
-                                </div>
+                                <type.icon size={14} />
+                                {type.label} <span style={{ opacity: 0.7, marginLeft: '2px' }}>({count})</span>
                             </div>
                         );
                     })}
                 </div>
-            )}
+
+                {/* Documents Grid */}
+                {documents.length === 0 ? (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '60px 20px',
+                        borderColor: '#e2e8f0',
+                        borderStyle: 'dashed',
+                        borderWidth: '2px',
+                        borderRadius: '16px',
+                        color: '#64748b',
+                        backgroundColor: '#ffffff'
+                    }}>
+                        <div style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '50%',
+                            backgroundColor: '#f1f5f9',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            margin: '0 auto 16px'
+                        }}>
+                            <FileText size={28} style={{ color: '#94a3b8' }} />
+                        </div>
+                        <p style={{ fontSize: '0.95rem', fontWeight: 500 }}>No documents shared yet</p>
+                        <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>Add documents to share with your team</p>
+                    </div>
+                ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '18px' }}>
+                        {documents.map(doc => {
+                            const typeInfo = getDocTypeInfo(doc.doc_type);
+                            const isEditing = editingDoc?.id === doc.id;
+
+                            return (
+                                <div key={doc.id} style={{
+                                    backgroundColor: 'white',
+                                    borderRadius: '16px',
+                                    padding: '20px',
+                                    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                                    border: '1px solid #e2e8f0',
+                                    transition: 'all 0.2s ease'
+                                }}>
+                                    {/* Doc Header */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={{
+                                                width: '36px',
+                                                height: '36px',
+                                                borderRadius: '10px',
+                                                backgroundColor: `${typeInfo.color}15`,
+                                                border: `1px solid ${typeInfo.color}25`,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                <typeInfo.icon size={18} color={typeInfo.color} />
+                                            </div>
+                                            {isEditing ? (
+                                                <input
+                                                    value={editingDoc.title}
+                                                    onChange={(e) => setEditingDoc({ ...editingDoc, title: e.target.value })}
+                                                    style={{
+                                                        fontSize: '0.9rem', fontWeight: 600, border: '1px solid #e2e8f0',
+                                                        borderRadius: '6px', padding: '4px 8px', width: '180px'
+                                                    }}
+                                                />
+                                            ) : (
+                                                <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: '#1e293b' }}>{doc.title}</h3>
+                                            )}
+                                        </div>
+                                        {userRole === 'executive' && (
+                                            <div style={{ fontSize: '0.75rem', color: '#64748b', marginLeft: 'auto', marginRight: '10px' }}>
+                                                {doc.project_name}
+                                            </div>
+                                        )}
+                                        {isManager && (
+                                            <div style={{ display: 'flex', gap: '4px' }}>
+                                                {isEditing ? (
+                                                    <>
+                                                        <button onClick={() => handleUpdateDocument(doc.id)} style={{ background: '#10b981', color: 'white', border: 'none', borderRadius: '6px', padding: '4px', cursor: 'pointer' }}>
+                                                            <Save size={14} />
+                                                        </button>
+                                                        <button onClick={() => setEditingDoc(null)} style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', padding: '4px', cursor: 'pointer' }}>
+                                                            <X size={14} />
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <button onClick={() => handleDeleteDocument(doc.id)} style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer' }}>
+                                                        <Trash2 size={14} color="#94a3b8" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Content */}
+                                    {isEditing ? (
+                                        <textarea
+                                            value={editingDoc.content}
+                                            onChange={(e) => setEditingDoc({ ...editingDoc, content: e.target.value })}
+                                            style={{
+                                                width: '100%', minHeight: '80px', border: '1px solid #e2e8f0',
+                                                borderRadius: '6px', padding: '8px', fontSize: '0.85rem',
+                                                resize: 'vertical', marginBottom: '12px'
+                                            }}
+                                        />
+                                    ) : (
+                                        <p style={{ color: '#64748b', fontSize: '0.85rem', lineHeight: 1.5, whiteSpace: 'pre-wrap', marginBottom: '12px', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                            {doc.content || 'No description.'}
+                                        </p>
+                                    )}
+
+                                    {/* Actions */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                                        <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <span>{new Date(doc.created_at).toLocaleDateString()}</span>
+                                            <span style={{ fontSize: '0.7rem' }}>by {doc.uploader_name} ({doc.uploader_role})</span>
+                                        </span>
+
+                                        {doc.file_url && (
+                                            <button
+                                                onClick={() => setViewingDoc(doc)}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: '4px',
+                                                    fontSize: '0.8rem', fontWeight: 600, color: '#3b82f6',
+                                                    textDecoration: 'none', background: 'none', border: 'none',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <Eye size={14} /> View
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
 
             {/* Add Modal */}
             {showAddModal && (

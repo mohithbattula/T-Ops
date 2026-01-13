@@ -68,10 +68,84 @@ const ATSDashboard = ({ onNavigate }) => {
 
     return (
         <div className="dashboard animate-fade-in">
-            <div className="page-header mb-8">
-                <div>
-                    <h1 className="text-2xl font-bold text-[var(--text-primary)]">Welcome back, {user?.split(' ')[0] || 'User'}!</h1>
-                    <p className="text-[var(--text-secondary)]">Here's what's happening with your recruitment today.</p>
+            {/* Premium Header Banner */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                borderRadius: '24px',
+                padding: '28px 32px',
+                color: 'white',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+                marginBottom: '24px'
+            }}>
+                {/* SVG Mesh Pattern Overlay */}
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }}>
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="mesh-ats-dashboard" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#mesh-ats-dashboard)" />
+                    </svg>
+                </div>
+
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                            <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dashboard</span>
+                            <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: '600' }}>/</span>
+                            <span style={{ color: '#22d3ee', fontSize: '0.75rem', fontWeight: '600', textTransform: 'uppercase' }}>Hiring Portal</span>
+                        </div>
+                        <h1 style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '8px', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <Users size={28} />
+                            Welcome back, <span style={{ background: 'linear-gradient(to right, #38bdf8, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{user?.split(' ')[0] || 'User'}!</span>
+                        </h1>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', fontWeight: '400' }}>
+                            Here's what's happening with your recruitment today
+                        </p>
+                    </div>
+
+                    {/* Quick Stats in Header */}
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        <div style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            backdropFilter: 'blur(10px)',
+                            padding: '14px 20px',
+                            borderRadius: '14px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            textAlign: 'center',
+                            minWidth: '90px'
+                        }}>
+                            <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Active Jobs</p>
+                            <p style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>{analytics.activeJobs}</p>
+                        </div>
+                        <div style={{
+                            background: 'rgba(255,255,255,0.05)',
+                            backdropFilter: 'blur(10px)',
+                            padding: '14px 20px',
+                            borderRadius: '14px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            textAlign: 'center',
+                            minWidth: '90px'
+                        }}>
+                            <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Candidates</p>
+                            <p style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>{analytics.totalCandidates}</p>
+                        </div>
+                        <div style={{
+                            background: 'rgba(16, 185, 129, 0.2)',
+                            backdropFilter: 'blur(10px)',
+                            padding: '14px 20px',
+                            borderRadius: '14px',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                            textAlign: 'center',
+                            minWidth: '90px'
+                        }}>
+                            <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.7)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Hired</p>
+                            <p style={{ fontSize: '1.5rem', fontWeight: '700', color: '#10b981' }}>{analytics.candidatesByStage?.hired || 0}</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 

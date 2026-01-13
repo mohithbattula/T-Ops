@@ -329,93 +329,132 @@ const PayslipsPage = ({ userRole, userId, addToast, orgId }) => {
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.875rem',
-                        marginBottom: '4px'
-                    }}>
-                        <span>Dashboard</span>
-                        <span>/</span>
-                        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
-                            {userRole === 'employee' || userRole === 'team_lead' ? 'Your Payslip' : 'Payslips'}
-                        </span>
+        <div style={{ padding: '24px', background: '#f8fafc', minHeight: '100vh' }}>
+            {/* Compact Header - Matching Leave Requests Style */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                borderRadius: '16px',
+                padding: '20px 28px',
+                color: 'white',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                marginBottom: '20px'
+            }}>
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                            <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dashboard</span>
+                            <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: '600' }}>/</span>
+                            <span style={{ color: '#22d3ee', fontSize: '0.75rem', fontWeight: '600', textTransform: 'uppercase' }}>Payslips</span>
+                        </div>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '6px', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+                            {userRole === 'employee' || userRole === 'team_lead' ? 'Your Payslips' : 'Payslip Repository'}
+                        </h1>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', fontWeight: '400' }}>
+                            Secure access to employee financial statements and payroll documentation.
+                        </p>
                     </div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
-                        {userRole === 'employee' || userRole === 'team_lead' ? 'Your Payslip' : 'Payslips'}
-                    </h2>
-                </div>
 
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    {/* Add Payslip Button */}
-                    {canAddPayslips && (
-                        <button
-                            onClick={() => setShowAddModal(true)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '12px 24px',
-                                backgroundColor: '#000',
-                                color: '#fff',
-                                borderRadius: '12px',
-                                fontWeight: 'bold',
-                                border: 'none',
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                            }}
-                        >
-                            <Plus size={20} />
-                            Add Payslip
-                        </button>
-                    )}
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexShrink: 0 }}>
+                        {canAddPayslips && (
+                            <button
+                                onClick={() => setShowAddModal(true)}
+                                style={{
+                                    background: 'linear-gradient(135deg, #22d3ee, #06b6d4)',
+                                    color: 'white',
+                                    padding: '10px 20px',
+                                    borderRadius: '10px',
+                                    fontWeight: '600',
+                                    fontSize: '0.85rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 12px rgba(6, 182, 212, 0.3)',
+                                    transition: 'all 0.2s ease',
+                                    whiteSpace: 'nowrap'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(6, 182, 212, 0.4)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(6, 182, 212, 0.3)';
+                                }}
+                            >
+                                <Plus size={16} strokeWidth={2.5} />
+                                Generate
+                            </button>
+                        )}
 
-                    <div style={{
-                        padding: '12px 20px',
-                        backgroundColor: 'var(--surface)',
-                        borderRadius: '12px',
-                        border: '1px solid var(--border)',
-                        boxShadow: 'var(--shadow-sm)'
-                    }}>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                            Total Payslips
-                        </p>
-                        <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>
-                            {payslips.length}
-                        </p>
+                        <div style={{
+                            padding: '10px 16px',
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            backdropFilter: 'blur(12px)',
+                            borderRadius: '12px',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            textAlign: 'right'
+                        }}>
+                            <p style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.5)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '2px', letterSpacing: '0.05em' }}>
+                                Records
+                            </p>
+                            <span style={{ fontSize: '1.25rem', fontWeight: '700', color: 'white', lineHeight: 1 }}>{payslips.length}</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Payslips Table */}
             {payslips.length > 0 ? (
-                <DataTable
-                    title="Payslip Records"
-                    columns={columns}
-                    data={payslips}
-                />
+                <div style={{
+                    background: 'white',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+                    border: '1px solid #e2e8f0'
+                }}>
+                    <DataTable
+                        title="Comprehensive Payslip Ledger"
+                        columns={columns}
+                        data={payslips}
+                    />
+                </div>
             ) : (
                 <div style={{
-                    backgroundColor: 'var(--surface)',
-                    borderRadius: '16px',
-                    padding: '60px 20px',
+                    backgroundColor: 'white',
+                    borderRadius: '12px',
+                    padding: '120px 20px',
                     textAlign: 'center',
-                    border: '2px dashed var(--border)'
+                    border: '2px dashed #e2e8f0',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
+                    minHeight: '400px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                 }}>
-                    <FileText size={64} style={{ margin: '0 auto 20px', opacity: 0.3, color: 'var(--text-secondary)' }} />
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '8px' }}>
-                        No Payslips Found
+                    <div style={{
+                        width: '64px',
+                        height: '64px',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '20px'
+                    }}>
+                        <FileText size={32} color="#cbd5e1" />
+                    </div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
+                        No Records Found
                     </h3>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem', maxWidth: '400px', margin: '0 auto' }}>
                         {userRole === 'employee' || userRole === 'team_lead'
-                            ? 'You don\'t have any payslips yet.'
-                            : 'No payslips have been generated yet.'}
+                            ? 'Your financial vault is currently empty. Direct deposits will appear here.'
+                            : 'The payslip repository is empty. Initialize your first generation above.'}
                     </p>
                 </div>
             )}

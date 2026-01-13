@@ -42,6 +42,10 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--background);
@@ -53,6 +57,7 @@ body {
 a {
   text-decoration: none;
   color: inherit;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 button {
@@ -60,6 +65,7 @@ button {
   border: none;
   background: none;
   font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Utilities */

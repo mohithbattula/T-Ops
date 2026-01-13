@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Eye, Mail, Phone, MapPin, Calendar, Briefcase, Download, Edit } from 'lucide-react';
+import { Plus, X, Eye, Mail, Phone, MapPin, Calendar, Briefcase, Download, Edit, Users, Clock, Activity, Target, TrendingUp, ChevronRight, LayoutGrid, List, Search, Map as MapIcon, CheckCircle } from 'lucide-react';
 import DataTable from '../components/UI/DataTable';
 import { useToast } from '../context/ToastContext';
 import AnalyticsDemo from '../components/Demo/AnalyticsDemo';
@@ -26,6 +26,8 @@ import ProjectAnalytics from '../../shared/ProjectAnalytics/ProjectAnalytics';
 const ModulePage = ({ title, type }) => {
     const { addToast } = useToast();
     const { userId, orgId, userRole } = useUser();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [viewType, setViewType] = useState('grid'); // 'grid' or 'list'
 
     // State for leave requests
     const [leaveRequests, setLeaveRequests] = useState([]);
@@ -131,7 +133,7 @@ const ModulePage = ({ title, type }) => {
     // Fetch employees from Supabase
     useEffect(() => {
         const fetchEmployees = async () => {
-            if (type === 'workforce' || type === 'status') {
+            if (orgId && (type === 'workforce' || type === 'status')) {
                 try {
                     console.log(`Fetching employees for ${type} from Supabase...`);
 
@@ -145,13 +147,10 @@ const ModulePage = ({ title, type }) => {
                             role, 
                             department,
                             job_title,
-                            employment_type,
-                            created_at,
                             join_date,
                             avatar_url
                         `)
-                        .eq('org_id', orgId)
-                        .neq('is_hidden', true);
+                        .eq('org_id', orgId);
 
                     if (profilesError) {
                         console.error('Error fetching employees:', profilesError);
@@ -1004,7 +1003,7 @@ const ModulePage = ({ title, type }) => {
     // Render specific demos for certain types
     if (type === 'analytics') return <AnalyticsDemo />;
     if (type === 'tasks') return <AllTasksView userRole={userRole} userId={userId} addToast={addToast} orgId={orgId} />;
-    if (title === 'Team Hierarchy' || title === 'Organizational Hierarchy') return <HierarchyDemo />;
+    if (title === 'Team Hierarchy' || title === 'Organizational Hierarchy' || title === 'Hierarchy') return <HierarchyDemo />;
     if (title === 'Project Hierarchy') return <ProjectHierarchyDemo isEditingEnabled={true} />;
     if (title === 'Settings') return <SettingsDemo />;
     if (title === 'Announcements') return <AnnouncementsPage userRole={userRole} userId={userId} orgId={orgId} />;
@@ -1456,44 +1455,537 @@ const ModulePage = ({ title, type }) => {
     const config = configs[type] || configs.default;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-lg)' }}>
-            {/* Header with Breadcrumb-like feel */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '4px' }}>
-                        <span>Dashboard</span>
-                        <span>/</span>
-                        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{title}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingBottom: '40px' }}>
+            {/* Premium Header - Reusing the Dashboard Aesthetic */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                borderRadius: '16px',
+                padding: '20px 24px',
+                color: 'white',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 10px 30px -10px rgba(0, 0, 0, 0.5)',
+                marginBottom: '4px'
+            }}>
+                {/* Mesh Grid Background */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)`,
+                    backgroundSize: '40px 40px',
+                    opacity: 0.4
+                }}></div>
+
+                {/* Animated Glow Orbs */}
+                <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%)', borderRadius: '50%' }}></div>
+                <div style={{ position: 'absolute', bottom: '-150px', left: '-50px', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(129, 140, 248, 0.08) 0%, transparent 70%)', borderRadius: '50%' }}></div>
+
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ flex: 1, minWidth: '300px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Executive Control</span>
+                            <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: '800' }}>•</span>
+                            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', fontWeight: '700' }}>{title} Hub</span>
+                        </div>
+                        <h1 style={{ fontSize: '1.75rem', fontWeight: '800', marginBottom: '4px', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                            {title.split(' ').map((word, i) => i === title.split(' ').length - 1 ? <span key={i} style={{ background: 'linear-gradient(to right, #38bdf8, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{word}</span> : word + ' ')}
+                        </h1>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', maxWidth: '600px', fontWeight: '500', lineHeight: 1.4 }}>
+                            {type === 'workforce' ? `Managing and scaling your talent network. ${employees.length} active profiles monitored.` :
+                                type === 'status' ? `Real-time visibility into peak performance and workforce engagement.` :
+                                    `Systematic overview of organizational ${title.toLowerCase()} and operational assets.`}
+                        </p>
                     </div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{title}</h2>
+
+                    {(type === 'workforce' || type === 'recruitment' || type === 'policies') && (
+                        <button
+                            onClick={() => handleAction(type === 'workforce' ? 'Add Employee' : type === 'recruitment' ? 'Add Candidate' : 'Add Policy')}
+                            style={{
+                                background: 'linear-gradient(135deg, #38bdf8 0%, #818cf8 100%)',
+                                color: 'white',
+                                padding: '18px 36px',
+                                borderRadius: '24px',
+                                fontWeight: '800',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                border: 'none',
+                                cursor: 'pointer',
+                                boxShadow: '0 10px 25px -5px rgba(56, 189, 248, 0.4)',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                fontSize: '1.1rem',
+                                letterSpacing: '-0.02em'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-4px) scale(1.02)';
+                                e.currentTarget.style.boxShadow = '0 20px 30px -5px rgba(56, 189, 248, 0.5)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                e.currentTarget.style.boxShadow = '0 10px 25px -5px rgba(56, 189, 248, 0.4)';
+                            }}
+                        >
+                            <Plus size={24} strokeWidth={3} />
+                            {type === 'workforce' ? 'Add Employee' : type === 'recruitment' ? 'Add Candidate' : 'Add Policy'}
+                        </button>
+                    )}
                 </div>
-                {(type === 'workforce' || type === 'recruitment' || type === 'policies') && (
-                    <button
-                        onClick={() => handleAction(type === 'workforce' ? 'Add Employee' : type === 'recruitment' ? 'Add Candidate' : 'Add Policy')}
-                        style={{
-                            backgroundColor: 'var(--primary)',
-                            color: 'white',
-                            padding: '10px 16px',
-                            borderRadius: '8px',
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            boxShadow: 'var(--shadow-md)'
-                        }}
-                    >
-                        <Plus size={20} />
-                        {type === 'workforce' ? 'Add Employee' : type === 'recruitment' ? 'Add Candidate' : 'Add Policy'}
-                    </button>
-                )}
             </div>
 
-            <DataTable
-                title={`${title} List`}
-                columns={config.columns}
-                data={config.data}
-                onAction={handleAction}
-            />
+            {/* Quick Stats Summary */}
+            {(type === 'workforce' || type === 'status') && (
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '24px',
+                    marginBottom: '8px'
+                }}>
+                    {[
+                        { label: 'Total Workforce', value: employees.length, icon: <Users size={20} />, color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.1)' },
+                        { label: 'Active Now', value: employees.filter(e => e.availability === 'Online').length, icon: <CheckCircle size={20} />, color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)' },
+                        { label: 'On Leave', value: employees.filter(e => e.availability === 'On Leave').length, icon: <Clock size={20} />, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
+                        { label: 'Peak Engagement', value: '92%', icon: <Activity size={20} />, color: '#818cf8', bg: 'rgba(129, 140, 248, 0.1)' }
+                    ].map((stat, i) => (
+                        <div key={i} style={{
+                            backgroundColor: '#ffffff',
+                            borderRadius: '24px',
+                            padding: '24px',
+                            border: '1px solid #f1f5f9',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '20px'
+                        }}>
+                            <div style={{
+                                width: '56px',
+                                height: '56px',
+                                borderRadius: '16px',
+                                backgroundColor: stat.bg,
+                                color: stat.color,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                {stat.icon}
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.02em' }}>{stat.label}</p>
+                                <p style={{ fontSize: '1.5rem', fontWeight: '800', color: '#0f172a' }}>{stat.value}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Search and Filters Bar */}
+            {(type === 'workforce' || type === 'status') && (
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '24px',
+                    marginBottom: '8px'
+                }}>
+                    <div style={{
+                        position: 'relative',
+                        flex: 1,
+                        maxWidth: '500px'
+                    }}>
+                        <Search style={{
+                            position: 'absolute',
+                            left: '20px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            color: '#94a3b8'
+                        }} size={20} />
+                        <input
+                            type="text"
+                            placeholder={`Search ${title.toLowerCase()}...`}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '12px 16px 12px 50px',
+                                borderRadius: '16px',
+                                border: '1px solid #f1f5f9',
+                                backgroundColor: '#ffffff',
+                                fontSize: '0.9rem',
+                                color: '#0f172a',
+                                outline: 'none',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
+                            }}
+                            onFocus={(e) => {
+                                e.target.style.borderColor = '#38bdf8';
+                                e.target.style.boxShadow = '0 10px 20px rgba(56, 189, 248, 0.05)';
+                            }}
+                            onBlur={(e) => {
+                                e.target.style.borderColor = '#f1f5f9';
+                                e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.02)';
+                            }}
+                        />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                        <div style={{ display: 'flex', backgroundColor: '#f1f5f9', padding: '4px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                            <button
+                                onClick={() => setViewType('grid')}
+                                style={{
+                                    padding: '6px 14px',
+                                    borderRadius: '10px',
+                                    backgroundColor: viewType === 'grid' ? '#ffffff' : 'transparent',
+                                    color: viewType === 'grid' ? '#0f172a' : '#64748b',
+                                    fontWeight: viewType === 'grid' ? '700' : '600',
+                                    fontSize: '0.8rem',
+                                    border: 'none',
+                                    boxShadow: viewType === 'grid' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <LayoutGrid size={16} /> Grid
+                            </button>
+                            <button
+                                onClick={() => setViewType('list')}
+                                style={{
+                                    padding: '8px 16px',
+                                    borderRadius: '10px',
+                                    backgroundColor: viewType === 'list' ? '#ffffff' : 'transparent',
+                                    color: viewType === 'list' ? '#0f172a' : '#64748b',
+                                    fontWeight: viewType === 'list' ? '700' : '600',
+                                    fontSize: '0.85rem',
+                                    border: 'none',
+                                    boxShadow: viewType === 'list' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <List size={16} /> List
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Premium Representation for Workforce/Status */}
+            {(type === 'workforce' || type === 'status') ? (
+                viewType === 'grid' ? (
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: type === 'status' ? 'repeat(auto-fill, minmax(320px, 1fr))' : 'repeat(auto-fill, minmax(280px, 1fr))',
+                        gap: '16px',
+                        marginTop: '8px'
+                    }}>
+                        {employees.filter(emp =>
+                            emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            emp.job_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            emp.department_display?.toLowerCase().includes(searchTerm.toLowerCase())
+                        ).map((emp) => (
+                            <div
+                                key={emp.id}
+                                style={{
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '16px',
+                                    padding: '16px',
+                                    border: (type === 'status' && emp.availability === 'Online') ? '2px solid #22c55e' : '1px solid #f1f5f9',
+                                    boxShadow: '0 4px 24px rgba(0,0,0,0.02)',
+                                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '12px'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-8px)';
+                                    e.currentTarget.style.borderColor = (type === 'status' && emp.availability === 'Online') ? '#22c55e' : '#e2e8f0';
+                                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.06)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.borderColor = (type === 'status' && emp.availability === 'Online') ? '#22c55e' : '#f1f5f9';
+                                    e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.02)';
+                                }}
+                                onClick={() => type === 'workforce' ? handleAction('View Employee', emp) : handleAction('View Status', emp)}
+                            >
+
+
+                                {/* Profile Header */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                        <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                                            {emp.avatar_url ? (
+                                                <img src={emp.avatar_url} alt={emp.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : (
+                                                <span style={{ fontSize: '1.2rem', fontWeight: '800', color: '#64748b' }}>{emp.name.charAt(0)}</span>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', marginBottom: '2px', letterSpacing: '-0.02em' }}>{emp.name}</h3>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b' }}>{emp.department_display}</span>
+                                                <span style={{ color: '#cbd5e1' }}>•</span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: emp.availability === 'Online' ? '#22c55e' : emp.availability === 'On Leave' ? '#ef4444' : '#94a3b8' }}></span>
+                                                    <span style={{ fontSize: '0.75rem', fontWeight: '700', color: emp.availability === 'Online' ? '#16a34a' : emp.availability === 'On Leave' ? '#dc2626' : '#64748b' }}>{emp.availability}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleAction(type === 'workforce' ? 'View Employee' : 'View Status', emp); }}
+                                            style={{ width: '36px', height: '36px', borderRadius: '12px', border: '1px solid #f1f5f9', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', transition: 'all 0.2s', cursor: 'pointer' }}
+                                        >
+                                            <Eye size={18} />
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleAction('Edit Employee', emp); }}
+                                            style={{ width: '36px', height: '36px', borderRadius: '12px', border: '1px solid #f1f5f9', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', transition: 'all 0.2s', cursor: 'pointer' }}
+                                        >
+                                            <Edit size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {type === 'status' ? (
+                                    <>
+                                        {/* Activity Pulse Section */}
+                                        <div style={{
+                                            backgroundColor: '#f8fafc',
+                                            borderRadius: '16px',
+                                            padding: '16px',
+                                            border: '1px solid #f1f5f9'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <Activity size={14} style={{ color: '#38bdf8' }} />
+                                                    <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#475569', textTransform: 'uppercase' }}>Active Intent</span>
+                                                </div>
+                                                <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>{emp.lastActive}</span>
+                                            </div>
+                                            <div style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                                                {emp.task !== '-' ? emp.task : 'System Idle / Standby'}
+                                            </div>
+                                            <div style={{ width: '100%', height: '4px', backgroundColor: '#e2e8f0', borderRadius: '2px', marginTop: '12px', overflow: 'hidden' }}>
+                                                <div style={{
+                                                    width: emp.availability === 'Online' ? '100%' : '0%',
+                                                    height: '100%',
+                                                    backgroundColor: '#38bdf8',
+                                                    borderRadius: '2px',
+                                                    boxShadow: '0 0 8px rgba(56, 189, 248, 0.5)'
+                                                }}></div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <span style={{ padding: '4px 10px', borderRadius: '8px', backgroundColor: '#eff6ff', color: '#1d4ed8', fontSize: '0.7rem', fontWeight: '700' }}>
+                                                    {emp.role}
+                                                </span>
+                                                <span style={{ padding: '4px 10px', borderRadius: '8px', backgroundColor: '#f5f3ff', color: '#6d28d9', fontSize: '0.7rem', fontWeight: '700' }}>
+                                                    {emp.job_title}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleAction('View Status', emp); }}
+                                                style={{ color: '#3182ce', fontSize: '0.8rem', fontWeight: '700', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                            >
+                                                Live Intel <ChevronRight size={14} />
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* Info Grid for Workforce */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                            <div style={{ padding: '16px', borderRadius: '20px', backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                                                <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <Briefcase size={12} /> Job Title
+                                                </div>
+                                                <div style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1e293b' }}>{emp.job_title || 'N/A'}</div>
+                                            </div>
+                                            <div style={{ padding: '16px', borderRadius: '20px', backgroundColor: '#f8fafc', border: '1px solid #f1f5f9' }}>
+                                                <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <Users size={12} /> Department
+                                                </div>
+                                                <div style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1e293b' }}>{emp.department_display || 'N/A'}</div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                            {emp.projects > 0 ? (
+                                                <span style={{ padding: '6px 12px', borderRadius: '10px', backgroundColor: '#ecfdf5', color: '#059669', fontSize: '0.75rem', fontWeight: '700', border: '1px solid #d1fae5' }}>
+                                                    Active on {emp.projects} Projects
+                                                </span>
+                                            ) : (
+                                                <span style={{ padding: '6px 12px', borderRadius: '10px', backgroundColor: '#fff7ed', color: '#d97706', fontSize: '0.75rem', fontWeight: '700', border: '1px solid #ffedd5' }}>
+                                                    Awaiting Project
+                                                </span>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {/* Premium List View Header */}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: type === 'status' ? 'minmax(300px, 1.5fr) 1fr 1.5fr 1fr 120px' : 'minmax(300px, 1.5fr) 1fr 1fr 1fr 120px',
+                            padding: '12px 32px',
+                            color: '#64748b',
+                            fontSize: '0.75rem',
+                            fontWeight: '800',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em'
+                        }}>
+                            <div>{type === 'status' ? 'Live Operator' : 'Employee Details'}</div>
+                            <div>{type === 'status' ? 'Department' : 'Designation'}</div>
+                            <div>{type === 'status' ? 'Live Activity / Presence' : 'Organization / Team'}</div>
+                            <div>{type === 'status' ? 'Last Signal' : 'Employment Status'}</div>
+                            <div style={{ textAlign: 'right' }}>Actions</div>
+                        </div>
+
+                        {/* Premium List Rows */}
+                        {employees.filter(emp =>
+                            emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            emp.job_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            emp.department_display?.toLowerCase().includes(searchTerm.toLowerCase())
+                        ).map((emp) => (
+                            <div
+                                key={emp.id}
+                                style={{
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '20px',
+                                    padding: '16px 32px',
+                                    border: '1px solid #f1f5f9',
+                                    display: 'grid',
+                                    gridTemplateColumns: type === 'status' ? 'minmax(300px, 1.5fr) 1fr 1.5fr 1fr 120px' : 'minmax(300px, 1.5fr) 1fr 1fr 1fr 120px',
+                                    alignItems: 'center',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.01)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.borderColor = '#e2e8f0';
+                                    e.currentTarget.style.boxShadow = '0 10px 20px rgba(0,0,0,0.04)';
+                                    e.currentTarget.style.transform = 'scale(1.005)';
+                                    e.currentTarget.style.zIndex = 10;
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.borderColor = '#f1f5f9';
+                                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.01)';
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.zIndex = 1;
+                                }}
+                                onClick={() => type === 'workforce' ? handleAction('View Employee', emp) : handleAction('View Status', emp)}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                    <div style={{
+                                        width: '44px',
+                                        height: '44px',
+                                        borderRadius: '14px',
+                                        background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        overflow: 'hidden',
+                                        border: '1px solid #e2e8f0',
+                                        position: 'relative'
+                                    }}>
+                                        {emp.avatar_url ? (
+                                            <img src={emp.avatar_url} alt={emp.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <span style={{ fontSize: '1rem', fontWeight: '800', color: '#64748b' }}>{emp.name.charAt(0)}</span>
+                                        )}
+                                        {type === 'status' && (
+                                            <div style={{ position: 'absolute', bottom: 0, right: 0, width: '12px', height: '12px', borderRadius: '50%', backgroundColor: emp.availability === 'Online' ? '#22c55e' : '#cbd5e1', border: '2px solid white' }}></div>
+                                        )}
+                                    </div>
+                                    <div style={{ overflow: 'hidden' }}>
+                                        <h4 style={{ fontSize: '1rem', fontWeight: '700', color: '#0f172a', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{emp.name}</h4>
+                                        <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>{emp.job_title}</p>
+                                    </div>
+                                </div>
+
+                                <div style={{ color: '#334155', fontWeight: '600', fontSize: '0.9rem' }}>
+                                    {emp.department_display || 'Main Office'}
+                                </div>
+
+                                {type === 'status' ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b' }}>{emp.task !== '-' ? emp.task : 'Active Standby'}</div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                                                <div style={{ width: '60px', height: '4px', backgroundColor: '#f1f5f9', borderRadius: '2px', overflow: 'hidden' }}>
+                                                    <div style={{ width: emp.availability === 'Online' ? '80%' : '0%', height: '100%', backgroundColor: '#22c55e' }}></div>
+                                                </div>
+                                                <span style={{ fontSize: '0.65rem', fontWeight: '800', color: '#94a3b8' }}>LIVE</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{ color: '#64748b', fontWeight: '500', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#cbd5e1' }}></div>
+                                        {emp.role}
+                                    </div>
+                                )}
+
+                                <div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569' }}>{type === 'status' ? emp.lastActive : emp.availability}</div>
+                                    {type === 'status' && (
+                                        <div style={{ fontSize: '0.65rem', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Session Lock</div>
+                                    )}
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleAction(type === 'status' ? 'View Status' : 'View Employee', emp); }}
+                                        style={{ width: '36px', height: '36px', borderRadius: '10px', border: '1px solid #f1f5f9', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', transition: 'all 0.2s', cursor: 'pointer' }}
+                                    >
+                                        <Eye size={18} />
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleAction('Edit Employee', emp); }}
+                                        style={{ width: '36px', height: '36px', borderRadius: '10px', border: '1px solid #f1f5f9', backgroundColor: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', transition: 'all 0.2s', cursor: 'pointer' }}
+                                    >
+                                        <Edit size={18} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )
+            ) : (
+                <DataTable
+                    title={`${title} List`}
+                    columns={config.columns}
+                    data={config.data.filter(item => {
+                        const searchStr = searchTerm.toLowerCase();
+                        return (
+                            (item.name && typeof item.name === 'string' && item.name.toLowerCase().includes(searchStr)) ||
+                            (item.job_title && typeof item.job_title === 'string' && item.job_title.toLowerCase().includes(searchStr)) ||
+                            (item.department_display && typeof item.department_display === 'string' && item.department_display.toLowerCase().includes(searchStr)) ||
+                            (item.role && typeof item.role === 'string' && item.role.toLowerCase().includes(searchStr))
+                        );
+                    })}
+                    onAction={handleAction}
+                />
+            )}
 
             {/* Apply Leave Modal */}
             {showApplyLeaveModal && (

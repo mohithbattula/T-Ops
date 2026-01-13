@@ -74,14 +74,14 @@ const Layout = ({ children }) => {
                     onMouseLeave={() => setIsCollapsed(true)}
                 />
                 <div style={{
-                    marginLeft: isCollapsed ? '80px' : '260px',
+                    marginLeft: isCollapsed ? '70px' : '240px',
                     flex: 1,
                     display: 'flex',
                     flexDirection: 'column',
-                    transition: 'margin-left 0.3s ease'
+                    transition: 'margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
                 }}>
                     <Header />
-                    <main style={{ flex: 1, padding: 'var(--spacing-xl)', backgroundColor: 'var(--background)' }}>
+                    <main style={{ flex: 1, padding: location.pathname.includes('/messages') ? 0 : '1.5rem', backgroundColor: location.pathname.includes('/messages') ? '#ffffff' : 'var(--background)' }}>
                         {children}
                     </main>
                     <Chatbot />

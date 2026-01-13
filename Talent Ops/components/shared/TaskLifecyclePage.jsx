@@ -308,26 +308,80 @@ const TaskLifecyclePage = ({ userRole = 'employee', userId, orgId, addToast, pro
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>Your Tasks</h2>
-                    <p style={{ color: 'var(--text-secondary)' }}>Track your tasks through the lifecycle</p>
+            {/* Premium Header - Reusing the Dashboard Aesthetic */}
+            <div style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                borderRadius: '24px',
+                padding: '32px 40px',
+                color: 'white',
+                position: 'relative',
+                overflow: 'hidden',
+                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                marginBottom: '8px'
+            }}>
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }}>
+                    <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <pattern id="mesh-tasks" width="40" height="40" patternUnits="userSpaceOnUse">
+                                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+                            </pattern>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#mesh-tasks)" />
+                    </svg>
                 </div>
-                {isManager && (
-                    <button
-                        onClick={() => setShowAddTaskModal(true)}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: '8px',
-                            padding: '12px 20px', borderRadius: '12px',
-                            background: 'linear-gradient(135deg, #10b981, #059669)',
-                            color: 'white', border: 'none', cursor: 'pointer',
-                            fontWeight: 600, fontSize: '0.9rem',
-                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
-                        }}
-                    >
-                        <Plus size={18} /> Add Task
-                    </button>
-                )}
+
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                            <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', border: '1px solid rgba(255,255,255,0.1)' }}>Project Management</span>
+                            <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: '800' }}>•</span>
+                            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', fontWeight: '600' }}>Workflow Tracking</span>
+                        </div>
+                        <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '12px', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                            Task <span style={{ background: 'linear-gradient(to right, #10b981, #34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Lifecycle</span>
+                        </h1>
+                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', maxWidth: '600px', fontWeight: '500', lineHeight: 1.6 }}>
+                            Track, validate, and complete your assigned tasks through every stage of development.
+                        </p>
+                    </div>
+
+                    {isManager && (
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            backdropFilter: 'blur(12px)',
+                            padding: '16px 24px',
+                            borderRadius: '20px',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px'
+                        }}>
+                            <button
+                                onClick={() => setShowAddTaskModal(true)}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '10px',
+                                    padding: '12px 24px', borderRadius: '14px',
+                                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                                    color: 'white', border: 'none', cursor: 'pointer',
+                                    fontWeight: '800', fontSize: '0.9rem',
+                                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                                    whiteSpace: 'nowrap',
+                                    transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(16, 185, 129, 0.4)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                                }}
+                            >
+                                <Plus size={18} strokeWidth={3} /> Add Task
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', backgroundColor: 'var(--surface)', padding: '16px', borderRadius: '16px', border: '1px solid var(--border)' }}>

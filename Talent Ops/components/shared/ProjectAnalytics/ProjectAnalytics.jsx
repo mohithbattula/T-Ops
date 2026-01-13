@@ -218,219 +218,387 @@ const ProjectAnalytics = ({ userRole = 'manager', dashboardPrefix = '/manager-da
     // ================================
     // Project List View
     // ================================
-    const ProjectListView = () => (
-        <div>
-            {/* Header */}
-            <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '24px'
-            }}>
-                <div>
-                    <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>
-                        Project Analytics
-                    </h1>
-                    <p style={{ color: '#64748b', marginTop: '4px' }}>
-                        Financial performance and resource allocation overview
-                    </p>
-                </div>
-                {isExecutive && (
-                    <button style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '10px 20px',
-                        backgroundColor: '#2563eb',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                    }}>
-                        <Plus size={18} />
-                        Add Project
-                    </button>
-                )}
-            </div>
+    const ProjectListView = () => {
+        // Calculate summary stats
+        const totalProjects = projects.length;
+        const activeProjects = projects.filter(p => p.status === 'active').length;
+        const totalRevenue = projects.reduce((sum, p) => sum + (p.total_revenue || 0), 0);
+        const totalProfit = projects.reduce((sum, p) => sum + (p.net_profit || 0), 0);
 
-            {/* Filters */}
-            <div style={{
-                display: 'flex',
-                gap: '16px',
-                marginBottom: '24px',
-                flexWrap: 'wrap'
-            }}>
-                {/* Search */}
-                <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
-                    <Search size={18} style={{
-                        position: 'absolute',
-                        left: '12px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        color: '#94a3b8'
-                    }} />
-                    <input
-                        type="text"
-                        placeholder="Search projects..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        style={{
-                            width: '100%',
-                            padding: '10px 10px 10px 40px',
-                            border: '1px solid #e2e8f0',
-                            borderRadius: '8px',
-                            fontSize: '0.9rem'
-                        }}
-                    />
-                </div>
+        return (
+            <div>
+                {/* Premium Header Banner */}
+                <div style={{
+                    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                    borderRadius: '24px',
+                    padding: '24px 28px',
+                    color: 'white',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+                    marginBottom: '24px'
+                }}>
+                    {/* SVG Mesh Pattern Overlay */}
+                    <div style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }}>
+                        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <pattern id="mesh-project-list" width="40" height="40" patternUnits="userSpaceOnUse">
+                                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+                                </pattern>
+                            </defs>
+                            <rect width="100%" height="100%" fill="url(#mesh-project-list)" />
+                        </svg>
+                    </div>
 
-                {/* Status Filter */}
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    {['all', 'active', 'completed', 'on_hold'].map(status => (
-                        <button
-                            key={status}
-                            onClick={() => setStatusFilter(status)}
-                            style={{
-                                padding: '8px 16px',
-                                borderRadius: '20px',
+                    <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                                <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '4px 10px', borderRadius: '12px', fontSize: '0.7rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dashboard</span>
+                                <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: '600' }}>/</span>
+                                <span style={{ color: '#22d3ee', fontSize: '0.75rem', fontWeight: '600', textTransform: 'uppercase' }}>Project Analytics</span>
+                            </div>
+                            <h1 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '6px', letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+                                Project Analytics
+                            </h1>
+                            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', fontWeight: '400' }}>
+                                Financial performance and resource allocation overview
+                            </p>
+                        </div>
+
+                        {isExecutive && (
+                            <button style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '10px 20px',
+                                background: 'linear-gradient(135deg, #10b981, #059669)',
+                                color: 'white',
                                 border: 'none',
-                                backgroundColor: statusFilter === status ? '#2563eb' : '#f1f5f9',
-                                color: statusFilter === status ? 'white' : '#64748b',
-                                fontWeight: 500,
+                                borderRadius: '10px',
+                                fontWeight: '600',
+                                fontSize: '0.85rem',
                                 cursor: 'pointer',
-                                textTransform: 'capitalize'
-                            }}
-                        >
-                            {status === 'all' ? 'All' : status.replace('_', ' ')}
-                        </button>
-                    ))}
+                                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                                transition: 'all 0.2s'
+                            }}>
+                                <Plus size={16} />
+                                Add Project
+                            </button>
+                        )}
+                    </div>
                 </div>
-            </div>
 
-            {/* Project Cards Grid */}
-            {loading ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                    Loading projects...
-                </div>
-            ) : filteredProjects.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                    No projects found
-                </div>
-            ) : (
+                {/* Summary Stats Row */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                    gap: '20px'
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '16px',
+                    marginBottom: '24px'
                 }}>
-                    {filteredProjects.map(project => {
-                        const statusStyle = getStatusColor(project.status);
-                        const isProfitable = project.net_profit >= 0;
+                    {[
+                        { label: 'Total Projects', value: totalProjects, icon: '📊', color: '#3b82f6', bg: '#eff6ff' },
+                        { label: 'Active Projects', value: activeProjects, icon: '🚀', color: '#10b981', bg: '#ecfdf5' },
+                        { label: 'Total Revenue', value: formatCurrency(totalRevenue), icon: '💰', color: '#16a34a', bg: '#f0fdf4' },
+                        { label: 'Net Profit', value: formatCurrency(totalProfit), icon: totalProfit >= 0 ? '📈' : '📉', color: totalProfit >= 0 ? '#16a34a' : '#dc2626', bg: totalProfit >= 0 ? '#f0fdf4' : '#fef2f2' }
+                    ].map((stat, idx) => (
+                        <div key={idx} style={{
+                            backgroundColor: 'white',
+                            borderRadius: '14px',
+                            padding: '20px',
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px'
+                        }}>
+                            <div style={{
+                                width: '48px',
+                                height: '48px',
+                                borderRadius: '12px',
+                                backgroundColor: stat.bg,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '1.4rem'
+                            }}>
+                                {stat.icon}
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>{stat.label}</p>
+                                <p style={{ fontSize: '1.25rem', fontWeight: '700', color: stat.color, margin: 0 }}>{stat.value}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
 
-                        return (
-                            <div
-                                key={project.id}
-                                onClick={() => setSelectedProject(project)}
+                {/* Filters Section */}
+                <div style={{
+                    display: 'flex',
+                    gap: '16px',
+                    marginBottom: '24px',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    backgroundColor: 'white',
+                    padding: '16px 20px',
+                    borderRadius: '14px',
+                    border: '1px solid #e2e8f0'
+                }}>
+                    {/* Search */}
+                    <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
+                        <Search size={18} style={{
+                            position: 'absolute',
+                            left: '14px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            color: '#94a3b8'
+                        }} />
+                        <input
+                            type="text"
+                            placeholder="Search projects..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '12px 12px 12px 44px',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '10px',
+                                fontSize: '0.9rem',
+                                backgroundColor: '#f8fafc',
+                                outline: 'none',
+                                transition: 'all 0.2s'
+                            }}
+                        />
+                    </div>
+
+                    {/* Status Filter Pills */}
+                    <div style={{ display: 'flex', gap: '6px', backgroundColor: '#f1f5f9', padding: '4px', borderRadius: '10px' }}>
+                        {['all', 'active', 'completed', 'on_hold'].map(status => (
+                            <button
+                                key={status}
+                                onClick={() => setStatusFilter(status)}
                                 style={{
-                                    backgroundColor: 'white',
-                                    borderRadius: '12px',
-                                    padding: '20px',
-                                    border: '1px solid #e2e8f0',
+                                    padding: '8px 16px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    backgroundColor: statusFilter === status ? '#0f172a' : 'transparent',
+                                    color: statusFilter === status ? 'white' : '#64748b',
+                                    fontWeight: '600',
+                                    fontSize: '0.8rem',
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-                                }}
-                                onMouseEnter={(e) => {
-                                    e.currentTarget.style.borderColor = '#2563eb';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.15)';
-                                }}
-                                onMouseLeave={(e) => {
-                                    e.currentTarget.style.borderColor = '#e2e8f0';
-                                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+                                    textTransform: 'capitalize',
+                                    transition: 'all 0.2s'
                                 }}
                             >
-                                {/* Header */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                                    <div>
-                                        <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>
-                                            {project.name}
-                                        </h3>
-                                        <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px' }}>
-                                            {project.manager_name}
-                                        </p>
-                                    </div>
-                                    <span style={{
-                                        padding: '4px 10px',
-                                        borderRadius: '12px',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        backgroundColor: statusStyle.bg,
-                                        color: statusStyle.text,
-                                        textTransform: 'capitalize'
-                                    }}>
-                                        {(project.status || 'active').replace('_', ' ')}
-                                    </span>
-                                </div>
-
-                                {/* Duration */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: '#64748b', fontSize: '0.85rem' }}>
-                                    <Calendar size={14} />
-                                    <span>
-                                        {project.start_date
-                                            ? new Date(project.start_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
-                                            : 'Not set'
-                                        }
-                                        {project.end_date && ` → ${new Date(project.end_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}`}
-                                    </span>
-                                </div>
-
-                                {/* Financial Summary */}
-                                <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: '1fr 1fr',
-                                    gap: '12px',
-                                    padding: '12px',
-                                    backgroundColor: '#f8fafc',
-                                    borderRadius: '8px',
-                                    marginBottom: '12px'
-                                }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase' }}>Revenue</div>
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#16a34a' }}>
-                                            {formatCurrency(project.total_revenue)}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase' }}>Cost</div>
-                                        <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#dc2626' }}>
-                                            {formatCurrency(project.total_cost)}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Profit/Loss & Team */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        {isProfitable ? <TrendingUp size={16} color="#16a34a" /> : <TrendingDown size={16} color="#dc2626" />}
-                                        <span style={{ fontWeight: 'bold', color: isProfitable ? '#16a34a' : '#dc2626' }}>
-                                            {formatCurrency(Math.abs(project.net_profit))}
-                                        </span>
-                                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                            {isProfitable ? 'profit' : 'loss'}
-                                        </span>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
-                                        <Users size={14} />
-                                        <span style={{ fontSize: '0.85rem' }}>{project.member_count} members</span>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+                                {status === 'all' ? 'All' : status === 'on_hold' ? 'On Hold' : status.charAt(0).toUpperCase() + status.slice(1)}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            )}
-        </div>
-    );
+
+                {/* Project Cards Grid */}
+                {loading ? (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '80px 40px',
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        border: '1px solid #e2e8f0'
+                    }}>
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '3px solid #e2e8f0', borderTopColor: '#3b82f6', margin: '0 auto 16px', animation: 'spin 1s linear infinite' }}></div>
+                        <p style={{ color: '#64748b', fontSize: '0.95rem' }}>Loading projects...</p>
+                    </div>
+                ) : filteredProjects.length === 0 ? (
+                    <div style={{
+                        textAlign: 'center',
+                        padding: '80px 40px',
+                        backgroundColor: 'white',
+                        borderRadius: '16px',
+                        border: '1px solid #e2e8f0'
+                    }}>
+                        <div style={{ width: '64px', height: '64px', borderRadius: '16px', backgroundColor: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.5rem' }}>📁</div>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>No projects found</h3>
+                        <p style={{ color: '#64748b', fontSize: '0.9rem' }}>Try adjusting your search or filter criteria</p>
+                    </div>
+                ) : (
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                        gap: '20px'
+                    }}>
+                        {filteredProjects.map(project => {
+                            const statusStyle = getStatusColor(project.status);
+                            const isProfitable = project.net_profit >= 0;
+
+                            return (
+                                <div
+                                    key={project.id}
+                                    onClick={() => setSelectedProject(project)}
+                                    style={{
+                                        backgroundColor: 'white',
+                                        borderRadius: '16px',
+                                        padding: '24px',
+                                        border: '1px solid #e2e8f0',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-4px)';
+                                        e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.08)';
+                                        e.currentTarget.style.borderColor = '#3b82f6';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.02)';
+                                        e.currentTarget.style.borderColor = '#e2e8f0';
+                                    }}
+                                >
+                                    {/* Top Accent Line */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        height: '3px',
+                                        background: isProfitable ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #ef4444, #dc2626)'
+                                    }}></div>
+
+                                    {/* Header */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0f172a', margin: 0, lineHeight: 1.3 }}>
+                                                {project.name}
+                                            </h3>
+                                            <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <Users size={12} />
+                                                {project.manager_name}
+                                            </p>
+                                        </div>
+                                        <span style={{
+                                            padding: '5px 12px',
+                                            borderRadius: '20px',
+                                            fontSize: '0.7rem',
+                                            fontWeight: '700',
+                                            backgroundColor: statusStyle.bg,
+                                            color: statusStyle.text,
+                                            textTransform: 'capitalize'
+                                        }}>
+                                            {(project.status || 'active').replace('_', ' ')}
+                                        </span>
+                                    </div>
+
+                                    {/* Duration */}
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        marginBottom: '16px',
+                                        padding: '10px 12px',
+                                        backgroundColor: '#f8fafc',
+                                        borderRadius: '10px',
+                                        color: '#64748b',
+                                        fontSize: '0.8rem'
+                                    }}>
+                                        <Calendar size={14} />
+                                        <span>
+                                            {project.start_date
+                                                ? new Date(project.start_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
+                                                : 'Not set'
+                                            }
+                                            {project.end_date && ` → ${new Date(project.end_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}`}
+                                        </span>
+                                    </div>
+
+                                    {/* Financial Summary */}
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '1fr 1fr',
+                                        gap: '12px',
+                                        marginBottom: '16px'
+                                    }}>
+                                        <div style={{
+                                            padding: '14px',
+                                            backgroundColor: '#f0fdf4',
+                                            borderRadius: '10px',
+                                            borderLeft: '3px solid #10b981'
+                                        }}>
+                                            <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '600', marginBottom: '4px' }}>Revenue</div>
+                                            <div style={{ fontSize: '1rem', fontWeight: '700', color: '#16a34a' }}>
+                                                {formatCurrency(project.total_revenue)}
+                                            </div>
+                                        </div>
+                                        <div style={{
+                                            padding: '14px',
+                                            backgroundColor: '#fef2f2',
+                                            borderRadius: '10px',
+                                            borderLeft: '3px solid #ef4444'
+                                        }}>
+                                            <div style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', fontWeight: '600', marginBottom: '4px' }}>Cost</div>
+                                            <div style={{ fontSize: '1rem', fontWeight: '700', color: '#dc2626' }}>
+                                                {formatCurrency(project.total_cost)}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Profit/Loss & Team */}
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        paddingTop: '16px',
+                                        borderTop: '1px solid #f1f5f9'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{
+                                                width: '28px',
+                                                height: '28px',
+                                                borderRadius: '8px',
+                                                backgroundColor: isProfitable ? '#f0fdf4' : '#fef2f2',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                            }}>
+                                                {isProfitable ? <TrendingUp size={14} color="#16a34a" /> : <TrendingDown size={14} color="#dc2626" />}
+                                            </div>
+                                            <div>
+                                                <span style={{ fontWeight: '700', color: isProfitable ? '#16a34a' : '#dc2626', fontSize: '0.95rem' }}>
+                                                    {formatCurrency(Math.abs(project.net_profit))}
+                                                </span>
+                                                <span style={{ fontSize: '0.7rem', color: '#64748b', marginLeft: '4px' }}>
+                                                    {isProfitable ? 'profit' : 'loss'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            padding: '6px 12px',
+                                            backgroundColor: '#f1f5f9',
+                                            borderRadius: '20px',
+                                            color: '#64748b'
+                                        }}>
+                                            <Users size={14} />
+                                            <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>{project.member_count}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                <style>{`
+                    @keyframes spin {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                    }
+                `}</style>
+            </div>
+        );
+    };
 
     // ================================
     // Project Detail View
@@ -507,121 +675,277 @@ const ProjectAnalytics = ({ userRole = 'manager', dashboardPrefix = '/manager-da
         };
 
         const statusStyle = getStatusColor(selectedProject?.status);
+        const isProfitable = (selectedProject?.net_profit || 0) >= 0;
 
         return (
             <div>
-                {/* Header */}
-                <div style={{ marginBottom: '24px' }}>
-                    <button
-                        onClick={() => setSelectedProject(null)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            background: 'none',
-                            border: 'none',
-                            color: '#64748b',
-                            cursor: 'pointer',
-                            marginBottom: '12px',
-                            fontSize: '0.9rem'
-                        }}
-                    >
-                        <ArrowLeft size={16} />
-                        Back to Projects
-                    </button>
+                {/* Premium Header Banner */}
+                <div style={{
+                    background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                    borderRadius: '24px',
+                    padding: '24px 28px',
+                    color: 'white',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+                    marginBottom: '24px'
+                }}>
+                    {/* SVG Mesh Pattern Overlay */}
+                    <div style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }}>
+                        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <pattern id="mesh-project-detail" width="40" height="40" patternUnits="userSpaceOnUse">
+                                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+                                </pattern>
+                            </defs>
+                            <rect width="100%" height="100%" fill="url(#mesh-project-detail)" />
+                        </svg>
+                    </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                            <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>
-                                {selectedProject?.name}
-                            </h1>
-                            <p style={{ color: '#64748b', marginTop: '4px' }}>
-                                Managed by {selectedProject?.manager_name}
-                            </p>
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        {/* Back Button */}
+                        <button
+                            onClick={() => setSelectedProject(null)}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                background: 'rgba(255,255,255,0.1)',
+                                border: 'none',
+                                color: 'rgba(255,255,255,0.7)',
+                                cursor: 'pointer',
+                                marginBottom: '16px',
+                                fontSize: '0.8rem',
+                                fontWeight: '500',
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <ArrowLeft size={14} />
+                            Back to Projects
+                        </button>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                                    <h1 style={{ fontSize: '1.75rem', fontWeight: '700', margin: 0, letterSpacing: '-0.02em' }}>
+                                        {selectedProject?.name}
+                                    </h1>
+                                    <span style={{
+                                        padding: '5px 14px',
+                                        borderRadius: '20px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '700',
+                                        backgroundColor: statusStyle.bg,
+                                        color: statusStyle.text,
+                                        textTransform: 'capitalize'
+                                    }}>
+                                        {(selectedProject?.status || 'active').replace('_', ' ')}
+                                    </span>
+                                </div>
+                                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Users size={14} />
+                                    Managed by <span style={{ color: '#22d3ee', fontWeight: '600' }}>{selectedProject?.manager_name}</span>
+                                </p>
+                            </div>
+
+                            {/* Quick Stats in Banner */}
+                            <div style={{ display: 'flex', gap: '16px' }}>
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    backdropFilter: 'blur(10px)',
+                                    padding: '12px 20px',
+                                    borderRadius: '12px',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    textAlign: 'center'
+                                }}>
+                                    <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Duration</p>
+                                    <p style={{ fontSize: '0.9rem', fontWeight: '700', color: 'white', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <Calendar size={14} />
+                                        {selectedProject?.start_date
+                                            ? new Date(selectedProject.start_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
+                                            : 'Not set'}
+                                    </p>
+                                </div>
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    backdropFilter: 'blur(10px)',
+                                    padding: '12px 20px',
+                                    borderRadius: '12px',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    textAlign: 'center'
+                                }}>
+                                    <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', fontWeight: '600', textTransform: 'uppercase', marginBottom: '4px' }}>Team Size</p>
+                                    <p style={{ fontSize: '0.9rem', fontWeight: '700', color: 'white' }}>{teamMembers.length} Members</p>
+                                </div>
+                            </div>
                         </div>
-                        <span style={{
-                            padding: '6px 14px',
-                            borderRadius: '16px',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            backgroundColor: statusStyle.bg,
-                            color: statusStyle.text,
-                            textTransform: 'capitalize'
-                        }}>
-                            {(selectedProject?.status || 'active').replace('_', ' ')}
-                        </span>
                     </div>
                 </div>
 
-                {/* Summary Cards */}
+                {/* Premium Summary Cards */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
                     gap: '16px',
                     marginBottom: '24px'
                 }}>
                     {[
-                        { label: 'Total Revenue', value: formatCurrency(selectedProject?.total_revenue), color: '#16a34a', icon: DollarSign },
-                        { label: 'Total Cost', value: formatCurrency(selectedProject?.total_cost), color: '#dc2626', icon: DollarSign },
-                        { label: 'Net Profit', value: formatCurrency(selectedProject?.net_profit), color: selectedProject?.net_profit >= 0 ? '#16a34a' : '#dc2626', icon: selectedProject?.net_profit >= 0 ? TrendingUp : TrendingDown },
-                        { label: 'Team Members', value: teamMembers.length, color: '#2563eb', icon: Users }
+                        {
+                            label: 'Total Revenue',
+                            value: formatCurrency(selectedProject?.total_revenue),
+                            icon: '💰',
+                            gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            bg: '#ecfdf5'
+                        },
+                        {
+                            label: 'Total Cost',
+                            value: formatCurrency(selectedProject?.total_cost),
+                            icon: '📊',
+                            gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                            bg: '#fef2f2'
+                        },
+                        {
+                            label: 'Net Profit',
+                            value: formatCurrency(selectedProject?.net_profit),
+                            icon: isProfitable ? '📈' : '📉',
+                            gradient: isProfitable ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                            bg: isProfitable ? '#ecfdf5' : '#fef2f2'
+                        },
+                        {
+                            label: 'ROI',
+                            value: selectedProject?.total_cost > 0
+                                ? `${((selectedProject?.net_profit / selectedProject?.total_cost) * 100).toFixed(1)}%`
+                                : 'N/A',
+                            icon: '🎯',
+                            gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                            bg: '#eff6ff'
+                        }
                     ].map((stat, i) => (
                         <div key={i} style={{
                             backgroundColor: 'white',
+                            borderRadius: '16px',
                             padding: '20px',
-                            borderRadius: '12px',
-                            border: '1px solid #e2e8f0'
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                            position: 'relative',
+                            overflow: 'hidden'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                <stat.icon size={18} color={stat.color} />
-                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{stat.label}</span>
-                            </div>
-                            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: stat.color }}>
-                                {stat.value}
+                            {/* Top Accent */}
+                            <div style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                height: '3px',
+                                background: stat.gradient
+                            }}></div>
+
+                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                                <div>
+                                    <p style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', marginBottom: '8px' }}>{stat.label}</p>
+                                    <p style={{ fontSize: '1.5rem', fontWeight: '700', color: '#0f172a', margin: 0 }}>{stat.value}</p>
+                                </div>
+                                <div style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: '12px',
+                                    backgroundColor: stat.bg,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '1.5rem'
+                                }}>
+                                    {stat.icon}
+                                </div>
                             </div>
                         </div>
                     ))}
                 </div>
 
-                {/* Tabs */}
-                <div style={{ display: 'flex', gap: '0', marginBottom: '24px', borderBottom: '2px solid #e2e8f0' }}>
-                    {[
-                        { id: 'financials', label: 'Financials' },
-                        { id: 'team', label: 'Team & Resources' },
-                        { id: 'timeline', label: 'Timeline' }
-                    ].map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            style={{
-                                padding: '12px 24px',
-                                border: 'none',
-                                background: 'none',
-                                fontSize: '0.95rem',
-                                fontWeight: activeTab === tab.id ? 600 : 400,
-                                color: activeTab === tab.id ? '#2563eb' : '#64748b',
-                                borderBottom: activeTab === tab.id ? '2px solid #2563eb' : '2px solid transparent',
-                                marginBottom: '-2px',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+                {/* Premium Tabs */}
+                <div style={{
+                    backgroundColor: 'white',
+                    borderRadius: '16px',
+                    border: '1px solid #e2e8f0',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        gap: '0',
+                        borderBottom: '1px solid #e2e8f0',
+                        backgroundColor: '#f8fafc',
+                        padding: '0 8px'
+                    }}>
+                        {[
+                            { id: 'financials', label: 'Financials', icon: DollarSign },
+                            { id: 'team', label: 'Team & Resources', icon: Users },
+                            { id: 'timeline', label: 'Timeline', icon: Calendar }
+                        ].map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                style={{
+                                    padding: '16px 24px',
+                                    border: 'none',
+                                    background: activeTab === tab.id ? 'white' : 'transparent',
+                                    fontSize: '0.9rem',
+                                    fontWeight: activeTab === tab.id ? '600' : '500',
+                                    color: activeTab === tab.id ? '#0f172a' : '#64748b',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    borderRadius: activeTab === tab.id ? '12px 12px 0 0' : '0',
+                                    marginBottom: activeTab === tab.id ? '-1px' : '0',
+                                    borderBottom: activeTab === tab.id ? '2px solid #3b82f6' : 'none',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <tab.icon size={16} />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Tab Content */}
+                    <div style={{ padding: '24px' }}>
+                        {loadingDetails ? (
+                            <div style={{
+                                textAlign: 'center',
+                                padding: '60px 20px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '16px'
+                            }}>
+                                <div style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: '50%',
+                                    border: '3px solid #e2e8f0',
+                                    borderTopColor: '#3b82f6',
+                                    animation: 'spin 1s linear infinite'
+                                }}></div>
+                                <p style={{ color: '#64748b', fontSize: '0.95rem' }}>Loading details...</p>
+                            </div>
+                        ) : (
+                            <>
+                                {activeTab === 'financials' && <FinancialsTab financials={financials} />}
+                                {activeTab === 'team' && <TeamTab members={teamMembers} isExecutive={isExecutive} />}
+                                {activeTab === 'timeline' && <TimelineTab project={selectedProject} members={teamMembers} />}
+                            </>
+                        )}
+                    </div>
                 </div>
 
-                {/* Tab Content */}
-                {loadingDetails ? (
-                    <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
-                        Loading details...
-                    </div>
-                ) : (
-                    <>
-                        {activeTab === 'financials' && <FinancialsTab financials={financials} />}
-                        {activeTab === 'team' && <TeamTab members={teamMembers} isExecutive={isExecutive} />}
-                        {activeTab === 'timeline' && <TimelineTab project={selectedProject} members={teamMembers} />}
-                    </>
-                )}
+                <style>{`
+                    @keyframes spin {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                    }
+                `}</style>
             </div>
         );
     };
@@ -634,26 +958,48 @@ const ProjectAnalytics = ({ userRole = 'manager', dashboardPrefix = '/manager-da
             return (
                 <div style={{
                     textAlign: 'center',
-                    padding: '60px 20px',
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '12px',
-                    color: '#64748b'
+                    padding: '60px 40px',
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                    borderRadius: '16px',
+                    border: '1px dashed #cbd5e1'
                 }}>
-                    <DollarSign size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
-                    <p style={{ margin: 0 }}>No financial data recorded yet</p>
+                    <div style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '20px',
+                        background: 'linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        margin: '0 auto 20px',
+                        fontSize: '2rem'
+                    }}>
+                        💰
+                    </div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>No Financial Data Yet</h3>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '20px', maxWidth: '300px', margin: '0 auto 20px' }}>
+                        Start tracking revenue, costs, and profits for this project
+                    </p>
                     {isExecutive && (
                         <button
                             onClick={() => setShowFinancialModal(true)}
                             style={{
-                                marginTop: '16px',
-                                padding: '10px 20px',
-                                backgroundColor: '#2563eb',
+                                padding: '12px 24px',
+                                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
                                 color: 'white',
                                 border: 'none',
-                                borderRadius: '8px',
-                                cursor: 'pointer'
+                                borderRadius: '10px',
+                                fontWeight: '600',
+                                fontSize: '0.9rem',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                transition: 'all 0.2s'
                             }}
                         >
+                            <Plus size={16} />
                             Add Financial Entry
                         </button>
                     )}
@@ -710,6 +1056,45 @@ const ProjectAnalytics = ({ userRole = 'manager', dashboardPrefix = '/manager-da
     const TeamTab = ({ members, isExecutive }) => {
         const hasAtRiskMembers = members.some(m => m.profiles?.employment_status === 'notice_period');
 
+        const getRoleColor = (role) => {
+            switch (role?.toLowerCase()) {
+                case 'manager': return { bg: '#dbeafe', color: '#2563eb' };
+                case 'team_lead': return { bg: '#fae8ff', color: '#a855f7' };
+                case 'employee': return { bg: '#dcfce7', color: '#16a34a' };
+                default: return { bg: '#f1f5f9', color: '#64748b' };
+            }
+        };
+
+        if (members.length === 0) {
+            return (
+                <div style={{
+                    textAlign: 'center',
+                    padding: '60px 40px',
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                    borderRadius: '16px',
+                    border: '1px dashed #cbd5e1'
+                }}>
+                    <div style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '20px',
+                        background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        margin: '0 auto 20px',
+                        fontSize: '2rem'
+                    }}>
+                        👥
+                    </div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>No Team Members</h3>
+                    <p style={{ color: '#64748b', fontSize: '0.9rem', maxWidth: '300px', margin: '0 auto' }}>
+                        No team members have been assigned to this project yet
+                    </p>
+                </div>
+            );
+        }
+
         return (
             <div>
                 {hasAtRiskMembers && (
@@ -717,101 +1102,133 @@ const ProjectAnalytics = ({ userRole = 'manager', dashboardPrefix = '/manager-da
                         display: 'flex',
                         alignItems: 'center',
                         gap: '12px',
-                        padding: '16px',
-                        backgroundColor: '#fef2f2',
-                        borderRadius: '8px',
+                        padding: '14px 18px',
+                        background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+                        borderRadius: '12px',
                         marginBottom: '20px',
                         border: '1px solid #fecaca'
                     }}>
-                        <AlertTriangle size={20} color="#dc2626" />
-                        <span style={{ color: '#dc2626', fontWeight: 500 }}>
+                        <AlertTriangle size={18} color="#dc2626" />
+                        <span style={{ color: '#dc2626', fontWeight: '600', fontSize: '0.9rem' }}>
                             Some team members are on notice period - resource gaps may occur
                         </span>
                     </div>
                 )}
 
-                <div style={{ backgroundColor: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ backgroundColor: '#f8fafc' }}>
-                                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b', fontSize: '0.8rem' }}>Name</th>
-                                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b', fontSize: '0.8rem' }}>Role</th>
-                                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b', fontSize: '0.8rem' }}>Assignment Period</th>
-                                <th style={{ padding: '14px 16px', textAlign: 'left', fontWeight: 600, color: '#64748b', fontSize: '0.8rem' }}>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {members.length === 0 ? (
-                                <tr>
-                                    <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                                        No team members assigned
-                                    </td>
-                                </tr>
-                            ) : (
-                                members.map((member) => {
-                                    const isOnNotice = member.profiles?.employment_status === 'notice_period';
-                                    return (
-                                        <tr key={member.id} style={{
-                                            borderTop: '1px solid #e2e8f0',
-                                            backgroundColor: isOnNotice ? '#fef2f2' : 'transparent'
-                                        }}>
-                                            <td style={{ padding: '14px 16px' }}>
-                                                <div style={{ fontWeight: 500 }}>{member.profiles?.full_name}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{member.profiles?.email}</div>
-                                            </td>
-                                            <td style={{ padding: '14px 16px', textTransform: 'capitalize' }}>
+                {/* Team Stats */}
+                <div style={{
+                    display: 'flex',
+                    gap: '12px',
+                    marginBottom: '20px'
+                }}>
+                    <div style={{
+                        padding: '12px 20px',
+                        backgroundColor: '#f8fafc',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <span style={{ fontSize: '1.1rem' }}>👥</span>
+                        <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Total:</span>
+                        <span style={{ fontSize: '0.95rem', fontWeight: '700', color: '#0f172a' }}>{members.length}</span>
+                    </div>
+                </div>
+
+                {/* Team Member Cards Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                    {members.map((member) => {
+                        const isOnNotice = member.profiles?.employment_status === 'notice_period';
+                        const roleStyle = getRoleColor(member.role_in_project);
+                        const initials = member.profiles?.full_name?.split(' ').map(n => n[0]).join('') || '??';
+
+                        return (
+                            <div key={member.id} style={{
+                                backgroundColor: 'white',
+                                borderRadius: '14px',
+                                padding: '20px',
+                                border: isOnNotice ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                                transition: 'all 0.2s',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}>
+                                {/* Top Accent */}
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    height: '3px',
+                                    background: isOnNotice ? 'linear-gradient(90deg, #ef4444, #dc2626)' : 'linear-gradient(90deg, #3b82f6, #2563eb)'
+                                }}></div>
+
+                                <div style={{ display: 'flex', gap: '14px' }}>
+                                    {/* Avatar */}
+                                    <div style={{
+                                        width: '52px',
+                                        height: '52px',
+                                        borderRadius: '14px',
+                                        background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: 'white',
+                                        fontWeight: '700',
+                                        fontSize: '1.1rem',
+                                        flexShrink: 0
+                                    }}>
+                                        {initials}
+                                    </div>
+
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                                            <h4 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#0f172a', margin: 0 }}>
+                                                {member.profiles?.full_name}
+                                            </h4>
+                                            {isOnNotice && (
+                                                <span style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    padding: '2px 8px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: '700',
+                                                    backgroundColor: '#dc2626',
+                                                    color: 'white'
+                                                }}>
+                                                    <AlertTriangle size={10} />
+                                                    NOTICE
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '0 0 10px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {member.profiles?.email}
+                                        </p>
+
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                            <span style={{
+                                                padding: '4px 10px',
+                                                borderRadius: '8px',
+                                                fontSize: '0.7rem',
+                                                fontWeight: '700',
+                                                backgroundColor: roleStyle.bg,
+                                                color: roleStyle.color,
+                                                textTransform: 'capitalize'
+                                            }}>
                                                 {(member.role_in_project || 'other').replace('_', ' ')}
-                                            </td>
-                                            <td style={{ padding: '14px 16px', fontSize: '0.9rem', color: '#64748b' }}>
-                                                {new Date(member.assignment_start).toLocaleDateString('en-IN', {
-                                                    day: 'numeric', month: 'short', year: 'numeric'
-                                                })}
-                                                {member.assignment_end && ` → ${new Date(member.assignment_end).toLocaleDateString('en-IN', {
-                                                    day: 'numeric', month: 'short', year: 'numeric'
-                                                })}`}
-                                            </td>
-                                            <td style={{ padding: '14px 16px' }}>
-                                                {isOnNotice ? (
-                                                    <div>
-                                                        <span style={{
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: '4px',
-                                                            padding: '4px 10px',
-                                                            borderRadius: '12px',
-                                                            fontSize: '0.75rem',
-                                                            fontWeight: 600,
-                                                            backgroundColor: '#dc2626',
-                                                            color: 'white'
-                                                        }}>
-                                                            <AlertTriangle size={12} />
-                                                            Notice Period
-                                                        </span>
-                                                        {member.profiles?.last_working_day && (
-                                                            <div style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>
-                                                                Last day: {new Date(member.profiles.last_working_day).toLocaleDateString('en-IN')}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span style={{
-                                                        padding: '4px 10px',
-                                                        borderRadius: '12px',
-                                                        fontSize: '0.75rem',
-                                                        fontWeight: 600,
-                                                        backgroundColor: '#dcfce7',
-                                                        color: '#16a34a'
-                                                    }}>
-                                                        Active
-                                                    </span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            )}
-                        </tbody>
-                    </table>
+                                            </span>
+                                            <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <Calendar size={12} />
+                                                {new Date(member.assignment_start).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         );
