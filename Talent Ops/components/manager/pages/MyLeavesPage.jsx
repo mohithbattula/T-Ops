@@ -3,9 +3,11 @@ import { supabase } from '../../../lib/supabaseClient';
 import { Plus, X, Briefcase, Trash2 } from 'lucide-react';
 import DataTable from '../components/UI/DataTable';
 import { useToast } from '../context/ToastContext';
+import { useUser } from '../context/UserContext';
 
 const MyLeavesPage = () => {
     const { addToast } = useToast();
+    const { orgId } = useUser();
 
     const [leaveRequests, setLeaveRequests] = useState([]);
     const [remainingLeaves, setRemainingLeaves] = useState(0);
@@ -28,10 +30,16 @@ const MyLeavesPage = () => {
 
             console.log('Fetching leaves for manager:', user.id);
 
-            const { data, error } = await supabase
+            let query = supabase
                 .from('leaves')
                 .select('*')
                 .eq('employee_id', user.id);
+
+            if (orgId) {
+                query = query.eq('org_id', orgId);
+            }
+
+            const { data, error } = await query;
 
             if (error) {
                 console.error('Error fetching leaves:', error);
@@ -76,11 +84,22 @@ const MyLeavesPage = () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            const { data, error } = await supabase
+            let query = supabase
                 .from('profiles')
                 .select('leaves_remaining')
                 .eq('id', user.id)
                 .single();
+
+            if (orgId) {
+                query = supabase
+                    .from('profiles')
+                    .select('leaves_remaining')
+                    .eq('id', user.id)
+                    .eq('org_id', orgId)
+                    .single();
+            }
+
+            const { data, error } = await query;
 
             if (data) {
                 setRemainingLeaves(data.leaves_remaining || 0);
@@ -89,7 +108,7 @@ const MyLeavesPage = () => {
 
         fetchLeaves();
         fetchRemainingLeaves();
-    }, [addToast]);
+    }, [addToast, orgId]);
 
     const handleAction = (action) => {
         if (action === 'Apply for Leave') {
@@ -124,7 +143,8 @@ const MyLeavesPage = () => {
                     from_date: leaveFormData.startDate,
                     to_date: leaveFormData.endDate,
                     reason: `${leaveFormData.leaveType}: ${leaveFormData.reason}`,
-                    status: 'pending'
+                    status: 'pending',
+                    org_id: orgId
                 }])
                 .select();
 
@@ -136,6 +156,7 @@ const MyLeavesPage = () => {
                     .from('profiles')
                     .select('monthly_leave_quota, leaves_taken_this_month')
                     .eq('id', user.id)
+                    .eq('org_id', orgId)
                     .single();
 
                 if (userError) throw userError;
@@ -145,7 +166,8 @@ const MyLeavesPage = () => {
                 const { error: updateError } = await supabase
                     .from('profiles')
                     .update({ leaves_taken_this_month: newTaken })
-                    .eq('id', user.id);
+                    .eq('id', user.id)
+                    .eq('org_id', orgId);
 
                 if (updateError) throw updateError;
 

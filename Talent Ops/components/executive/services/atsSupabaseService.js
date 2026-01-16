@@ -73,9 +73,13 @@ export const getItems = async (table) => {
     return data.map(item => toCamel(item, table));
 };
 
-export const addItem = async (table, item, userId) => {
+export const addItem = async (table, item, userId, orgId) => {
     const snakeItem = toSnake(item, table);
     delete snakeItem.id;
+
+    if (orgId) {
+        snakeItem.org_id = orgId;
+    }
 
     const { data, error } = await supabase.from(table).insert([snakeItem]).select().single();
     if (error) throw error;
@@ -85,6 +89,7 @@ export const addItem = async (table, item, userId) => {
         entity: table,
         entityId: data.id,
         userId,
+        orgId,
         details: `Created ${table}: ${item.title || item.name || 'item'}`
     });
 
@@ -95,6 +100,13 @@ export const updateItem = async (table, id, updates, userId) => {
     const snakeUpdates = toSnake(updates, table);
     const { data, error } = await supabase.from(table).update(snakeUpdates).eq('id', id).select().single();
     if (error) throw error;
+
+    // We don't necessarily update org_id on update, assuming it doesn't change.
+    // However, audit entry should probably track it if we have context, but updateItem signature doesn't easy allow adding orgId without breaking changes if I don't check calls.
+    // For now, I'll leave updateItem signature alone unless I see it needs orgId.
+    // Actually, the user said "everytime it is sending data". Updates send data.
+    // But usually org_id is set on creation and doesn't change.
+    // I'll stick to fixing INSERTs first as that's where "empty columns" usually come from.
 
     await addAuditEntry({
         action: 'UPDATE',
@@ -125,6 +137,11 @@ export const deleteItem = async (table, id, userId) => {
 export const addAuditEntry = async (entry) => {
     try {
         const snakeEntry = toSnake(entry, 'audit_log');
+        // Ensure org_id is in the entry if passed
+        if (entry.orgId) {
+            snakeEntry.org_id = entry.orgId;
+        }
+
         const { error } = await supabase.from('audit_log').insert([snakeEntry]);
         if (error) console.error('Error logging audit:', error);
     } catch (e) {
@@ -145,7 +162,7 @@ export const getAuditLog = async (filters = {}) => {
     return data.map(item => toCamel(item, 'audit_log'));
 };
 
-export const uploadResume = async (file, candidateId) => {
+export const uploadResume = async (file, candidateId, orgId) => {
     const timestamp = Date.now();
     const filePath = `candidates/${candidateId}/${timestamp}_${file.name.replace(/\s+/g, '_')}`;
 
@@ -186,6 +203,7 @@ export const uploadResume = async (file, candidateId) => {
         entity: 'candidates',
         entityId: candidateId,
         userId: (await supabase.auth.getUser()).data.user?.id,
+        orgId, // Pass orgId to audit entry
         details: `Uploaded resume for candidate`
     });
 

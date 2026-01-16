@@ -18,6 +18,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
     const [employees, setEmployees] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [dateFilter, setDateFilter] = useState('');
     const [showAddTaskModal, setShowAddTaskModal] = useState(false);
     const [selectedTask, setSelectedTask] = useState(null);
     const [submitting, setSubmitting] = useState(false);
@@ -997,7 +998,11 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
         const matchesSearch = task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             task.assignee_name?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = statusFilter === 'all' || task.status?.toLowerCase() === statusFilter.toLowerCase();
-        return matchesSearch && matchesStatus;
+
+        // Date filter: check if task's due_date matches the selected date
+        const matchesDate = !dateFilter || (task.due_date && task.due_date === dateFilter);
+
+        return matchesSearch && matchesStatus && matchesDate;
     });
 
     if (loading) {
@@ -1147,6 +1152,74 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                         pointerEvents: 'none',
                         color: '#64748b'
                     }} />
+                </div>
+
+                {/* Date Filter */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                        type="date"
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                        style={{
+                            padding: '10px 16px',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '8px',
+                            fontSize: '0.95rem',
+                            fontWeight: 500,
+                            backgroundColor: 'white',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            color: dateFilter ? '#0f172a' : '#94a3b8'
+                        }}
+                        onFocus={e => e.target.style.borderColor = '#3b82f6'}
+                        onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                    />
+                    <button
+                        onClick={() => setDateFilter(new Date().toISOString().split('T')[0])}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '10px 14px',
+                            backgroundColor: '#3b82f6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            fontSize: '0.875rem',
+                            transition: 'background-color 0.2s'
+                        }}
+                        onMouseEnter={e => e.target.style.backgroundColor = '#2563eb'}
+                        onMouseLeave={e => e.target.style.backgroundColor = '#3b82f6'}
+                    >
+                        <Calendar size={16} />
+                        Today
+                    </button>
+                    {dateFilter && (
+                        <button
+                            onClick={() => setDateFilter('')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '10px 14px',
+                                backgroundColor: '#ef4444',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                fontSize: '0.875rem',
+                                transition: 'background-color 0.2s'
+                            }}
+                            onMouseEnter={e => e.target.style.backgroundColor = '#dc2626'}
+                            onMouseLeave={e => e.target.style.backgroundColor = '#ef4444'}
+                        >
+                            <X size={16} />
+                            Clear
+                        </button>
+                    )}
                 </div>
             </div>
 

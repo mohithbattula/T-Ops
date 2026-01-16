@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Calendar, CheckCircle, Upload, FileText, Send, AlertCircle, Paperclip, ClipboardList, AlertTriangle, Eye, Clock, Trash2, X } from 'lucide-react';
+import { Search, Calendar, CheckCircle, Upload, FileText, Send, AlertCircle, Paperclip, ClipboardList, AlertTriangle, Eye, Clock, Trash2, X, ChevronDown } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useProject } from '../context/ProjectContext';
 import { useToast } from '../context/ToastContext';
@@ -11,6 +11,8 @@ const MyTasksPage = () => {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [dateFilter, setDateFilter] = useState('');
 
     // Proof upload states
     const [showProofModal, setShowProofModal] = useState(false);
@@ -494,10 +496,18 @@ const MyTasksPage = () => {
         );
     };
 
-    const filteredTasks = tasks.filter(t =>
-        t.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.projects?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredTasks = tasks.filter(t => {
+        const matchesSearch = t.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            t.projects?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+
+        // Status filter
+        const matchesStatus = statusFilter === 'all' || t.status?.toLowerCase() === statusFilter.toLowerCase();
+
+        // Date filter: check if task's due_date matches the selected date
+        const matchesDate = !dateFilter || (t.due_date && t.due_date === dateFilter);
+
+        return matchesSearch && matchesStatus && matchesDate;
+    });
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -522,6 +532,105 @@ const MyTasksPage = () => {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         style={{ width: '100%', padding: '10px 12px 10px 40px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.95rem', outline: 'none' }}
                     />
+                </div>
+
+                {/* Status Filter */}
+                <div style={{ position: 'relative' }}>
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        style={{
+                            padding: '10px 36px 10px 16px',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            fontSize: '0.95rem',
+                            fontWeight: 500,
+                            backgroundColor: 'white',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            appearance: 'none'
+                        }}
+                    >
+                        <option value="all">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="on_hold">On Hold</option>
+                    </select>
+                    <ChevronDown size={16} style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        pointerEvents: 'none',
+                        color: '#64748b'
+                    }} />
+                </div>
+
+                {/* Date Filter */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                        type="date"
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                        style={{
+                            padding: '10px 16px',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            fontSize: '0.95rem',
+                            fontWeight: 500,
+                            backgroundColor: 'white',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            color: dateFilter ? '#0f172a' : '#94a3b8'
+                        }}
+                    />
+                    <button
+                        onClick={() => setDateFilter(new Date().toISOString().split('T')[0])}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '10px 14px',
+                            backgroundColor: '#3b82f6',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '10px',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            fontSize: '0.875rem',
+                            transition: 'background-color 0.2s'
+                        }}
+                        onMouseEnter={e => e.target.style.backgroundColor = '#2563eb'}
+                        onMouseLeave={e => e.target.style.backgroundColor = '#3b82f6'}
+                    >
+                        <Calendar size={16} />
+                        Today
+                    </button>
+                    {dateFilter && (
+                        <button
+                            onClick={() => setDateFilter('')}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '10px 14px',
+                                backgroundColor: '#ef4444',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '10px',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                fontSize: '0.875rem',
+                                transition: 'background-color 0.2s'
+                            }}
+                            onMouseEnter={e => e.target.style.backgroundColor = '#dc2626'}
+                            onMouseLeave={e => e.target.style.backgroundColor = '#ef4444'}
+                        >
+                            <X size={16} />
+                            Clear
+                        </button>
+                    )}
                 </div>
             </div>
 

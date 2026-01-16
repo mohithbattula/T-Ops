@@ -186,6 +186,11 @@ const AttendanceTracker = () => {
             if (checkInTime) {
                 const diffMs = now - checkInTime; // Difference in milliseconds
                 totalHours = (diffMs / (1000 * 60 * 60)).toFixed(2); // Convert to hours, 2 decimal places
+
+                // Handle cross-midnight sessions: if total is negative, add 24 hours
+                if (parseFloat(totalHours) < 0) {
+                    totalHours = ((diffMs + (24 * 60 * 60 * 1000)) / (1000 * 60 * 60)).toFixed(2);
+                }
             }
 
             const { error } = await supabase

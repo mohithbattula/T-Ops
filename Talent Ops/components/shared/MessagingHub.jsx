@@ -420,7 +420,8 @@ const MessagingHub = () => {
                             currentUserId,
                             senderName,
                             `New message from ${senderName}`,
-                            'message'
+                            'message',
+                            currentUserOrgId
                         );
                     }
                 }

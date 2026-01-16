@@ -24,7 +24,7 @@ export const useATSData = () => {
 
 export const ATSDataProvider = ({ children }) => {
 
-    const { userId } = useUser();
+    const { userId, orgId } = useUser();
     // Simulate user object for compatibility with existing logic
     const user = userId ? { id: userId } : null;
 
@@ -64,10 +64,10 @@ export const ATSDataProvider = ({ children }) => {
     }, [refreshData]);
 
     const createJob = useCallback(async (jobData) => {
-        const newJob = await addItem('jobs', { ...jobData, applicants: 0 }, user?.id);
+        const newJob = await addItem('jobs', { ...jobData, applicants: 0 }, user?.id, orgId);
         setJobs(prev => [newJob, ...prev]);
         return newJob;
-    }, [user]);
+    }, [user, orgId]);
 
     const updateJob = useCallback(async (jobId, updates) => {
         const updated = await updateItem('jobs', jobId, updates, user?.id);
@@ -85,7 +85,7 @@ export const ATSDataProvider = ({ children }) => {
     }, [jobs]);
 
     const createCandidate = useCallback(async (candidateData) => {
-        const newCandidate = await addItem('candidates', candidateData, user?.id);
+        const newCandidate = await addItem('candidates', candidateData, user?.id, orgId);
         setCandidates(prev => [newCandidate, ...prev]);
         if (candidateData.jobId) {
             const job = jobs.find(j => j.id === candidateData.jobId);
@@ -94,7 +94,7 @@ export const ATSDataProvider = ({ children }) => {
             }
         }
         return newCandidate;
-    }, [user, jobs, updateJob]);
+    }, [user, jobs, updateJob, orgId]);
 
     const updateCandidate = useCallback(async (candidateId, updates) => {
         const updated = await updateItem('candidates', candidateId, updates, user?.id);
@@ -136,7 +136,7 @@ export const ATSDataProvider = ({ children }) => {
         const packedNotes = (notes || '') + '\n\n__METADATA__\n' + JSON.stringify(metadata);
         const dbData = { ...rest, notes: packedNotes };
 
-        const newInterview = await addItem('interviews', dbData, user?.id);
+        const newInterview = await addItem('interviews', dbData, user?.id, orgId);
 
         const enrichedInterview = {
             ...newInterview,
@@ -148,7 +148,7 @@ export const ATSDataProvider = ({ children }) => {
 
         setInterviews(prev => [enrichedInterview, ...prev]);
         return enrichedInterview;
-    }, [user]);
+    }, [user, orgId]);
 
     const updateInterview = useCallback(async (interviewId, updates) => {
         const { mode, interviewers, notes, ...rest } = updates;
@@ -195,10 +195,10 @@ export const ATSDataProvider = ({ children }) => {
     }, [interviews]);
 
     const createFeedback = useCallback(async (feedbackData) => {
-        const newFeedback = await addItem('feedback', feedbackData, user?.id);
+        const newFeedback = await addItem('feedback', feedbackData, user?.id, orgId);
         setFeedback(prev => [newFeedback, ...prev]);
         return newFeedback;
-    }, [user]);
+    }, [user, orgId]);
 
     const updateFeedback = useCallback(async (feedbackId, updates) => {
         const updated = await updateItem('feedback', feedbackId, updates, user?.id);
@@ -245,10 +245,10 @@ export const ATSDataProvider = ({ children }) => {
     }, [getFeedbackByCandidate]);
 
     const createOffer = useCallback(async (offerData) => {
-        const newOffer = await addItem('offers', offerData, user?.id);
+        const newOffer = await addItem('offers', offerData, user?.id, orgId);
         setOffers(prev => [newOffer, ...prev]);
         return newOffer;
-    }, [user]);
+    }, [user, orgId]);
 
     const updateOffer = useCallback(async (offerId, updates) => {
         const updated = await updateItem('offers', offerId, updates, user?.id);
@@ -301,6 +301,10 @@ export const ATSDataProvider = ({ children }) => {
         return await getAuditLog(filters);
     }, []);
 
+    const uploadResumeWrapper = useCallback(async (file, candidateId) => {
+        return await uploadResume(file, candidateId, orgId);
+    }, [orgId]);
+
     const value = {
         jobs,
         candidates,
@@ -340,7 +344,7 @@ export const ATSDataProvider = ({ children }) => {
         getAnalytics,
         fetchAuditLog,
         isConnected,
-        uploadResume
+        uploadResume: uploadResumeWrapper
     };
 
     return (
