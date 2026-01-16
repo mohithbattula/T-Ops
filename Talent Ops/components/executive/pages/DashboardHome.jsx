@@ -426,10 +426,10 @@ const DashboardHome = () => {
                     </div>
 
                     {/* Team Analytics Card (Green) - Moved to Bottom, Full Width */}
-                    <div style={{ backgroundColor: '#bbf7d0', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', minHeight: '200px' }}>
+                    <div style={{ backgroundColor: '#bbf7d0', borderRadius: '24px', padding: '24px', display: 'flex', flexDirection: 'column', minHeight: '200px', maxHeight: '500px' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#14532d', marginBottom: '16px' }}>Project Wise Status:</h3>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', paddingRight: '8px' }}>
                             {teamAnalytics.map((team) => (
                                 <div
                                     key={team.id}

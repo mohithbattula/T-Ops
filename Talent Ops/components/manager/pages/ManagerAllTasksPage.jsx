@@ -19,11 +19,10 @@ const ManagerAllTasksPage = () => {
         try {
             setLoading(true);
 
-            // Fetch all active projects for the Manager view
+            // Fetch all projects for the Manager view
             const { data: allProjects, error } = await supabase
                 .from('projects')
                 .select('id, name, status, description')
-                .eq('status', 'active')
                 .eq('org_id', orgId);
 
             if (error) throw error;
@@ -131,8 +130,8 @@ const ManagerAllTasksPage = () => {
                                 <div style={{
                                     padding: '4px 12px',
                                     borderRadius: '20px',
-                                    backgroundColor: project.status === 'active' ? '#dcfce7' : '#f1f5f9',
-                                    color: project.status === 'active' ? '#166534' : '#64748b',
+                                    backgroundColor: '#dcfce7',
+                                    color: '#166534',
                                     fontSize: '0.75rem',
                                     fontWeight: 600,
                                     textTransform: 'uppercase'
