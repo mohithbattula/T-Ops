@@ -169,6 +169,30 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                 const targetEmp = employees.find(e => e.id === reassignTarget);
                 const targetName = targetEmp ? targetEmp.full_name : 'Unknown';
 
+                // Ensure new assignee is part of the project so the task is visible
+                if (accessReviewTask.project_id) {
+                    const { data: existingMembers, error: memberCheckError } = await supabase
+                        .from('project_members')
+                        .select('id')
+                        .eq('project_id', accessReviewTask.project_id)
+                        .eq('user_id', reassignTarget)
+                        .eq('org_id', orgId);
+
+                    if (memberCheckError) throw memberCheckError;
+
+                    if (!existingMembers || existingMembers.length === 0) {
+                        const { error: memberInsertError } = await supabase
+                            .from('project_members')
+                            .insert({
+                                project_id: accessReviewTask.project_id,
+                                user_id: reassignTarget,
+                                role: 'employee',
+                                org_id: orgId
+                            });
+                        if (memberInsertError) throw memberInsertError;
+                    }
+                }
+
                 // 1. Close the OLD task for the original assignee
                 const { error: closeError } = await supabase.from('tasks').update({
                     status: 'completed', // Use 'completed' as 'closed' is not a valid enum value
@@ -187,12 +211,14 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                 const {
                     id, created_at, updated_at,
                     assignee_name, assignee_avatar, assigned_by_name, project_name,
+                    reassigned_from_name, reassigned_to_name,
                     ...taskData
                 } = accessReviewTask;
 
                 const newTaskPayload = {
                     ...taskData,
                     assigned_to: reassignTarget,
+                    org_id: orgId,
                     status: 'pending', // Fresh start logic
                     lifecycle_state: 'requirement_refiner', // Reset to start
                     sub_state: 'pending_validation',
@@ -201,7 +227,6 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                     },
                     proof_url: null, // Clear proofs
                     proof_text: null,
-                    reassigned_from: accessReviewTask.assigned_to,
                     reassigned_to: null, // Ensure this is null
                     reassigned_at: new Date().toISOString(),
                     // Clear access/lock flags
@@ -209,8 +234,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                     access_status: 'approved', // Auto-approve to bypass overdue lock
                     access_reason: 'Reassigned by manager',
                     access_requested_at: null,
-                    access_reviewer_id: user.id, // Manager approved it by assigning
-                    access_reviewed_at: new Date().toISOString(),
+                    // access_reviewer_id/access_reviewed_at omitted (columns not present in schema)
                     closed_by_manager: false,
                     closed_reason: null,
                     is_locked: false // Explicitly unlock for new user
@@ -274,7 +298,46 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
 
     const fetchEmployees = async () => {
         try {
-            const { data } = await supabase.from('profiles').select('*').eq('org_id', orgId);
+            if (!orgId) {
+                setEmployees([]);
+                return;
+            }
+
+            if (effectiveProjectId) {
+                const { data: members, error: membersError } = await supabase
+                    .from('project_members')
+                    .select(`
+                        user_id,
+                        role,
+                        profiles:user_id (id, full_name, email, role, avatar_url)
+                    `)
+                    .eq('project_id', effectiveProjectId)
+                    .eq('org_id', orgId);
+
+                if (membersError) throw membersError;
+
+                if (members && members.length > 0) {
+                    const teamMembers = members
+                        .filter(m => m.profiles)
+                        .map(m => ({
+                            id: m.profiles.id,
+                            full_name: m.profiles.full_name,
+                            email: m.profiles.email,
+                            role: m.role || m.profiles.role,
+                            avatar_url: m.profiles.avatar_url
+                        }));
+                    setEmployees(teamMembers);
+                    return;
+                }
+
+                setEmployees([]);
+                return;
+            }
+
+            const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('org_id', orgId);
             setEmployees(data || []);
         } catch (error) {
             console.error('Error fetching employees:', error);
@@ -330,7 +393,7 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
             console.log('Raw Tasks Found:', tasksData?.length);
 
             // Efficiently fetch profiles
-            const userIds = [...new Set((tasksData || []).flatMap(t => [t.assigned_to, t.assigned_by, t.reassigned_to].filter(Boolean)))];
+            const userIds = [...new Set((tasksData || []).flatMap(t => [t.assigned_to, t.assigned_by, t.reassigned_to, t.reassigned_from].filter(Boolean)))];
             let profileMap = {};
             if (userIds.length > 0) {
                 const { data: profiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', userIds);
@@ -342,6 +405,8 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                 assignee_name: profileMap[task.assigned_to]?.full_name || 'Unassigned',
                 assignee_avatar: profileMap[task.assigned_to]?.avatar_url,
                 assigned_by_name: task.assigned_by_name || profileMap[task.assigned_by]?.full_name || 'Unknown',
+                reassigned_from_name: profileMap[task.reassigned_from]?.full_name,
+                reassigned_to_name: profileMap[task.reassigned_to]?.full_name,
                 project_name: currentProject?.name || 'Project'
             }));
 
@@ -1206,13 +1271,41 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
         );
     };
 
+    const normalizeDate = (value) => {
+        if (!value) return null;
+        let datePart = value;
+        if (typeof datePart === 'string' && datePart.includes('/')) {
+            const parts = datePart.split('/');
+            if (parts.length === 3 && parts[2].length === 4) {
+                datePart = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+        }
+        const parsed = new Date(datePart);
+        if (Number.isNaN(parsed.getTime())) return null;
+        return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+    };
+
+    const isWithinDateRange = (target, start, end) => {
+        if (!target) return false;
+        if (!start && !end) return true;
+        if (!start) return target <= end;
+        if (!end) return target >= start;
+        return target >= start && target <= end;
+    };
+
     const filteredTasks = tasks.filter(task => {
         const matchesSearch = task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             task.assignee_name?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = statusFilter === 'all' || task.status?.toLowerCase() === statusFilter.toLowerCase();
 
-        // Date filter
-        const matchesDate = !dateFilter || (task.due_date && task.due_date === dateFilter);
+        // Date filter: show tasks active on selected date (start_date..due_date)
+        let matchesDate = true;
+        if (dateFilter) {
+            const selectedDate = normalizeDate(dateFilter);
+            const startDate = normalizeDate(task.start_date || task.due_date);
+            const endDate = normalizeDate(task.due_date || task.start_date);
+            matchesDate = isWithinDateRange(selectedDate, startDate, endDate);
+        }
 
         return matchesSearch && matchesStatus && matchesDate;
     });
@@ -1597,6 +1690,11 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                     filteredTasks.map((task, index) => {
                                         const priorityStyle = getPriorityStyle(task.priority);
                                         const statusStyle = getStatusStyle(task.status);
+                                        const reassignmentLabel = task.reassigned_from
+                                            ? `Reassigned from ${task.reassigned_from_name || 'Unknown'}`
+                                            : (task.reassigned_to
+                                                ? `Reassigned to ${task.reassigned_to_name || 'Unknown'}`
+                                                : (task.access_reason === 'Reassigned by manager' ? 'Reassigned' : null));
                                         return (
                                             <tr key={task.id} style={{
                                                 borderBottom: index < filteredTasks.length - 1 ? '1px solid #f1f5f9' : 'none',
@@ -1619,6 +1717,22 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                                     }}>
                                                         {task.title}
                                                     </div>
+                                                    {reassignmentLabel && (
+                                                        <div style={{
+                                                            marginTop: '6px',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            padding: '2px 8px',
+                                                            borderRadius: '999px',
+                                                            backgroundColor: '#fef3c7',
+                                                            color: '#92400e',
+                                                            fontSize: '0.7rem',
+                                                            fontWeight: 600,
+                                                            whiteSpace: 'nowrap'
+                                                        }}>
+                                                            {reassignmentLabel}
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td style={{ padding: '12px', verticalAlign: 'middle' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -2311,6 +2425,39 @@ const AllTasksView = ({ userRole = 'employee', projectRole = 'employee', userId,
                                         {selectedTask.description || 'No description provided.'}
                                     </p>
                                 </div>
+
+                                {(selectedTask.reassigned_from || selectedTask.reassigned_to || selectedTask.access_reason === 'Reassigned by manager') && (
+                                    <div style={{
+                                        padding: '16px',
+                                        backgroundColor: '#fff7ed',
+                                        borderRadius: '12px',
+                                        border: '1px solid #fed7aa'
+                                    }}>
+                                        <label style={{
+                                            display: 'block',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            color: '#9a3412',
+                                            textTransform: 'uppercase',
+                                            marginBottom: '10px',
+                                            letterSpacing: '0.05em'
+                                        }}>Reassignment</label>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.9rem', color: '#7c2d12' }}>
+                                            {selectedTask.reassigned_from && (
+                                                <div><strong>From:</strong> {selectedTask.reassigned_from_name || 'Unknown'}</div>
+                                            )}
+                                            {selectedTask.reassigned_to && (
+                                                <div><strong>To:</strong> {selectedTask.reassigned_to_name || 'Unknown'}</div>
+                                            )}
+                                            {!selectedTask.reassigned_from && !selectedTask.reassigned_to && selectedTask.access_reason === 'Reassigned by manager' && (
+                                                <div><strong>Status:</strong> Reassigned by manager</div>
+                                            )}
+                                            {selectedTask.reassigned_at && (
+                                                <div><strong>On:</strong> {new Date(selectedTask.reassigned_at).toLocaleString()}</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Lifecycle Progress */}
                                 <div style={{

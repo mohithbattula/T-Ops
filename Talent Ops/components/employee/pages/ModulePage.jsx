@@ -328,6 +328,22 @@ const ModulePage = ({ title, type }) => {
         endDate: '',
         reason: ''
     });
+    const [selectedDates, setSelectedDates] = useState([]);
+    const [dateToAdd, setDateToAdd] = useState('');
+
+    const addSelectedDate = (date) => {
+        if (!date) return;
+        setSelectedDates(prev => {
+            const set = new Set(prev);
+            if (set.has(date)) return prev;
+            set.add(date);
+            return Array.from(set).sort();
+        });
+    };
+
+    const removeSelectedDate = (date) => {
+        setSelectedDates(prev => prev.filter(d => d !== date));
+    };
 
     // State for Employee Details modal
     const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -557,6 +573,8 @@ const ModulePage = ({ title, type }) => {
                 ...prev,
                 leaveType: remainingLeaves <= 0 ? 'Loss of Pay' : 'Casual Leave'
             }));
+            setSelectedDates([]);
+            setDateToAdd('');
             setShowApplyLeaveModal(true);
         } else if (type === 'leaves' && (action === 'Approve' || action === 'Reject')) {
             // Update local state first for immediate UI feedback
@@ -608,6 +626,21 @@ const ModulePage = ({ title, type }) => {
             return;
         }
 
+        const useSpecificDates = selectedDates.length > 0;
+        const datesToApply = useSpecificDates
+            ? Array.from(new Set(selectedDates)).sort()
+            : [];
+
+        if (useSpecificDates && datesToApply.length === 0) {
+            addToast('Please select at least one leave date.', 'error');
+            return;
+        }
+
+        if (!useSpecificDates && (!leaveFormData.startDate || !leaveFormData.endDate || leaveFormData.endDate < leaveFormData.startDate)) {
+            addToast('End date must be the same or after the start date.', 'error');
+            return;
+        }
+
         try {
             // Fetch the latest team_id from profile to ensure validity
             const { data: profileData, error: profileError } = await supabase
@@ -626,20 +659,33 @@ const ModulePage = ({ title, type }) => {
 
             let insertError = null;
 
+            const leaveReason = `${leaveFormData.leaveType}: ${leaveFormData.reason}` +
+                (useSpecificDates ? ` (Dates: ${datesToApply.join(', ')})` : '');
+
+            const leaveRows = useSpecificDates
+                ? datesToApply.map(date => ({
+                    employee_id: userId,
+                    org_id: orgId,
+                    team_id: currentTeamId,
+                    from_date: date,
+                    to_date: date,
+                    reason: leaveReason,
+                    status: 'pending'
+                }))
+                : [{
+                    employee_id: userId,
+                    org_id: orgId,
+                    team_id: currentTeamId,
+                    from_date: leaveFormData.startDate,
+                    to_date: leaveFormData.endDate,
+                    reason: leaveReason,
+                    status: 'pending'
+                }];
+
             // Attempt 1: Try with the fetched team_id
             const { error: attempt1Error } = await supabase
                 .from('leaves')
-                .insert([
-                    {
-                        employee_id: userId,
-                        org_id: orgId,
-                        team_id: currentTeamId,
-                        from_date: leaveFormData.startDate,
-                        to_date: leaveFormData.endDate,
-                        reason: `${leaveFormData.leaveType}: ${leaveFormData.reason}`,
-                        status: 'pending'
-                    }
-                ]);
+                .insert(leaveRows);
 
             if (attempt1Error) {
                 console.warn('Attempt 1 with team_id failed:', attempt1Error);
@@ -649,19 +695,10 @@ const ModulePage = ({ title, type }) => {
                     console.log('Retrying with team_id: null due to FK violation...');
 
                     // Attempt 2: Retry with team_id = null
+                    const fallbackRows = leaveRows.map(row => ({ ...row, team_id: null }));
                     const { error: attempt2Error } = await supabase
                         .from('leaves')
-                        .insert([
-                            {
-                                employee_id: userId,
-                                org_id: orgId,
-                                team_id: null,
-                                from_date: leaveFormData.startDate,
-                                to_date: leaveFormData.endDate,
-                                reason: `${leaveFormData.leaveType}: ${leaveFormData.reason}`,
-                                status: 'pending'
-                            }
-                        ]);
+                        .insert(fallbackRows);
 
                     if (attempt2Error) {
                         insertError = attempt2Error; // Both failed
@@ -680,6 +717,7 @@ const ModulePage = ({ title, type }) => {
             const end = new Date(leaveFormData.endDate);
             const diffTime = Math.abs(end - start);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            const requestedDays = useSpecificDates ? datesToApply.length : diffDays;
 
             // 2. Only update quota/balance if NOT 'Loss of Pay'
             if (leaveFormData.leaveType !== 'Loss of Pay') {
@@ -696,7 +734,7 @@ const ModulePage = ({ title, type }) => {
                 // 3. Update 'leaves_taken_this_month' in profiles
                 // Note: 'leaves_remaining' is a GENERATED COLUMN in the DB, so we cannot update it manually.
                 // It will auto-calculate based on quota - taken.
-                const newTaken = (userData.leaves_taken_this_month || 0) + diffDays;
+                const newTaken = (userData.leaves_taken_this_month || 0) + requestedDays;
 
                 // Calculate newRemaining locally for UI update
                 const quota = userData.monthly_leave_quota || 0;
@@ -777,6 +815,8 @@ const ModulePage = ({ title, type }) => {
                 endDate: '',
                 reason: ''
             });
+            setSelectedDates([]);
+            setDateToAdd('');
 
             // Refresh leaves list
             const { data: newLeaves, error: fetchError } = await supabase
@@ -1445,11 +1485,18 @@ const ModulePage = ({ title, type }) => {
                                         <input
                                             type="date"
                                             value={leaveFormData.startDate}
-                                            onChange={(e) => setLeaveFormData({ ...leaveFormData, startDate: e.target.value })}
+                                            onChange={(e) => {
+                                                const nextStart = e.target.value;
+                                                setLeaveFormData(prev => ({
+                                                    ...prev,
+                                                    startDate: nextStart,
+                                                    endDate: prev.endDate && prev.endDate >= nextStart ? prev.endDate : nextStart
+                                                }));
+                                            }}
                                             style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '2px solid var(--border)', fontSize: '1rem', backgroundColor: 'var(--background)', color: 'var(--text-primary)', outline: 'none', transition: 'border-color 0.2s' }}
                                             onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
                                             onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
-                                            required
+                                            required={selectedDates.length === 0}
                                         />
                                     </div>
                                     <div>
@@ -1462,8 +1509,46 @@ const ModulePage = ({ title, type }) => {
                                             style={{ width: '100%', padding: '14px 16px', borderRadius: '12px', border: '2px solid var(--border)', fontSize: '1rem', backgroundColor: 'var(--background)', color: 'var(--text-primary)', outline: 'none', transition: 'border-color 0.2s' }}
                                             onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
                                             onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
-                                            required
+                                            required={selectedDates.length === 0}
                                         />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        Specific Dates (Optional)
+                                    </label>
+                                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                        <input
+                                            type="date"
+                                            value={dateToAdd}
+                                            onChange={(e) => setDateToAdd(e.target.value)}
+                                            style={{ flex: 1, padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--text-primary)' }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => { addSelectedDate(dateToAdd); setDateToAdd(''); }}
+                                            style={{ padding: '10px 14px', borderRadius: '10px', border: 'none', backgroundColor: 'var(--primary)', color: 'white', fontWeight: 600, cursor: 'pointer' }}
+                                        >
+                                            Add
+                                        </button>
+                                    </div>
+                                    {selectedDates.length > 0 && (
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                                            {selectedDates.map(date => (
+                                                <button
+                                                    key={date}
+                                                    type="button"
+                                                    onClick={() => removeSelectedDate(date)}
+                                                    style={{ padding: '6px 10px', borderRadius: '999px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--text-primary)', fontSize: '0.8rem', cursor: 'pointer' }}
+                                                >
+                                                    {date} x
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <div style={{ marginTop: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                        If you add specific dates, the request will be created only for those dates.
                                     </div>
                                 </div>
 

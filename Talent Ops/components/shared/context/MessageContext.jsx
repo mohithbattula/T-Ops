@@ -194,7 +194,14 @@ export const MessageProvider = ({ children, addToast }) => {
                                     // Need to get latest convs to match
                                     const latestConvsWithIds = await fetchConversations();
                                     const dm = latestConvsWithIds?.find(c => c.type === 'dm' && senderConvIds.includes(c.id));
-                                    if (dm) conversationId = dm.id;
+                                    if (dm) {
+                                        conversationId = dm.id;
+                                        const lastMessage = dm.conversation_indexes?.[0]?.last_message;
+                                        if (lastMessage) {
+                                            const looksGeneric = (payload.new.message || '').toLowerCase().startsWith('new message from');
+                                            displayMessage = looksGeneric ? lastMessage : (payload.new.message || lastMessage);
+                                        }
+                                    }
                                 }
                             }
 
@@ -221,6 +228,18 @@ export const MessageProvider = ({ children, addToast }) => {
                         notifTitle = 'New Task Assigned';
                         notifBody = payload.new.message;
                         if (addToast) addToast(notifBody, 'info');
+                    } else if (payload.new.type === 'task_closed') {
+                        notifTitle = 'Task Update';
+                        notifBody = payload.new.message;
+                        if (addToast) addToast(notifBody, 'info');
+                    } else if (payload.new.type === 'access_requested') {
+                        notifTitle = 'Access Requested';
+                        notifBody = payload.new.message;
+                        if (addToast) addToast(notifBody, 'info');
+                    } else if (payload.new.type === 'access_approved') {
+                        notifTitle = 'Access Approved';
+                        notifBody = payload.new.message;
+                        if (addToast) addToast(notifBody, 'info');
                     } else if (payload.new.type === 'announcement') {
                         notifTitle = 'New Announcement';
                         notifBody = payload.new.message;
@@ -237,13 +256,15 @@ export const MessageProvider = ({ children, addToast }) => {
                     // 2. System Notification
                     if ('Notification' in window && Notification.permission === 'granted') {
                         try {
-                            const cta = "\n\n👉 Go check the TalentOps website!";
-                            const cleanBody = (payload.new.message || 'You have a new update') + cta;
+                            const senderName = payload.new.sender_name || 'User';
+                            const isMessage = payload.new.type === 'message';
+                            const systemTitle = isMessage ? `New Message from ${senderName}` : notifTitle;
+                            const systemBody = isMessage ? `New message from ${senderName}` : (notifBody || 'You have a new update');
 
-                            // Use basic notification without complex icon paths if they might be missing
-                            const notification = new Notification(notifTitle, {
-                                body: cleanBody,
-                                icon: notifIcon && notifIcon.startsWith('http') ? notifIcon : undefined, // Only use valid URLs
+                            // Use basic notification (no CTA text) to match native style
+                            const notification = new Notification(systemTitle, {
+                                body: systemBody,
+                                icon: isMessage ? undefined : (notifIcon && notifIcon.startsWith('http') ? notifIcon : undefined),
                                 silent: false,
                                 requireInteraction: true
                             });

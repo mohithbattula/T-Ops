@@ -17,6 +17,22 @@ const MyLeavesPage = () => {
         endDate: '',
         reason: ''
     });
+    const [selectedDates, setSelectedDates] = useState([]);
+    const [dateToAdd, setDateToAdd] = useState('');
+
+    const addSelectedDate = (date) => {
+        if (!date) return;
+        setSelectedDates(prev => {
+            const set = new Set(prev);
+            if (set.has(date)) return prev;
+            set.add(date);
+            return Array.from(set).sort();
+        });
+    };
+
+    const removeSelectedDate = (date) => {
+        setSelectedDates(prev => prev.filter(d => d !== date));
+    };
 
     // Fetch leaves from Supabase
     useEffect(() => {
@@ -99,6 +115,8 @@ const MyLeavesPage = () => {
                 ...prev,
                 leaveType: remainingLeaves <= 0 ? 'Loss of Pay' : 'Casual Leave'
             }));
+            setSelectedDates([]);
+            setDateToAdd('');
             setShowApplyLeaveModal(true);
         }
     };
@@ -112,23 +130,58 @@ const MyLeavesPage = () => {
             return;
         }
 
+        if (!leaveFormData.startDate || !leaveFormData.endDate || leaveFormData.endDate < leaveFormData.startDate) {
+            addToast('End date must be the same or after the start date.', 'error');
+            return;
+        }
+
+        const useSpecificDates = selectedDates.length > 0;
+        const datesToApply = useSpecificDates
+            ? Array.from(new Set(selectedDates)).sort()
+            : [];
+
+        if (useSpecificDates && datesToApply.length === 0) {
+            addToast('Please select at least one leave date.', 'error');
+            return;
+        }
+
+        if (!useSpecificDates && (!leaveFormData.startDate || !leaveFormData.endDate || leaveFormData.endDate < leaveFormData.startDate)) {
+            addToast('End date must be the same or after the start date.', 'error');
+            return;
+        }
+
         const start = new Date(leaveFormData.startDate);
         const end = new Date(leaveFormData.endDate);
         const diffTime = Math.abs(end - start);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        const requestedDays = useSpecificDates ? datesToApply.length : diffDays;
 
         try {
-            // 1. Insert leave request into DB
-            const { data, error } = await supabase
-                .from('leaves')
-                .insert([{
+            const leaveReason = `${leaveFormData.leaveType}: ${leaveFormData.reason}` +
+                (useSpecificDates ? ` (Dates: ${datesToApply.join(', ')})` : '');
+
+            const leaveRows = useSpecificDates
+                ? datesToApply.map(date => ({
+                    employee_id: user.id,
+                    org_id: orgId,
+                    from_date: date,
+                    to_date: date,
+                    reason: leaveReason,
+                    status: 'pending'
+                }))
+                : [{
                     employee_id: user.id,
                     org_id: orgId,
                     from_date: leaveFormData.startDate,
                     to_date: leaveFormData.endDate,
-                    reason: `${leaveFormData.leaveType}: ${leaveFormData.reason}`,
+                    reason: leaveReason,
                     status: 'pending'
-                }])
+                }];
+
+            // 1. Insert leave request(s) into DB
+            const { data, error } = await supabase
+                .from('leaves')
+                .insert(leaveRows)
                 .select();
 
             if (error) throw error;
@@ -143,7 +196,7 @@ const MyLeavesPage = () => {
 
                 if (userError) throw userError;
 
-                const newTaken = (userData.leaves_taken_this_month || 0) + diffDays;
+                const newTaken = (userData.leaves_taken_this_month || 0) + requestedDays;
 
                 const { error: updateError } = await supabase
                     .from('profiles')
@@ -156,24 +209,30 @@ const MyLeavesPage = () => {
             }
 
             // 3. Update local state
-            if (data && data[0]) {
-                const newLeave = data[0];
-                const newRequest = {
-                    id: newLeave.id,
-                    name: 'You',
-                    type: leaveFormData.leaveType,
-                    duration: diffDays === 1 ? '1 Day' : `${diffDays} Days`,
-                    dates: start.toDateString() === end.toDateString()
-                        ? start.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })
-                        : `${start.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`,
-                    status: 'Pending'
-                };
-                setLeaveRequests([newRequest, ...leaveRequests]);
+            if (data && data.length > 0) {
+                const newRequests = data.map(leave => {
+                    const rowStart = new Date(leave.from_date);
+                    const rowEnd = new Date(leave.to_date);
+                    const rowDiff = Math.ceil(Math.abs(rowEnd - rowStart) / (1000 * 60 * 60 * 24)) + 1;
+                    return {
+                        id: leave.id,
+                        name: 'You',
+                        type: leaveFormData.leaveType,
+                        duration: rowDiff === 1 ? '1 Day' : `${rowDiff} Days`,
+                        dates: rowStart.toDateString() === rowEnd.toDateString()
+                            ? rowStart.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })
+                            : `${rowStart.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })} - ${rowEnd.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })}`,
+                        status: 'Pending'
+                    };
+                });
+                setLeaveRequests([...newRequests, ...leaveRequests]);
             }
 
             addToast('Leave application submitted successfully', 'success');
             setShowApplyLeaveModal(false);
             setLeaveFormData({ leaveType: 'Casual Leave', startDate: '', endDate: '', reason: '' });
+            setSelectedDates([]);
+            setDateToAdd('');
         } catch (error) {
             console.error('Error applying leave:', error);
             addToast('Failed to apply: ' + error.message, 'error');
@@ -452,9 +511,16 @@ const MyLeavesPage = () => {
                                     <input
                                         type="date"
                                         value={leaveFormData.startDate}
-                                        onChange={(e) => setLeaveFormData({ ...leaveFormData, startDate: e.target.value })}
+                                        onChange={(e) => {
+                                            const nextStart = e.target.value;
+                                            setLeaveFormData(prev => ({
+                                                ...prev,
+                                                startDate: nextStart,
+                                                endDate: prev.endDate && prev.endDate >= nextStart ? prev.endDate : nextStart
+                                            }));
+                                        }}
                                         style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '1rem', backgroundColor: 'var(--background)', color: 'var(--text-primary)' }}
-                                        required
+                                        required={selectedDates.length === 0}
                                     />
                                 </div>
                                 <div>
@@ -463,9 +529,46 @@ const MyLeavesPage = () => {
                                         type="date"
                                         value={leaveFormData.endDate}
                                         onChange={(e) => setLeaveFormData({ ...leaveFormData, endDate: e.target.value })}
+                                        min={leaveFormData.startDate}
                                         style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '1rem', backgroundColor: 'var(--background)', color: 'var(--text-primary)' }}
-                                        required
+                                        required={selectedDates.length === 0}
                                     />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 500, marginBottom: '8px', color: 'var(--text-primary)' }}>Specific Dates (Optional)</label>
+                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                    <input
+                                        type="date"
+                                        value={dateToAdd}
+                                        onChange={(e) => setDateToAdd(e.target.value)}
+                                        style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', fontSize: '1rem', backgroundColor: 'var(--background)', color: 'var(--text-primary)' }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => { addSelectedDate(dateToAdd); setDateToAdd(''); }}
+                                        style={{ padding: '10px 14px', borderRadius: '8px', border: 'none', backgroundColor: 'var(--primary)', color: 'white', fontWeight: 600, cursor: 'pointer' }}
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                                {selectedDates.length > 0 && (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                                        {selectedDates.map(date => (
+                                            <button
+                                                key={date}
+                                                type="button"
+                                                onClick={() => removeSelectedDate(date)}
+                                                style={{ padding: '6px 10px', borderRadius: '999px', border: '1px solid var(--border)', backgroundColor: 'var(--background)', color: 'var(--text-primary)', fontSize: '0.8rem', cursor: 'pointer' }}
+                                            >
+                                                {date} x
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                                <div style={{ marginTop: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                    If you add specific dates, the request will be created only for those dates.
                                 </div>
                             </div>
 

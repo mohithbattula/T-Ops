@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Search, Calendar, CheckCircle, Upload, FileText, Send, AlertCircle, Paperclip, ClipboardList, AlertTriangle, Eye, Clock, Trash2, X } from 'lucide-react';
 import { supabase } from '../../../lib/supabaseClient';
 import { useProject } from '../context/ProjectContext';
+import { useUser } from '../context/UserContext';
 import { useToast } from '../context/ToastContext';
 
 const MyTasksPage = () => {
     // We don't need projectRole, but we use useProject context for consistency (or future use)
     const { currentProject } = useProject();
+    const { orgId } = useUser();
     const { addToast } = useToast();
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -39,10 +41,10 @@ const MyTasksPage = () => {
     const [requestingAccess, setRequestingAccess] = useState(false);
 
     useEffect(() => {
-        if (currentProject?.id) {
+        if (orgId) {
             fetchTasks();
         }
-    }, [currentProject?.id]); // Refetch when project changes
+    }, [currentProject?.id, orgId]); // Refetch when project changes or org resolves
 
     const fetchTasks = async () => {
         setLoading(true);
@@ -56,19 +58,12 @@ const MyTasksPage = () => {
                 return;
             }
 
-            if (!currentProject?.id) {
-                // If no project selected, maybe show empty or all? 
-                // Let's assume we wait for a project.
-                setLoading(false);
-                return;
-            }
-
-            // Fetch tasks assigned to the current user AND belonging to the current project
+            // Fetch tasks assigned to the current user (across projects)
             const { data, error } = await supabase
                 .from('tasks')
                 .select('*, projects(name)')
                 .eq('assigned_to', user.id)
-                .eq('project_id', currentProject.id) // Filter by current project
+                .eq('org_id', orgId)
                 .order('id', { ascending: false });
 
             if (error) throw error;
@@ -841,6 +836,7 @@ const MyTasksPage = () => {
                             filteredTasks.map(task => {
                                 const priorityColor = getPriorityColor(task.priority);
                                 const subStateColor = getSubStateColor(task.sub_state);
+                                const reassignedLabel = (task.reassigned_from || task.reassigned_to || task.access_reason === 'Reassigned by manager') ? 'Reassigned' : null;
 
                                 return (
                                     <tr key={task.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background-color 0.2s' }}>
@@ -849,6 +845,22 @@ const MyTasksPage = () => {
                                                 <div style={{ fontWeight: 600, color: '#1e293b', fontSize: '0.95rem' }}>
                                                     {task.title}
                                                 </div>
+                                                {reassignedLabel && (
+                                                    <div style={{
+                                                        marginTop: '6px',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '999px',
+                                                        backgroundColor: '#fef3c7',
+                                                        color: '#92400e',
+                                                        fontSize: '0.7rem',
+                                                        fontWeight: 600,
+                                                        whiteSpace: 'nowrap'
+                                                    }}>
+                                                        {reassignedLabel}
+                                                    </div>
+                                                )}
                                                 {task.description && (
                                                     <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '250px' }}>
                                                         {task.description}
