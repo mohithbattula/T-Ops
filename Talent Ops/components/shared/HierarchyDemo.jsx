@@ -30,9 +30,28 @@ const HierarchyDemo = () => {
 
     const fetchHierarchy = async () => {
         try {
+            // 1. Get current user
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error("Not authenticated");
+
+            // 2. Get logged in user's profile to find their org_id
+            const { data: currentUserProfile } = await supabase
+                .from('profiles')
+                .select('org_id')
+                .eq('id', user.id)
+                .single();
+
+            if (!currentUserProfile?.org_id) {
+                console.warn("No org_id found for current user");
+                setLoading(false);
+                return;
+            }
+
+            // 3. Fetch all profiles with the same org_id
             const { data: profiles } = await supabase
                 .from('profiles')
                 .select('*')
+                .eq('org_id', currentUserProfile.org_id)
                 .order('full_name');
 
             if (profiles) {
