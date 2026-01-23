@@ -23,7 +23,8 @@ import {
     FolderKanban,
     FileText,
     Check,
-    Ticket
+    Ticket,
+    Trophy
 } from 'lucide-react';
 import { useProject } from '../../../employee/context/ProjectContext';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -63,6 +64,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
         { icon: LayoutDashboard, label: 'Dashboard', path: '/manager-dashboard/dashboard' },
         { icon: ListTodo, label: 'All Tasks', path: '/manager-dashboard/global-tasks' },
         { icon: Users, label: 'Employees', path: '/manager-dashboard/employees' },
+        { icon: UserCheck, label: 'Employee Reviews', path: '/manager-dashboard/team-reviews' },
+        { icon: Trophy, label: 'Employee Rankings', path: '/manager-dashboard/rankings' },
         { icon: UserCheck, label: 'Employee Status', path: '/manager-dashboard/employee-status' },
         { icon: CalendarOff, label: 'Leave Requests', path: '/manager-dashboard/leaves' },
         { icon: CalendarOff, label: 'My Leaves', path: '/manager-dashboard/my-leaves' },

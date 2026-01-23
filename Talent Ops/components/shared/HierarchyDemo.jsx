@@ -11,21 +11,18 @@ const HierarchyDemo = () => {
         employees: []
     });
     const [loading, setLoading] = useState(true);
-    const [scale, setScale] = useState(1);
+    const [scale, setScale] = useState(0.8);
     const containerRef = useRef(null);
-    const [scrollTop, setScrollTop] = useState(0);
 
     const handleZoomIn = () => setScale(prev => Math.min(prev + 0.1, 2));
     const handleZoomOut = () => setScale(prev => Math.max(prev - 0.1, 0.4));
     const handleReset = () => {
-        setScale(0.75);
+        setScale(0.8);
         if (containerRef.current) {
             containerRef.current.scrollLeft = 0;
             containerRef.current.scrollTop = 0;
         }
     };
-
-
 
     useEffect(() => {
         fetchHierarchy();
@@ -63,20 +60,25 @@ const HierarchyDemo = () => {
                 alignItems: 'center',
                 cursor: 'pointer',
                 transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                position: 'relative'
+                position: 'relative',
+                zIndex: 5
             }}
             onClick={() => setSelectedEmployee(data)}
             onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-8px) scale(1.05)';
                 const card = e.currentTarget.children[1];
-                card.style.borderColor = color;
-                card.style.boxShadow = `0 20px 40px -10px ${color}40`;
+                if (card) {
+                    card.style.borderColor = color;
+                    card.style.boxShadow = `0 20px 40px -10px ${color}40`;
+                }
             }}
             onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0) scale(1)';
                 const card = e.currentTarget.children[1];
-                card.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-                card.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.05)';
+                if (card) {
+                    card.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+                    card.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.05)';
+                }
             }}
         >
             {/* Role Chip */}
@@ -98,8 +100,8 @@ const HierarchyDemo = () => {
 
             {/* Node Card */}
             <div style={{
-                padding: '24px 20px',
-                backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                padding: '20px',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(12px)',
                 border: '1.5px solid rgba(255, 255, 255, 0.5)',
                 borderRadius: '24px',
@@ -140,9 +142,9 @@ const HierarchyDemo = () => {
                 </div>
 
                 <div>
-                    <p style={{ fontWeight: '800', fontSize: '1rem', color: '#0f172a', margin: 0, letterSpacing: '-0.01em' }}>
+                    <h3 style={{ fontWeight: '800', fontSize: '1rem', color: '#0f172a', margin: 0, letterSpacing: '-0.01em' }}>
                         {data.full_name || 'N/A'}
-                    </p>
+                    </h3>
                     <p style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                         {data.job_title || 'Workspace Member'}
                     </p>
@@ -156,13 +158,14 @@ const HierarchyDemo = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
             padding: '10px 20px',
             borderRadius: '16px',
             border: `1px solid ${color}20`,
             boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
             marginBottom: '40px',
-            backdropFilter: 'blur(8px)'
+            backdropFilter: 'blur(8px)',
+            zIndex: 10
         }}>
             <div style={{
                 width: '32px',
@@ -199,14 +202,15 @@ const HierarchyDemo = () => {
             position: 'relative',
             backgroundColor: '#f8fafc',
             backgroundImage: `radial-gradient(circle at 2px 2px, #cbd5e1 1px, transparent 0)`,
-            backgroundSize: '40px 40px'
+            backgroundSize: '40px 40px',
+            overflow: 'hidden'
         }}>
             {/* Header Overlay */}
             <div style={{
                 position: 'absolute',
                 top: '24px',
                 left: '24px',
-                zIndex: 10,
+                zIndex: 20,
                 pointerEvents: 'none'
             }}>
                 <h1 style={{ fontSize: '1.75rem', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.04em', marginBottom: '8px' }}>
@@ -218,26 +222,30 @@ const HierarchyDemo = () => {
             <div
                 className="hierarchy-viewport premium-scrollbar"
                 style={{
-                    height: '100%',
-                    width: '100%',
-                    overflow: 'auto', // Allow scrolling in all directions
+                    position: 'absolute',
+                    top: '120px',
+                    left: '20px',
+                    right: '20px',
+                    bottom: '20px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                    backdropFilter: 'blur(4px)',
+                    borderRadius: '24px',
+                    border: '1.5px solid rgba(255, 255, 255, 0.5)',
+                    overflow: 'auto',
                     cursor: 'default',
-                    userSelect: 'auto',
-                    scrollBehavior: 'smooth',
-                    textAlign: 'center' // Centers the inline-block canvas
+                    userSelect: 'none',
+                    boxShadow: 'inset 0 0 20px rgba(0,0,0,0.02)'
                 }}
                 ref={containerRef}
             >
                 <div className="hierarchy-canvas" style={{
-                    display: 'inline-block', // Crucial for width: max-content to work
-                    width: 'max-content',
-                    minWidth: '100%', // Ensures it fills at least the screen
-                    whiteSpace: 'nowrap',
-                    textAlign: 'center',
-                    margin: '0 auto', // Horizontal centering aid
-                    padding: '100px', // generous padding for "scroll in all directions" feel
-                    zoom: scale, // Uses CSS zoom to affect layout size, enabling native scrollbars
-                    transition: 'zoom 0.3s ease', // Smooth zoom
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: '100px 100px 200px',
+                    zoom: scale,
+                    transition: 'zoom 0.3s ease',
+                    minWidth: 'max-content'
                 }}>
                     {(!loading && !hierarchyData.executives.length && !hierarchyData.managers.length && !hierarchyData.teamLeads.length && !hierarchyData.employees.length) ? (
                         <div style={{
@@ -253,20 +261,50 @@ const HierarchyDemo = () => {
                             <p style={{ color: '#64748b', fontSize: '0.9rem' }}>No organizational structure found. Make sure members have assigned roles in the system.</p>
                         </div>
                     ) : (
-                        <>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '80px' }}>
+
                             {/* Level 1: Executives */}
                             {hierarchyData.executives.length > 0 && (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
                                     <LevelBadge color="#7c3aed" label="Executive Board" icon={Shield} />
-                                    <div style={{ display: 'flex', gap: '48px', marginBottom: '80px' }}>
-                                        {hierarchyData.executives.map(exec => (
+                                    <div style={{ display: 'flex', gap: '48px', position: 'relative' }}>
+                                        {hierarchyData.executives.map((exec, idx) => (
                                             <div key={exec.id} style={{ position: 'relative' }}>
                                                 <EmployeeNode data={exec} color="#7c3aed" roleLabel="Executive" />
-                                                {/* Connector Down */}
-                                                <div style={{ position: 'absolute', bottom: '-40px', left: '50%', width: '2px', height: '40px', background: 'linear-gradient(to bottom, #7c3aed80, #cbd5e1)' }}></div>
+                                                {/* Vertical line down to horizontal bar */}
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    bottom: '-40px',
+                                                    left: '50%',
+                                                    width: '2px',
+                                                    height: '40px',
+                                                    background: '#cbd5e1'
+                                                }}></div>
                                             </div>
                                         ))}
+
+                                        {/* Horizontal connecting bar for Executives */}
+                                        {hierarchyData.executives.length > 1 && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                bottom: '-40px',
+                                                left: `calc(120px)`, // Half node width
+                                                right: `calc(120px)`,
+                                                height: '2px',
+                                                background: '#cbd5e1'
+                                            }}></div>
+                                        )}
                                     </div>
+
+                                    {/* Vertical line down from the center of the level to the next level */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        bottom: '-80px',
+                                        left: '50%',
+                                        width: '2px',
+                                        height: '80px',
+                                        background: '#cbd5e1'
+                                    }}></div>
                                 </div>
                             )}
 
@@ -275,48 +313,111 @@ const HierarchyDemo = () => {
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
                                     <LevelBadge color="#2563eb" label="Operations Management" icon={Users} />
 
-                                    {/* Horizontal Connector */}
-                                    {hierarchyData.managers.length > 1 && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            top: '72px',
-                                            left: '120px',
-                                            right: '120px',
-                                            height: '2px',
-                                            backgroundColor: '#cbd5e1',
-                                            zIndex: -1
-                                        }}></div>
-                                    )}
-
-                                    <div style={{ display: 'flex', gap: '48px', marginBottom: '80px' }}>
-                                        {hierarchyData.managers.map(manager => (
+                                    <div style={{ display: 'flex', gap: '48px', position: 'relative' }}>
+                                        {hierarchyData.managers.map((manager, idx) => (
                                             <div key={manager.id} style={{ position: 'relative' }}>
+                                                {/* Vertical line up to horizontal bar */}
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '-40px',
+                                                    left: '50%',
+                                                    width: '2px',
+                                                    height: '40px',
+                                                    background: '#cbd5e1'
+                                                }}></div>
+
                                                 <EmployeeNode data={manager} color="#2563eb" roleLabel="Manager" />
-                                                {/* Connector Down */}
-                                                <div style={{ position: 'absolute', bottom: '-40px', left: '50%', width: '2px', height: '40px', backgroundColor: '#cbd5e1' }}></div>
+
+                                                {/* Vertical line down to horizontal bar */}
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    bottom: '-40px',
+                                                    left: '50%',
+                                                    width: '2px',
+                                                    height: '40px',
+                                                    background: '#cbd5e1'
+                                                }}></div>
                                             </div>
                                         ))}
+
+                                        {/* Horizontal connecting bar for Managers */}
+                                        {hierarchyData.managers.length > 1 && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '-40px',
+                                                left: `calc(120px)`,
+                                                right: `calc(120px)`,
+                                                height: '2px',
+                                                background: '#cbd5e1'
+                                            }}></div>
+                                        )}
+
+                                        {/* Common horizontal connecting bar BELOW Managers */}
+                                        {hierarchyData.managers.length > 1 && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                bottom: '-40px',
+                                                left: `calc(120px)`,
+                                                right: `calc(120px)`,
+                                                height: '2px',
+                                                background: '#cbd5e1'
+                                            }}></div>
+                                        )}
                                     </div>
+
+                                    {/* Vertical line down from the center of the level to the next level */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        bottom: '-80px',
+                                        left: '50%',
+                                        width: '2px',
+                                        height: '80px',
+                                        background: '#cbd5e1'
+                                    }}></div>
                                 </div>
                             )}
 
+                            {/* Level 3: Frontline & Leads */}
                             {([...hierarchyData.teamLeads, ...hierarchyData.employees].length > 0) && (
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
                                     <LevelBadge color="#10b981" label="Frontline & Leads" icon={Briefcase} />
 
-                                    <div style={{ display: 'flex', gap: '48px', flexWrap: 'nowrap', padding: '0 40px' }}>
-                                        {[...hierarchyData.teamLeads, ...hierarchyData.employees].map(item => (
-                                            <EmployeeNode
-                                                key={item.id}
-                                                data={item}
-                                                color={hierarchyData.teamLeads.includes(item) ? "#10b981" : "#64748b"}
-                                                roleLabel={hierarchyData.teamLeads.includes(item) ? "Team Lead" : "Employee"}
-                                            />
+                                    <div style={{ display: 'flex', gap: '48px', position: 'relative' }}>
+                                        {[...hierarchyData.teamLeads, ...hierarchyData.employees].map((item, idx) => (
+                                            <div key={item.id} style={{ position: 'relative' }}>
+                                                {/* Vertical line up to horizontal bar */}
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: '-40px',
+                                                    left: '50%',
+                                                    width: '2px',
+                                                    height: '40px',
+                                                    background: '#cbd5e1'
+                                                }}></div>
+
+                                                <EmployeeNode
+                                                    data={item}
+                                                    color={hierarchyData.teamLeads.includes(item) ? "#10b981" : "#64748b"}
+                                                    roleLabel={hierarchyData.teamLeads.includes(item) ? "Team Lead" : "Employee"}
+                                                />
+                                            </div>
                                         ))}
+
+                                        {/* Horizontal connecting bar for Frontline */}
+                                        {[...hierarchyData.teamLeads, ...hierarchyData.employees].length > 1 && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '-40px',
+                                                left: `calc(120px)`,
+                                                right: `calc(120px)`,
+                                                height: '2px',
+                                                background: '#cbd5e1'
+                                            }}></div>
+                                        )}
                                     </div>
                                 </div>
                             )}
-                        </>
+                        </div>
                     )}
                 </div>
             </div>
@@ -332,7 +433,7 @@ const HierarchyDemo = () => {
                 borderRadius: '24px',
                 border: '1px solid rgba(255, 255, 255, 0.5)',
                 boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
-                zIndex: 10,
+                zIndex: 30,
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '16px',
@@ -369,13 +470,13 @@ const HierarchyDemo = () => {
                 zIndex: 100,
                 color: 'white'
             }}>
-                <button onClick={handleZoomOut} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}><ZoomOut size={20} /></button>
+                <button onClick={handleZoomOut} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }} title="Zoom Out"><ZoomOut size={20} /></button>
                 <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '20px' }}></div>
                 <span style={{ fontSize: '0.9rem', fontWeight: '700', minWidth: '45px', textAlign: 'center' }}>{Math.round(scale * 100)}%</span>
                 <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '20px' }}></div>
-                <button onClick={handleZoomIn} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}><ZoomIn size={20} /></button>
+                <button onClick={handleZoomIn} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }} title="Zoom In"><ZoomIn size={20} /></button>
                 <div style={{ borderLeft: '1px solid rgba(255,255,255,0.1)', height: '20px' }}></div>
-                <button onClick={handleReset} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }}><RotateCcw size={18} /></button>
+                <button onClick={handleReset} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center' }} title="Reset View"><RotateCcw size={18} /></button>
             </div>
 
             {/* Detailed Profile Modal */}

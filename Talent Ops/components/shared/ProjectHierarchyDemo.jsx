@@ -938,11 +938,11 @@ const ProjectHierarchyDemo = ({ isEditingEnabled = false }) => {
             <div
                 className="hierarchy-viewport premium-scrollbar"
                 style={{
-                    height: '100%',
+                    height: 'calc(100vh - 140px)', // Constrain height
                     width: '100%',
-                    overflow: 'auto',
+                    overflow: 'auto', // Enable scrollbars
                     position: 'relative',
-                    cursor: 'default',
+                    cursor: 'default', // Revert custom cursor
                     userSelect: 'auto',
                     scrollBehavior: 'smooth',
                     textAlign: 'center'

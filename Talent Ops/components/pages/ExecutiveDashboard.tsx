@@ -25,6 +25,10 @@ import ProjectDocuments from '../employee/pages/ProjectDocuments';
 import RaiseTicketPage from '../shared/pages/RaiseTicketPage';
 // @ts-ignore
 import ExecutiveAllTasksPage from '../executive/pages/ExecutiveAllTasksPage';
+// @ts-ignore
+import ExecutiveReviewsPage from '../executive/pages/ExecutiveReviewsPage';
+// @ts-ignore
+import FullRankingPage from '../shared/pages/FullRankingPage';
 import { EmployeeLifecycleManagement } from '../shared/EmployeeLifecycleManagement';
 import RoleGuard from '../shared/RoleGuard';
 import '../executive/index.css';
@@ -64,6 +68,8 @@ export const ExecutiveDashboard = () => {
                                 <Route path="raise-ticket" element={<RaiseTicketPage />} />
                                 <Route path="settings" element={<ModulePage title="Settings" type="default" />} />
                                 <Route path="project-analytics" element={<ModulePage title="Project Analytics" type="project-analytics" />} />
+                                <Route path="reviews" element={<ExecutiveReviewsPage />} />
+                                <Route path="rankings" element={<FullRankingPage />} />
                                 <Route path="documents" element={<DocumentsWithToast />} />
                             </Routes>
                         </Layout>

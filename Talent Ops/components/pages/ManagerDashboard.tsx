@@ -11,6 +11,10 @@ import MyLeavesPage from '../manager/pages/MyLeavesPage';
 // @ts-ignore
 import ManagerAllTasksPage from '../manager/pages/ManagerAllTasksPage';
 // @ts-ignore
+import TeamReviewsPage from '../manager/pages/TeamReviewsPage';
+// @ts-ignore
+import FullRankingPage from '../shared/pages/FullRankingPage';
+// @ts-ignore
 import MessagingHub from '../shared/MessagingHub';
 // @ts-ignore
 import RaiseTicketPage from '../shared/pages/RaiseTicketPage';
@@ -40,6 +44,8 @@ export const ManagerDashboard = () => {
                                 <Route path="personal-tasks" element={<ModulePage title="My Tasks" type="personal-tasks" />} />
                                 <Route path="leaves" element={<ModulePage title="Leave Requests" type="leaves" />} />
                                 <Route path="my-leaves" element={<MyLeavesPage />} />
+                                <Route path="team-reviews" element={<TeamReviewsPage />} />
+                                <Route path="rankings" element={<FullRankingPage />} />
                                 <Route path="employee-status" element={<ModulePage title="Employee Status" type="status" />} />
                                 <Route path="payslips" element={<ModulePage title="Payslips" type="payroll" />} />
                                 <Route path="policies" element={<ModulePage title="Policies" type="policies" />} />

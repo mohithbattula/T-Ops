@@ -23,7 +23,9 @@ import {
     TrendingUp,
     Building2,
     FolderKanban,
-    Ticket
+    Ticket,
+    Star,
+    Trophy
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMessages } from '../../../shared/context/MessageContext';
@@ -50,6 +52,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar, onMouseEnter, onMouseLeave }) => 
     const orgMenuItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/executive-dashboard/dashboard' },
         { icon: Users, label: 'Employees', path: '/executive-dashboard/employees' },
+        { icon: Star, label: 'Reviews', path: '/executive-dashboard/reviews' },
+        { icon: Trophy, label: 'Employee Rankings', path: '/executive-dashboard/rankings' },
         { icon: UserCheck, label: 'Employee Status', path: '/executive-dashboard/employee-status' },
         { icon: CalendarOff, label: 'Leave Requests', path: '/executive-dashboard/leaves' },
         { icon: DollarSign, label: 'Payroll', path: '/executive-dashboard/payroll' },
